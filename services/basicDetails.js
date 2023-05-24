@@ -90,7 +90,7 @@ function reqData(req) {
 
     return data;
 
-}
+} 
 
 function getAllApplicantsInfo(req) {
     var data1 = [];
@@ -248,8 +248,8 @@ exports.update1 = (req, res) => {
             let applicantsPersonalArray = [];
             let counter = 1;
 
-            async.eachSeries(allApplicants, function itrateOverAllApplicant(applicant , callback){
-                
+            async.eachSeries(allApplicants, function itrateOverAllApplicant(applicant, callback) {
+
 
                 Object.keys(applicant).forEach(key => {
                     applicantsPersonalfeilds += `${key} = ? ,`;
@@ -258,42 +258,38 @@ exports.update1 = (req, res) => {
 
                 applicantsPersonalfeilds = applicantsPersonalfeilds.slice(0, -1)
 
-                const q =`update applicants_personal_details set ${applicantsPersonalfeilds} where APPLICANT_ID = ${req.body.ID} AND APPLICANT_NO = ${counter}`
-                
-                db.executeDML(q, applicantsPersonalArray , supportKey , con , (error)=>{
-                    if(error)
-                    {
-                        console.log("error in personal info update through bsicdetails " , error);
+                const q = `update applicants_personal_details set ${applicantsPersonalfeilds} where APPLICANT_ID = ${req.body.ID} AND APPLICANT_NO = ${counter}`
+
+                db.executeDML(q, applicantsPersonalArray, supportKey, con, (error) => {
+                    if (error) {
+                        console.log("error in personal info update through bsicdetails ", error);
                         db.rollbackConnection(con);
                         callback(error);
                     }
-                    else
-                    {
+                    else {
                         console.log("applicant :  - ", applicant);
-                        counter += 1; 
+                        counter += 1;
                         callback();
                     }
                 })
             },
-            function resultFunction(error){
-                if(error)
-                {
-                    console.log("error", error);
-                    res.send({
-                        "code" : 400,
-                        "message" : "Failed to update basic information" 
+                function resultFunction(error) {
+                    if (error) {
+                        console.log("error", error);
+                        res.send({
+                            "code": 400,
+                            "message": "Failed to update basic information"
 
-                    })
-                }
-                else
-                {
-                    res.send({
-                        "code": 200,
-                        "message": "bascic details update successfully"
-                    })
-                }
+                        })
+                    }
+                    else {
+                        res.send({
+                            "code": 200,
+                            "message": "bascic details update successfully"
+                        })
+                    }
 
-            })
+                })
 
         }
 
@@ -303,7 +299,7 @@ exports.update1 = (req, res) => {
 }
 
 exports.update = (req, res) => {
-    const supportKey = req.headers['supportkey'] ;   
+    const supportKey = req.headers['supportkey'];
 
 
     const data = reqData(req);
@@ -315,12 +311,11 @@ exports.update = (req, res) => {
         recData.push(data[key]);
     });
 
-    setData2  = setData.slice(0,-1)
+    setData2 = setData.slice(0, -1)
 
     const q = `update basic_details set ${setData2} where ID = ${req.body.ID}`
-    db.executeQueryData(q , recData , supportKey , (error)=>{
-        if(error)
-        {
+    db.executeQueryData(q, recData, supportKey, (error) => {
+        if (error) {
             console.log(error);
             res.send({
                 "code": 400,
