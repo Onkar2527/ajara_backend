@@ -19,6 +19,12 @@ app.use(bodyParser.json({ limit: '50mb', extended: true }));
 
 app.use('/static', express.static(path.join(__dirname, 'uploads')));
 
+app.use('/',(req, res, next)=>{
+    let supportKey = req.headers['supportkey'];
+    console.log("Requested Method : -", req.method, req.url, "public Ip :", req.connection.remoteAddress, "supportkey : ", supportKey);
+    next();
+})
+
 
 app.use(cors());
 app.use(helmet());

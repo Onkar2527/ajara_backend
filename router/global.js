@@ -15,11 +15,15 @@ router
     .use('/api/loanInformation', require('./loanInformation'))
     .use('/api/otherBankAccounts', require('./otherBankAccounts'))
     .use('/api/propertyInformation', require('./propertyInformation'))
+    .use('/api/documentGroup', require('./documentGroup'))
+    .use('/api/document', require('./document'))
 
     .use('/api/drafts', require('./drafts'))
     //.use('/api/accountHistory', require('./accountHistory'))
    
     .use('/api/applicantsPhoto', require('./applicantsPhoto'))
+
+    .post('/user/login', require('../services/userAccess/user').login)
     
     
 
