@@ -1,4 +1,4 @@
-const mm = require('../utilities/dbModule');
+const db = require('../utilities/dbModule');
 
 
 
@@ -7,7 +7,7 @@ const mm = require('../utilities/dbModule');
 exports.get = (req, res) => {
     let supportKey = req.headers['supportkey'];
 
-    mm.executeQueryData(`select * from document_group_master where 1`, '', supportKey, (error, result) => {
+    db.executeQueryData(`select * from document_group_master where 1`, '', supportKey, (error, result) => {
         if (error) {
             console.log("error", error);
             res.send({

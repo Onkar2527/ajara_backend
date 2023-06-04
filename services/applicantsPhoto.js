@@ -39,7 +39,7 @@ exports.getAllApplicants = (req, res) => {
     const supportKey = req.headers['supportkey']
     let resultsArray = [];
 
-    db.executeQuery(`select * from applicant_photos where APPLICANT_ID = ${req.body.APPLICANT_ID}`, supportKey, (error, applicantsPhotoResult, ) => {
+    db.executeQuery(`select * from applicant_photos where APPLICANT_ID = ${req.body.APPLICANT_ID}`, supportKey, (error, applicantsPhotoResult,) => {
         if (error) {
             console.log("error", error);
             res.send({
@@ -51,43 +51,38 @@ exports.getAllApplicants = (req, res) => {
         else {
             console.log("appPhoto", applicantsPhotoResult);
 
-            if(applicantsPhotoResult.length > 0)
-            {
+            if (applicantsPhotoResult.length > 0) {
 
-                async.eachSeries(applicantsPhotoResult, function itrateOverAllApplicant(applicant , callback) {
-                    if(applicant.IMAGE_LINK != null && applicant.IMAGE_LINK != undefined && applicant.IMAGE_LINK != '' )
-                    {
-                        applicant.IMAGE_DATA = fs.readFileSync(applicant.IMAGE_LINK, {encoding: "utf-8"});
+                async.eachSeries(applicantsPhotoResult, function itrateOverAllApplicant(applicant, callback) {
+                    if (applicant.IMAGE_LINK != null && applicant.IMAGE_LINK != undefined && applicant.IMAGE_LINK != '') {
+                        applicant.IMAGE_DATA = fs.readFileSync(applicant.IMAGE_LINK, { encoding: "utf-8" });
                         resultsArray.push(applicant)
                         callback();
                     }
-                    else{
+                    else {
                         resultsArray.push(applicant)
                         callback()
                     }
                 },
                     function resultFunction(error) {
-                        if(error)
-                        {
+                        if (error) {
                             console.log("error async", error);
                         }
-                        else
-                        {
+                        else {
                             res.send({
                                 "code": 200,
-                                "data" : resultsArray
+                                "data": resultsArray
                             })
                         }
-    
-    
+
+
                     })
 
 
             }
-            else
-            {
+            else {
                 console.log("applican doent exist");
-               
+
             }
 
         }
@@ -222,9 +217,7 @@ exports.retrieve = (req, res) => {
         else {
 
             const IMAGE_DATA = fs.readFileSync(applicantPhotoResult[0].IMAGE_LINK, { encoding: "base64" })
-
-
-
+            
             res.send({
 
                 "code": 200,

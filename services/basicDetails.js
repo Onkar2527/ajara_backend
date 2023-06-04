@@ -4,50 +4,7 @@ function reqData(req) {
 
 
 
-    // var data = { //personal info table 
-    //     ID: req.body.ID,
-    //     APPLICANT_ID: req.body.APPLICANT_ID,
-    //     FIRST_NAME: req.body.FIRST_NAME,
-    //     MIDDLE_NAME: req.body.MIDDLE_NAME,
-    //     LAST_NAME: req.body.LAST_NAME,
-    //     FATHER_OR_HUSBAND_NAME: req.body.FATHER_OR_HUSBAND_NAME,
-    //     CURRENT_ADDRESS: req.body.CURRENT_ADDRESS,
-    //     CURRENT_CITY: req.body.CURRENT_CITY,
-    //     CURRENT_TALUKA: req.body.CURRENT_TALUKA,
-    //     CURRENT_DISTRICT: req.body.CURRENT_DISTRICT,
-    //     CURRENT_LANDMARK: req.body.CURRENT_LANDMARK,
-    //     CURRENT_STATE: req.body.CURRENT_STATE,
-    //     CURRENT_PINCODE: req.body.CURRENT_PINCODE,
-    //     PERMANENT_ADDRESS: req.body.PERMANENT_ADDRESS,
-    //     PERMANENT_CITY: req.body.PERMANENT_CITY,
-    //     PERMANENT_TALUKA: req.body.PERMANENT_TALUKA,
-    //     PERMANENT_DISTRICT: req.body.PERMANENT_DISTRICT,
-    //     PERMANENT_LANDMARK: req.body.PERMANENT_LANDMARK,
-    //     PERMANENT_STATE: req.body.PERMANENT_STATE,
-    //     PERMANENT_PINCODE: req.body.PERMANENT_PINCODE,
-    //     HOUSE_PHONE: req.body.HOUSE_PHONE,
-    //     OFFICE_PHONE: req.body.OFFICE_PHONE,
-    //     EMAIL_ID: req.body.EMAIL_ID,
-    //     MOBILE_NUMBER: req.body.MOBILE_NUMBER,
-    //     WORK: req.body.WORK,
-    //     ESTABLISHMENT: req.body.ESTABLISHMENT,
-    //     RELIGION: req.body.RELIGION,
-    //     CAST: req.body.CAST,
-    //     MARITAL_STATUS: req.body.MARITAL_STATUS,
-    //     FAMILY_COUNT: req.body.FAMILY_COUNT,
-    //     EDUCATION: req.body.EDUCATION,
-    //     IS_INSURED: req.body.IS_INSURED,
-    //     INSURANCE_YEAR: req.body.INSURANCE_YEAR,
-    //     POLICY_TYPE: req.body.POLICY_TYPE,
 
-    //     INSURANCE_COMPANY: req.body.INSURANCE_COMPANY,
-    //     AADHAAR_NUMBER: req.body.AADHAAR_NUMBER,
-    //     BLOOD_TYPE: req.body.BLOOD_TYPE,
-    //     EMPLOYMENT_DETAIL: req.body.EMPLOYMENT_DETAIL,
-    //     EMPLOYMENT_DESIGNATION: req.body.EMPLOYMENT_DESIGNATION,
-    //     SELF_EMPLOYMENT_DETAIL: req.body.SELF_EMPLOYMENT_DETAIL,
-    //     BUSINESS_DETAIL: req.body.BUSINESS_DETAIL
-    // };
 
     var data = {
 
@@ -90,7 +47,7 @@ function reqData(req) {
 
     return data;
 
-} 
+}
 
 function getAllApplicantsInfo(req) {
     var data1 = [];
@@ -162,50 +119,63 @@ exports.create = (req, res) => {
             callback(error);
         }
         else {
-            let async = require('async')
+            console.log("here is result", basicDetailResult);
+            db.executeDML(`insert into frictionless_account_opening.extra_information (APPLICANT_ID, TAB_ID) select ${basicDetailResult.insertId}, ID from tab_master`, '', supportKey, con, (error, ResultTabmap) => {
+                if (error) {
+                    console.log("error", error);
+                    db.rollbackConnection(con)
+                    res.send({
+                        "code": 400,
+                        "message": "failed to map tabs"
+                    })
+                }
+                else {
+                    let async = require('async')
 
 
-            async.eachSeries(allApplicants, function itrateOverApplicant(applicant, callback) {
+                    async.eachSeries(allApplicants, function itrateOverApplicant(applicant, callback) {
 
-                db.executeDML(`insert into applicant_photos set ? `, { APPLICANT_ID: basicDetailResult.insertId, APPLICANT_NO: applicant.APPLICANT_NO, FIRST_NAME: applicant.FIRST_NAME, MIDDLE_NAME: applicant.MIDDLE_NAME, LAST_NAME: applicant.LAST_NAME }, supportKey, con, (error, applicantPhotoResult) => {
-                    if (error) {
-                        console.log("error", error);
-                        db.rollbackConnection(con);
-                        callback(error);
-                    }
-                    else {
-                        console.log("reslt", basicDetailResult);
-                        db.executeDML('insert into applicants_personal_details set ? ', { APPLICANT_ID: basicDetailResult.insertId, APPLICANT_NO: applicant.APPLICANT_NO, FIRST_NAME: applicant.FIRST_NAME, MIDDLE_NAME: applicant.MIDDLE_NAME, LAST_NAME: applicant.LAST_NAME, AADHAAR_NUMBER: applicant.AADHAAR_NUMBER }, supportKey, con, (error, persoanlDetailsResult) => {
+                        db.executeDML(`insert into applicant_photos set ? `, { APPLICANT_ID: basicDetailResult.insertId, APPLICANT_NO: applicant.APPLICANT_NO, FIRST_NAME: applicant.FIRST_NAME, MIDDLE_NAME: applicant.MIDDLE_NAME, LAST_NAME: applicant.LAST_NAME }, supportKey, con, (error, applicantPhotoResult) => {
                             if (error) {
                                 console.log("error", error);
                                 db.rollbackConnection(con);
-                                callback(error)
+                                callback(error);
                             }
                             else {
-                                console.log("application created successful .............");
-                                callback();
+                                console.log("reslt", basicDetailResult);
+                                db.executeDML('insert into applicants_personal_details set ? ', { APPLICANT_ID: basicDetailResult.insertId, APPLICANT_NO: applicant.APPLICANT_NO, FIRST_NAME: applicant.FIRST_NAME, MIDDLE_NAME: applicant.MIDDLE_NAME, LAST_NAME: applicant.LAST_NAME, AADHAAR_NUMBER: applicant.AADHAAR_NUMBER }, supportKey, con, (error, persoanlDetailsResult) => {
+                                    if (error) {
+                                        console.log("error", error);
+                                        db.rollbackConnection(con);
+                                        callback(error)
+                                    }
+                                    else {
+                                        console.log("application created successful .............");
+                                        callback();
+                                    }
+                                })
+                            }
+
+                        })
+                    },
+                        function resultFunction(error) {
+                            if (error) {
+                                res.send({
+                                    "code": 400,
+                                    "message": "Failed to save basic details"
+                                })
+                            }
+                            else {
+                                db.commitConnection(con)
+                                res.send({
+                                    "code": 200,
+                                    "message": "Basic details saved successfully",
+                                    "APPLICANT_ID": basicDetailResult.insertId
+                                })
                             }
                         })
-                    }
-
-                })
-            },
-                function resultFunction(error) {
-                    if (error) {
-                        res.send({
-                            "code": 400,
-                            "message": "Failed to save basic details"
-                        })
-                    }
-                    else {
-                        db.commitConnection(con)
-                        res.send({
-                            "code": 200,
-                            "message": "Basic details saved successfully",
-                            "APPLICANT_ID": basicDetailResult.insertId
-                        })
-                    }
-                })
+                }
+            })
         }
     })
 }
@@ -323,8 +293,7 @@ exports.update = (req, res) => {
             })
 
         }
-        else
-        {
+        else {
             res.send({
                 "code": 200,
                 "message": "basic details updated successfully"
@@ -332,6 +301,100 @@ exports.update = (req, res) => {
 
         }
 
+    })
+
+
+}
+
+
+
+exports.getAll = (req, res) => {
+
+    const supportKey = req.header['supportkey'];
+
+    db.executeQueryData(`select ROLE_ID from user_key_master where USER_KEY = ?`, [req.body.USER_KEY], supportKey, (error, resRoleId) => {
+        if (error) {
+            console.log("error", error);
+            res.send({
+                "code": 400,
+                "message": "Failed to applications"
+            })
+        }
+        else {
+
+            var pageIndex = req.body.pageIndex ? req.body.pageIndex : '';
+
+            var pageSize = req.body.pageSize ? req.body.pageSize : '';
+            var start = 0;
+            var end = 0;
+
+            console.log(pageIndex + " " + pageSize)
+            if (pageIndex != '' && pageSize != '') {
+                start = (pageIndex - 1) * pageSize;
+                end = pageSize;
+                console.log(start + " " + end);
+            }
+
+            let sortKey = req.body.sortKey ? req.body.sortKey : 'ID';
+            let sortValue = req.body.sortValue ? req.body.sortValue : 'DESC';
+
+            let filter = ``
+
+            if (resRoleId[0].ROLE_ID == 1) {
+                filter = `STATUS = 'D'`
+            }
+            else if (resRoleId[0].ROLE_ID == 2) {
+                filter = `STATUS = 'C'`
+            }
+            else if (resRoleId[0].ROLE_ID == 3) {
+                filter = `STATUS = 'V'`
+            }
+            else {
+                filter = `STATUS = ''`
+            }
+
+            let criteria = '';
+
+            if (pageIndex === '' && pageSize === '')
+                criteria = filter + " order by " + sortKey + " " + sortValue;
+            else
+                criteria = filter + " order by " + sortKey + " " + sortValue + " LIMIT " + start + "," + end;
+
+            let countCriteria = filter;
+
+
+
+            db.executeQuery(`select count(*) as cnt from basic_details where 1 AND ` + criteria, supportKey, (error, resultCount) => {
+                if (error) {
+                    console.log("error", error);
+                    res.send({
+                        "code": 400,
+                        "message": "failed to get proposal count"
+                    })
+                }
+                else {
+                    db.executeQuery(`select * from basic_details where 1 AND ` + criteria, supportKey, (error, results) => {
+                        if (error) {
+                            console.log("error", error);
+                            res.send({
+                                "code": 400,
+                                "message": "Failed to get drafts"
+                            })
+                        }
+                        else {
+                            console.log("count,data");
+                            res.send({
+                                "code": 200,
+                                "message": "ok",
+                                "count": resultCount[0].cnt,
+                                "data": results
+                            })
+                        }
+                    })
+                }
+            })
+
+        }
     })
 
 

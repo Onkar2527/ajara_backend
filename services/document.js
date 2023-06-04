@@ -1,4 +1,4 @@
-const mm = require('../utilities/dbModule');
+const db = require('../utilities/dbModule');
 
 function reqData(req){
     data = {
@@ -13,7 +13,7 @@ function reqData(req){
 exports.get = (req, res) => {
     let supportKey = req.headers['supportkey'];
 
-    mm.executeQueryData(`select * from document_master where 1`, '', supportKey, (error, result) => {
+    db.executeQueryData(`select * from document_master where 1`, '', supportKey, (error, result) => {
         if (error) {
             console.log("error", error);
             res.send({
@@ -35,7 +35,7 @@ exports.create = (req,res)=>{
     let supportKey = req.headers['supportkey'];
     data = reqData(req);
 
-    mm.executeQueryData(`insert into document_master set ?` ,data, supportKey,(error)=>{
+    db.executeQueryData(`insert into document_master set ?` ,data, supportKey,(error)=>{
         if(error)
         {
             console.log("error",error);
