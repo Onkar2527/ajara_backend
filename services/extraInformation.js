@@ -16,7 +16,7 @@ exports.update = (req, res) =>{
         VERIFIER_REMARK : req.body.VERIFIER_REMARK
     }
     const supportKey = req.headers['supportkey'];
-db.executeQueryData(`update extra_information set ? where ID = ?`, [dt,req.body.ID], supportKey,(error)=>{
+   db.executeQueryData(`update extra_information set ? where ID = ?`, [dt,req.body.ID], supportKey,(error)=>{
     if(error)
     {
         console.log("error",error);

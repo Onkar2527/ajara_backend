@@ -35,5 +35,5 @@ app.use('/', globalRoutes)
 
 
 httpServer.listen(port, hostname,  ()=>{
-    console.log(`listening on http://${hostname}:${port}`);
+    console.log(`Server listening on http://${hostname}:${port}`);
 })

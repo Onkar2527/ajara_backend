@@ -8,23 +8,60 @@ exports.getTabs = (req,res) =>{
     console.log("incoData", dt);
     let data = dt
     const supportKey = req.headers['supportkey'];
-    db.executeQueryData(`select * from view_tab_master where APPLICANT_ID = ? ORDER BY view_tab_master.INDEX`, [data.APPLICANT_ID],supportKey, (error, ResTabs)=>{
+   // const userKey = req.headers['user-key']
+    // console.log("here is userkey", userKey);
+
+    db.executeQueryData(`select ROLE_ID from user_key_master where USER_KEY = ?`, [data.USER_KEY],supportKey,(error,userRoleInfo)=>{
         if(error)
         {
             console.log("error", error);
             res.send({
                 "code": 400,
-                "message": "Failed to get tabs "
+                "message": "Failed to get user_role for tab"
             })
         }
-        else{
+        else
+        {
 
-           // let eData = rsa.encriptData(ResTabs)
-            res.send({
-                "code": 200,
-                "message": "ok",
-                "data": ResTabs
+            let q = `select * from view_tab_master where APPLICANT_ID = ? ORDER BY view_tab_master.INDEX`
+             if(userRoleInfo[0].ROLE_ID == 1)
+             {
+                 q = `select * from view_tab_master where APPLICANT_ID = ? AND TAB_ID not in (6,7) ORDER BY view_tab_master.INDEX`
+             }
+             else if(userRoleInfo[0].ROLE_ID == 2)
+             {
+                q = `select * from view_tab_master where APPLICANT_ID = ? AND TAB_ID not in (7) ORDER BY view_tab_master.INDEX`
+             }
+             else if(userRoleInfo[0].ROLE_ID == 3)
+             {
+                q = `select * from view_tab_master where APPLICANT_ID = ? AND TAB_ID not in (6) ORDER BY view_tab_master.INDEX`
+             }
+             else
+             {
+                console.log("Failed to set query");
+             }
+            db.executeQueryData(q, [data.APPLICANT_ID],supportKey, (error, ResTabs)=>{
+                if(error)
+                {
+                    console.log("error", error);
+                    res.send({
+                        "code": 400,
+                        "message": "Failed to get tabs "
+                    })
+                }
+                else{
+        
+                   // let eData = rsa.encriptData(ResTabs)
+                    res.send({
+                        "code": 200,
+                        "message": "ok",
+                        "data": ResTabs
+                    })
+                }
             })
+
         }
     })
+
+    
 }

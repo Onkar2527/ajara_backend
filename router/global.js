@@ -24,6 +24,7 @@ router
     .use('/api/componunts', require('./componunt'))
     .use('/api/tabs', require('./tabs'))
     .use('/api/extraInformation', require('./extraInformation'))
+    .use('/api/applicantDocuments', require('./applicantDocument'))
 
     .use('/api/applicantsPhoto', require('./applicantsPhoto'))
 

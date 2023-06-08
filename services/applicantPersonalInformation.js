@@ -9,7 +9,9 @@ function reqData(req) {
         FIRST_NAME: req.body.FIRST_NAME,
         MIDDLE_NAME: req.body.MIDDLE_NAME,
         LAST_NAME: req.body.LAST_NAME,
-        FATHER_OR_HUSBAND_NAME: req.body.FATHER_OR_HUSBAND_NAME,
+        F_OR_H_FIRST_NAME: req.body.F_OR_H_FIRST_NAME,
+        F_OR_H_MIDDLE_NAME: req.body.F_OR_H_MIDDLE_NAME,
+        F_OR_H_LAST_NAME: req.body.F_OR_H_LAST_NAME,
         CURRENT_ADDRESS: req.body.CURRENT_ADDRESS,
         CURRENT_CITY: req.body.CURRENT_CITY,
         CURRENT_TALUKA: req.body.CURRENT_TALUKA,
@@ -35,22 +37,28 @@ function reqData(req) {
         MARITAL_STATUS: req.body.MARITAL_STATUS,
         FAMILY_COUNT: req.body.FAMILY_COUNT,
         EDUCATION: req.body.EDUCATION,
-        IS_INSURED: req.body.IS_INSURED ? 1 : 0 ,
+        IS_INSURED: req.body.IS_INSURED ? 1 : 0,
         INSURANCE_YEAR: req.body.INSURANCE_COMPANY,
         POLICY_TYPE: req.body.POLICY_TYPE,
         INSURANCE_COMPANY: req.body.INSURANCE_COMPANY,
         AADHAAR_NUMBER: req.body.AADHAAR_NUMBER,
         BLOOD_TYPE: req.body.BLOOD_TYPE,
-        BLOOD_TYPE_SIGN : req.body.BLOOD_TYPE_SIGN,
+        BLOOD_TYPE_SIGN: req.body.BLOOD_TYPE_SIGN,
         EMPLOYMENT_DETAIL: req.body.EMPLOYMENT_DETAIL,
         EMPLOYMENT_DESIGNATION: req.body.EMPLOYMENT_DESIGNATION,
         SELF_EMPLOYMENT_DETAIL: req.body.SELF_EMPLOYMENT_DETAIL,
         BUSINESS_DETAIL: req.body.BUSINESS_DETAIL,
-        PROPRIETOR_DETAILS : req.body.PROPRIETOR_DETAILS
+        PROPRIETOR_DETAILS: req.body.PROPRIETOR_DETAILS,
+        MOTHERS_NAME : req.body.MOTHERS_NAME,
+        PAN_NO : req.body.PAN_NO,
+        MOTHERS_MAIDEN_NAME : req.body.MOTHERS_MAIDEN_NAME,
+        NATIONALITY : req.body.NATIONALITY,
+        DATE_OFBIRTH : req.body.DATE_OFBIRTH,
+        GENDER : req.body.GENDER
 
     }
 
-    return data ;
+    return data;
 }
 
 exports.get = (req, res) => {
@@ -58,48 +66,44 @@ exports.get = (req, res) => {
     let supportKey = req.headers['supportkey'];
     const q = `select * from applicants_personal_details where APPLICANT_ID = ${req.body.APPLICANT_ID}` + (req.body.APPLICANT_NO ? 'AND APPLICANT_NO = ' + req.body.APPLICANT_NO : '');
     console.log("query", q);
-    db.executeQuery(q, supportKey, (error, results)=>{
-        if(error)
-        {
+    db.executeQuery(q, supportKey, (error, results) => {
+        if (error) {
             console.log("error", error);
             res.send({
                 "code": 400,
                 "message": "Failed to get applicants personal information"
             })
         }
-        else
-        {
+        else {
             console.log("result personal", results);
             res.send({
                 "code": 200,
                 "message": "OK",
-                "data" : results
+                "data": results
             })
 
         }
-    } )
+    })
 
 }
 
-exports.create = (req, res) =>{
+exports.create = (req, res) => {
 
-    const supportKey = req.headers['supportkey'] ;   
+    const supportKey = req.headers['supportkey'];
 
-    const data =  reqData(req);
+    const data = reqData(req);
     const q = `insert into applicants_persoanl_details set ?`
 
-    db.executeQueryData(q, data, supportKey, (error)=>{
+    db.executeQueryData(q, data, supportKey, (error) => {
 
-        if(error)
-        {
+        if (error) {
             console.log("error", error);
             res.send({
                 "code": 400,
                 "message": "Failed to save applicants personal information"
             })
         }
-        else
-        {
+        else {
             res.send({
                 "code": 200,
                 "message": "Appliction personal information saved successfully"
@@ -108,12 +112,12 @@ exports.create = (req, res) =>{
         }
     })
 
-    
+
 
 }
 
 exports.update = (req, res) => {
-    const supportKey = req.headers['supportkey'] ;   
+    const supportKey = req.headers['supportkey'];
 
 
     const data = reqData(req);
@@ -125,14 +129,13 @@ exports.update = (req, res) => {
         recData.push(data[key]);
     });
 
-    setData2 = setData.slice(0,-1);
+    setData2 = setData.slice(0, -1);
 
 
     const q = `update applicants_personal_details set ${setData2} where ID = ${req.body.ID}`
-    
-    db.executeQueryData(q , recData , supportKey , (error)=>{
-        if(error)
-        {
+
+    db.executeQueryData(q, recData, supportKey, (error) => {
+        if (error) {
             console.log(error);
             res.send({
                 "code": 400,
@@ -140,8 +143,7 @@ exports.update = (req, res) => {
             })
 
         }
-        else
-        {
+        else {
             res.send({
                 "code": 200,
                 "message": "applicants personal information updated successfully"

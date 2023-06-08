@@ -3,7 +3,7 @@ const fs = require('fs');
 const path = require('path');
 const async = require('async');
 
-const IncomingForm = require('formidable').IncomingForm;
+//const IncomingForm = require('formidable').IncomingForm;
 
 
 
@@ -52,37 +52,36 @@ exports.getAllApplicants = (req, res) => {
             console.log("appPhoto", applicantsPhotoResult);
 
             if (applicantsPhotoResult.length > 0) {
-
-                async.eachSeries(applicantsPhotoResult, function itrateOverAllApplicant(applicant, callback) {
-                    if (applicant.IMAGE_LINK != null && applicant.IMAGE_LINK != undefined && applicant.IMAGE_LINK != '') {
-                        applicant.IMAGE_DATA = fs.readFileSync(applicant.IMAGE_LINK, { encoding: "utf-8" });
-                        resultsArray.push(applicant)
-                        callback();
-                    }
-                    else {
-                        resultsArray.push(applicant)
-                        callback()
-                    }
-                },
-                    function resultFunction(error) {
-                        if (error) {
-                            console.log("error async", error);
+                let isPathExists = fs.existsSync(applicantsPhotoResult.IMAGE_LINK)
+                
+                    async.eachSeries(applicantsPhotoResult, function itrateOverAllApplicant(applicant, callback) {
+                        if (applicant.IMAGE_LINK != null && applicant.IMAGE_LINK != undefined && applicant.IMAGE_LINK != '') {
+                            applicant.IMAGE_DATA = fs.readFileSync(applicant.IMAGE_LINK, { encoding: "utf-8" });
+                            resultsArray.push(applicant)
+                            callback();
                         }
                         else {
-                            res.send({
-                                "code": 200,
-                                "data": resultsArray
-                            })
+                            resultsArray.push(applicant)
+                            callback()
                         }
+                    },
+                        function resultFunction(error) {
+                            if (error) {
+                                console.log("error async", error);
+                            }
+                            else {
+                                res.send({
+                                    "code": 200,
+                                    "data": resultsArray
+                                })
+                            }
 
 
-                    })
-
-
+                        })
+               
             }
             else {
                 console.log("applican doent exist");
-
             }
 
         }
@@ -105,7 +104,7 @@ exports.upload = (req, res) => {
                 const folderName = 'APPLICANT_ID-' + req.body.APPLICANT_ID;
                 const fileName = 'APPLICANT_NO-' + req.body.APPLICANT_NO + '.' + 'jpg'
                 const data = req.body.IMAGE_DATA;
-                let folderPath = `./uploads/${folderName}`;
+                let folderPath = `./uploads/applicantsPhotos/${folderName}`;
                 let filePath = folderPath + '/' + fileName;
 
                 if (!fs.existsSync(folderPath)) {
@@ -149,7 +148,7 @@ exports.upload = (req, res) => {
                     const folderName = 'APPLICANT_ID-' + req.body.APPLICANT_ID;
                     const fileName = 'APPLICANT_NO-' + req.body.APPLICANT_NO + '.' + 'jpg'
                     const data = req.body.IMAGE_DATA;
-                    let folderPath = `./uploads/${folderName}`;
+                    let folderPath = `./uploads/applicantsPhotos/${folderName}`;
                     let filePath = folderPath + '/' + fileName;
 
 
@@ -217,7 +216,7 @@ exports.retrieve = (req, res) => {
         else {
 
             const IMAGE_DATA = fs.readFileSync(applicantPhotoResult[0].IMAGE_LINK, { encoding: "base64" })
-            
+
             res.send({
 
                 "code": 200,
