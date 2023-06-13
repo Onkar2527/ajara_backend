@@ -321,7 +321,7 @@ exports.getAll = (req, res) => {
             })
         }
         else {
-
+            console.log("here", resRoleId);
             var pageIndex = req.body.pageIndex ? req.body.pageIndex : '';
 
             var pageSize = req.body.pageSize ? req.body.pageSize : '';

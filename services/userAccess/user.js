@@ -234,6 +234,9 @@ exports.getUserIdByKey = (req, res) =>{
             })
         }
         else{
+            console.log("here is result od call - ",reslt);
+                 
+
             let eData ='' ;
             if(reslt[0])
             {
