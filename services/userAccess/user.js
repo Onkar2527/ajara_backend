@@ -224,7 +224,7 @@ function genrateRandomKey(length, supportKey, ) {
 exports.getUserIdByKey = (req, res) =>{
    const supportKey = req.headers['supportkey'];
     let dt = rsa.decriptData(req.body.data)
-   db.executeQueryData(`select ROLE_ID, BRANCH_ID from view_user_master where ID = (select USER_ID from user_key_master where USER_KEY = ?)`, [dt.USER_KEY], supportKey, (error, reslt)=>{
+   db.executeQueryData(`select * from view_user_master where ID = (select USER_ID from user_key_master where USER_KEY = ?)`, [dt.USER_KEY], supportKey, (error, reslt)=>{
         if(error)
         {
             console.log("error");
@@ -234,6 +234,9 @@ exports.getUserIdByKey = (req, res) =>{
             })
         }
         else{
+            console.log("here is result od call - ",reslt);
+                 
+
             let eData ='' ;
             if(reslt[0])
             {

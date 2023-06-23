@@ -7,7 +7,7 @@ exports.getComponunts = (req,res) =>{
     let data = rsa.decriptData(req.body.data)
     console.log("data is", data);
 
-    db.executeQueryData(`select * from user_key_master where USER_KEY like ? `, [data.USER_KEY], supportKey,(error, result)=>{
+    db.executeQueryData(`select * from user_key_master where USER_KEY = ? `, [data.USER_KEY], supportKey,(error, result)=>{
         if(error)
         {
             console.log("error", error);

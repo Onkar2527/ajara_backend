@@ -6,7 +6,8 @@ function reqData(req) {
         
         APPLICANT_ID : req.body.APPLICANT_ID,
         APPLICANT_NO : req.body.APPLICANT_NO,
-        INCOME : req.body.INCOME
+        INCOME : req.body.INCOME,
+        SOURCE_OF_BUSINESS : req.body.SOURCE_OF_BUSINESS
 
     }
 
