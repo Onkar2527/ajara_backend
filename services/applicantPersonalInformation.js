@@ -53,7 +53,7 @@ function reqData(req) {
         PAN_NO : req.body.PAN_NO,
         MOTHERS_MAIDEN_NAME : req.body.MOTHERS_MAIDEN_NAME,
         NATIONALITY : req.body.NATIONALITY,
-        DATE_OFBIRTH : req.body.DATE_OFBIRTH,
+        DATE_OF_BIRTH : req.body.DATE_OF_BIRTH,
         GENDER : req.body.GENDER
 
     }
