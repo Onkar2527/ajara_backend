@@ -54,7 +54,10 @@ function reqData(req) {
         MOTHERS_MAIDEN_NAME : req.body.MOTHERS_MAIDEN_NAME,
         NATIONALITY : req.body.NATIONALITY,
         DATE_OF_BIRTH : req.body.DATE_OF_BIRTH,
-        GENDER : req.body.GENDER
+        GENDER : req.body.GENDER,
+        IS_CURRENT_ADDRESS_ON_OVD : req.body.IS_CURRENT_ADDRESS_ON_OVD,
+        ADDRESS_DOCUMENT : req.body.ADDRESS_DOCUMENT,
+        ADDRESS_DOCUMENT_NUMBER : req.body.ADDRESS_DOCUMENT_NUMBER
 
     }
 

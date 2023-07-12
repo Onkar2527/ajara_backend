@@ -41,7 +41,8 @@ function reqData(req) {
         E_CUSTOMER_ID: req.body.E_CUSTOMER_ID,
         E_ACCOUNT_NUMBER: req.body.E_ACCOUNT_NUMBER,
         E_YEARS: req.body.E_YEARS,
-        STATUS: req.body.STATUS
+        STATUS: req.body.STATUS,
+        IS_OLD_CUSTOMER : req.body.IS_OLD_CUSTOMER
 
     }
 

@@ -12,7 +12,9 @@ function reqData(req)
             RELATION :req.body.RELATION,
             NOMINEE_ADDRESS :req.body.NOMINEE_ADDRESS,
             APONITED_NAME:req.body.APONITED_NAME,
-            APONITED_ADDRESS:req.body.APONITED_ADDRESS
+            APONITED_ADDRESS:req.body.APONITED_ADDRESS,
+            NOMINEE_MIDDLE_NAME : req.body.NOMINEE_MIDDLE_NAME,
+            NOMINEE_LAST_NAME : req.body.NOMINEE_LAST_NAME
         
     }
 
