@@ -157,7 +157,7 @@ exports.create = (req, res) => {
                                                 callback(error)
                                             }
                                             else {
-                                              
+                                                 console.log(", zale ka zale kazale kazale ka ");
                                                 callback();
                                             }
                                         })
