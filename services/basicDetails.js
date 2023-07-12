@@ -150,9 +150,20 @@ exports.create = (req, res) => {
                                         callback(error)
                                     }
                                     else {
-                                        console.log("application created successful .............");
-                                        callback();
+                                        db.executeDML(`insert into applicants_personal_details (DOCUMENT_NAME,APPLICANT_ID,APPLICANT_NO) select DOCUMENT_NAME, ${basicDetailResult.insertId}, ${applicant.APPLICANT_NO}  from document_master `, '', supportKey, con, (error, persoanlDetailsResult) => {
+                                            if (error) {
+                                                console.log("error", error);
+                                                db.rollbackConnection(con);
+                                                callback(error)
+                                            }
+                                            else {
+                                              
+                                                callback();
+                                            }
+                                        })
                                     }
+                                      
+                                      
                                 })
                             }
 
