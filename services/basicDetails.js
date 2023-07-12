@@ -150,7 +150,7 @@ exports.create = (req, res) => {
                                         callback(error)
                                     }
                                     else {
-                                        db.executeDML(`insert into applicants_personal_details (DOCUMENT_NAME,APPLICANT_ID,APPLICANT_NO) select DOCUMENT_NAME, ${basicDetailResult.insertId}, ${applicant.APPLICANT_NO}  from document_master `, '', supportKey, con, (error, persoanlDetailsResult) => {
+                                        db.executeDML(`insert into applicant_documents (DOCUMENT_NAME,APPLICANT_ID,APPLICANT_NO) select DOCUMENT_NAME, ${basicDetailResult.insertId}, ${applicant.APPLICANT_NO}  from document_master `, '', supportKey, con, (error, persoanlDetailsResult) => {
                                             if (error) {
                                                 console.log("error", error);
                                                 db.rollbackConnection(con);
