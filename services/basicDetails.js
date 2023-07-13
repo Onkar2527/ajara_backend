@@ -32,13 +32,13 @@ function reqData(req) {
         GUARDIAN_NAME: req.body.GUARDIAN_NAME,
         RELATION_WITH_MINOR: req.body.RELATION_WITH_MINOR,
         GUARDIAN_DOB: req.body.GUARDIAN_DOB,
-        IS_INTRODUCED: req.body.IS_INTRODUCED,
+        IS_INTRODUCED: req.body.IS_INTRODUCED ? '1': 0,
         E_CUSTOMER_NAME: req.body.E_CUSTOMER_NAME,
         E_CUSTOMER_ID: req.body.E_CUSTOMER_ID,
         E_ACCOUNT_NUMBER: req.body.E_ACCOUNT_NUMBER,
         E_YEARS: req.body.E_YEARS,
         STATUS: req.body.STATUS,
-        IS_OLD_CUSTOMER : req.body.IS_OLD_CUSTOMER
+        IS_OLD_CUSTOMER : req.body.IS_OLD_CUSTOMER ? '1' : '0'
 
     }
 
