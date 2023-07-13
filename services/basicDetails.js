@@ -2,10 +2,6 @@ const db = require('../utilities/dbModule');
 
 function reqData(req) {
 
-
-
-
-
     var data = {
 
         NO_OF_APPLICANT: req.body.NO_OF_APPLICANT,
@@ -31,7 +27,7 @@ function reqData(req) {
         APPLICANT4_FIRST_NAME: req.body.APPLICANT4_FIRST_NAME,
         APPLICANT4_MIDDLE_NAME: req.body.APPLICANT4_MIDDLE_NAME,
         APPLICANT4_LAST_NAME: req.body.APPLICANT4_LAST_NAME,
-        IS_MINOR: req.body.IS_MINOR,
+        IS_MINOR: req.body.IS_MINOR ? '1' : '0',
         MINOR_DOB: req.body.MINOR_DOB,
         GUARDIAN_NAME: req.body.GUARDIAN_NAME,
         RELATION_WITH_MINOR: req.body.RELATION_WITH_MINOR,
