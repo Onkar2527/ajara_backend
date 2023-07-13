@@ -49,7 +49,7 @@ exports.getAllApplicants = (req, res) => {
     const supportKey = req.headers['supportkey']
     let resultsArray = [];
 
-    db.executeQueryData(`select * from applicant_documents where APPLICANT_ID = ? AND APPLICANT_NO = ? `, [req.body.APPLICANT_ID, req.body.APPLICANT_NO], supportKey, (error, applicantsDocResult) => {
+    db.executeQueryData(`select * from applicant_documents where APPLICANT_ID = ? ` +(req.body.APPLICANT_NO ? `AND APPLICANT_NO = ? ` : `` ), [req.body.APPLICANT_ID, req.body.APPLICANT_NO], supportKey, (error, applicantsDocResult) => {
         if (error) {
             console.log("error", error);
             res.send({
@@ -108,7 +108,7 @@ exports.create = (req, res) => {
     let data = reqData(req);
 
 
-    db.executeQueryData(`insert into applicant_documents set ?`, data , supportKey, (error, documentInsertResult) => {
+    db.executeQueryData(`insert into applicant_documents set ?`, data, supportKey, (error, documentInsertResult) => {
         if (error) {
             console.log("error", error);
             res.send({

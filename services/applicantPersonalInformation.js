@@ -57,7 +57,9 @@ function reqData(req) {
         GENDER : req.body.GENDER,
         IS_CURRENT_ADDRESS_ON_OVD : req.body.IS_CURRENT_ADDRESS_ON_OVD,
         ADDRESS_DOCUMENT : req.body.ADDRESS_DOCUMENT,
-        ADDRESS_DOCUMENT_NUMBER : req.body.ADDRESS_DOCUMENT_NUMBER
+        ADDRESS_DOCUMENT_NUMBER : req.body.ADDRESS_DOCUMENT_NUMBER,
+        IS_DOB_MISMATCH : req.body.IS_DOB_MISMATCH ? '1' : '0',
+        IS_VERNACULAR : req.body.IS_VERNACULAR
 
     }
 
