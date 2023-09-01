@@ -26,7 +26,9 @@ app.use('/',(req, res, next)=>{
 })
 
 
-app.use(cors());
+app.use(cors({
+    origin: "*"
+}));
 app.use(helmet());
 app.disable('x-powered-by');
 
