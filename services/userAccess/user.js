@@ -7,7 +7,7 @@ const jwt = require('jsonwebtoken');
 
 var userMaster = 'user_master';
 var viewUserMaster = 'view_' + userMaster
-exports.login = (req, res) => {
+exports.login_old = (req, res) => {
     try {
 
         // console.log("reqheader",req.headers);
@@ -36,7 +36,7 @@ exports.login = (req, res) => {
         }
         else {
             console.log("upcoming credentials ps", username, password);
-            console.log(`SELECT * FROM ${viewUserMaster}  WHERE  USER_NAME = ? and PASSWORD = ?`);
+            // console.log(`SELECT * FROM ${viewUserMaster}  WHERE  USER_NAME = ? and PASSWORD = ?`);
             db.executeQueryData(`SELECT * FROM ${viewUserMaster}  WHERE  USER_NAME = ? and PASSWORD = ?`, [username, password], supportKey, (error, results1) => {
                 if (error) {
                     console.log(error);
@@ -173,6 +173,107 @@ exports.login = (req, res) => {
 
 }
 
+
+exports.login = (req, res) => {
+    try {
+
+        // console.log("reqheader",req.headers);
+        console.log("reqBody", req.body);
+        if (req.body.data) {
+            let dt = rsa.decriptData(req.body.data)
+            data = {
+                body: dt
+            }
+            console.log("dt ", dt);
+        }
+
+
+        var username = data.body.USER_NAME;
+        var password = data.body.PASSWORD;
+
+
+        var supportKey = req.headers['supportkey'];
+        console.log("reqData", req.body);
+
+        if ((!username && username == '' && username == undefined) && (!password && password == '' && password == undefined)) {
+            res.send({
+                "code": 400,
+                "message": "username or password parameter missing",
+            });
+        }
+        else {
+            console.log("upcoming credentials ps", username, password);
+            // console.log(`SELECT * FROM ${viewUserMaster}  WHERE  USER_NAME = ? and PASSWORD = ?`);
+            db.executeQueryData(`SELECT * FROM ${viewUserMaster}  WHERE  USER_NAME = ? and PASSWORD = ?`, [username, password], supportKey, (error, results1) => {
+                if (error) {
+                    console.log(error);
+
+                    res.send({
+                        "code": 400,
+                        "message": "Failed to get record",
+                    });
+                }
+                else {
+                    console.log("here is login dta", results1);
+                    db.executeQueryData(`select * from user_key_master where 1 USER_ID = ?`, results1[0].ID, supportKey, (error, result2) => {
+
+                        if (error) {
+
+                        }
+                        else {
+                            if (result2.length>0) {
+                               if(result2[0].USER_KEY)
+                               {
+                                    res.send({
+                                        "code": 400,
+                                        "mesaage": "Active session"
+                                    })
+                               }
+                               else
+                               {
+
+                                let userKey = genrateRandomKey(32, supportKey)
+                                db.executeDML(`update user_key_master set USER_KEY = ? where ID = ?`,[userKey, result2[0].ID],supportKey, conn,(error)=>{
+                                    if(error)
+                                    {
+                                        console.log("err",error);
+                                        res.send({
+                                            "err": errror
+                                        })
+
+                                    }
+                                    else
+                                    {
+                                        res.send({
+                                            "code":200,
+                                            "message": "ok",
+                                            "data": userKey
+                                        })
+                                    }
+                                })
+                               }
+                            }
+                            else {
+                                res.send({
+                                    "code": 400,
+                                    "code": "user key record not found "
+                                })
+                            }
+                        }
+                    })
+
+
+                }
+            });
+        }
+
+    } catch (error) {
+        console.log(error);
+    }
+
+}
+
+
 function generateToken(userId, req, res, resultsUser) {
     const supportKey = req.headers['supportKey'];
     try {
@@ -207,47 +308,44 @@ function generateToken(userId, req, res, resultsUser) {
 }
 
 
-function genrateRandomKey(length, supportKey, ) {
+function genrateRandomKey(length, supportKey) {
     const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789$-#@&';
     let result = "";
     const charactersLength = characters.length;
     for (let i = 0; i < length; i++) {
         result += characters.charAt(Math.floor(Math.random() * charactersLength));
     }
-    
+
     return result;
-    
 
 }
 
 
-exports.getUserIdByKey = (req, res) =>{
-   const supportKey = req.headers['supportkey'];
+exports.getUserIdByKey = (req, res) => {
+    const supportKey = req.headers['supportkey'];
     let dt = rsa.decriptData(req.body.data)
-   db.executeQueryData(`select * from view_user_master where ID = (select USER_ID from user_key_master where USER_KEY = ?)`, [dt.USER_KEY], supportKey, (error, reslt)=>{
-        if(error)
-        {
+    db.executeQueryData(`select * from view_user_master where ID = (select USER_ID from user_key_master where USER_KEY = ?)`, [dt.USER_KEY], supportKey, (error, reslt) => {
+        if (error) {
             console.log("error");
             res.send({
                 "code": 400,
                 "message": "Failed to get data for UserID"
             })
         }
-        else{
-            console.log("here is result od call - ",reslt);
-                 
+        else {
+            console.log("here is result od call - ", reslt);
 
-            let eData ='' ;
-            if(reslt[0])
-            {
-              eData  = rsa.encriptData(reslt[0])
+
+            let eData = '';
+            if (reslt[0]) {
+                eData = rsa.encriptData(reslt[0])
             }
-            
+
             res.send({
-                "code" : 200,
+                "code": 200,
                 "message": "ok",
                 "data": eData
-            }) 
+            })
         }
-   })
+    })
 }
