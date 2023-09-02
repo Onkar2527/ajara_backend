@@ -173,9 +173,6 @@ exports.login = (req, res) => {
 
 }
 
-
-
-
 function generateToken(userId, req, res, resultsUser) {
     const supportKey = req.headers['supportKey'];
     try {
