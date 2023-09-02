@@ -23,42 +23,52 @@ exports.getTabs = (req,res) =>{
         else
         {
 
+           if(userRoleInfo)
+           {
             let q = `select * from view_tab_master where APPLICANT_ID = ? ORDER BY view_tab_master.INDEX`
-             if(userRoleInfo[0].ROLE_ID == 1)
-             {
-                 q = `select * from view_tab_master where APPLICANT_ID = ? AND TAB_ID not in (6,7) ORDER BY view_tab_master.INDEX`
-             }
-             else if(userRoleInfo[0].ROLE_ID == 2)
-             {
-                q = `select * from view_tab_master where APPLICANT_ID = ? AND TAB_ID not in (7) ORDER BY view_tab_master.INDEX`
-             }
-             else if(userRoleInfo[0].ROLE_ID == 3)
-             {
-                q = `select * from view_tab_master where APPLICANT_ID = ? AND TAB_ID not in (6) ORDER BY view_tab_master.INDEX`
-             }
-             else
-             {
-                console.log("Failed to set query");
-             }
-            db.executeQueryData(q, [data.APPLICANT_ID],supportKey, (error, ResTabs)=>{
-                if(error)
-                {
-                    console.log("error", error);
-                    res.send({
-                        "code": 400,
-                        "message": "Failed to get tabs "
-                    })
-                }
-                else{
-        
-                   // let eData = rsa.encriptData(ResTabs)
-                    res.send({
-                        "code": 200,
-                        "message": "ok",
-                        "data": ResTabs
-                    })
-                }
-            })
+            if(userRoleInfo[0].ROLE_ID == 1)
+            {
+                q = `select * from view_tab_master where APPLICANT_ID = ? AND TAB_ID not in (6,7) ORDER BY view_tab_master.INDEX`
+            }
+            else if(userRoleInfo[0].ROLE_ID == 2)
+            {
+               q = `select * from view_tab_master where APPLICANT_ID = ? AND TAB_ID not in (7) ORDER BY view_tab_master.INDEX`
+            }
+            else if(userRoleInfo[0].ROLE_ID == 3)
+            {
+               q = `select * from view_tab_master where APPLICANT_ID = ? AND TAB_ID not in (6) ORDER BY view_tab_master.INDEX`
+            }
+            else
+            {
+               console.log("Failed to set query");
+            }
+           db.executeQueryData(q, [data.APPLICANT_ID],supportKey, (error, ResTabs)=>{
+               if(error)
+               {
+                   console.log("error", error);
+                   res.send({
+                       "code": 400,
+                       "message": "Failed to get tabs "
+                   })
+               }
+               else{
+       
+                  // let eData = rsa.encriptData(ResTabs)
+                   res.send({
+                       "code": 200,
+                       "message": "ok",
+                       "data": ResTabs
+                   })
+               }
+           })
+           }
+           else
+           {
+             res.send({
+                "code": 400,
+                "message": "User record not found for tab"
+             })
+           }
 
         }
     })
