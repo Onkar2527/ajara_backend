@@ -234,7 +234,7 @@ exports.login = (req, res) => {
 
                                 let userKey = genrateRandomKey(32, supportKey)
                                 db.executeDML(`update user_key_master set USER_KEY = ? where ID = ?`,[userKey, result2[0].ID],supportKey, conn,(error)=>{
-                                    if(error)
+                                     if(error)
                                     {
                                         console.log("err",error);
                                         res.send({
