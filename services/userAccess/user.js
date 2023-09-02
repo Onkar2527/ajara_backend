@@ -7,7 +7,7 @@ const jwt = require('jsonwebtoken');
 
 var userMaster = 'user_master';
 var viewUserMaster = 'view_' + userMaster
-exports.login_old = (req, res) => {
+exports.login = (req, res) => {
     try {
 
         // console.log("reqheader",req.headers);
@@ -174,7 +174,7 @@ exports.login_old = (req, res) => {
 }
 
 
-exports.login = (req, res) => {
+exports.login2 = (req, res) => {
     try {
 
         // console.log("reqheader",req.headers);
@@ -215,43 +215,14 @@ exports.login = (req, res) => {
                 }
                 else {
                     console.log("here is login dta", results1);
-                    db.executeQueryData(`select * from user_key_master where USER_ID = ?`, results1[0].ID, supportKey, (error, result2) => {
+                    db.executeQueryData(`select * from user_key_master where 1 USER_ID = ?`, results1[0].ID, supportKey, (error, result2) => {
 
                         if (error) {
 
                         }
                         else {
                             if (result2.length>0) {
-                               if(result2[0].USER_KEY)
-                               {
-                                    res.send({
-                                        "code": 400,
-                                        "mesaage": "Active session"
-                                    })
-                               }
-                               else
-                               {
-
-                                let userKey = genrateRandomKey(32, supportKey)
-                                db.executeDML(`update user_key_master set USER_KEY = ? where ID = ?`,[userKey, result2[0].ID],supportKey, conn,(error)=>{
-                                     if(error)
-                                    {
-                                        console.log("err",error);
-                                        res.send({
-                                            "err": errror
-                                        })
-
-                                    }
-                                    else
-                                    {
-                                        res.send({
-                                            "code":200,
-                                            "message": "ok",
-                                            "data": userKey
-                                        })
-                                    }
-                                })
-                               }
+                               if
                             }
                             else {
                                 res.send({
