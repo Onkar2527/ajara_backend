@@ -215,7 +215,7 @@ exports.login = (req, res) => {
                 }
                 else {
                     console.log("here is login dta", results1);
-                    db.executeQueryData(`select * from user_key_master where 1 USER_ID = ?`, results1[0].ID, supportKey, (error, result2) => {
+                    db.executeQueryData(`select * from user_key_master where USER_ID = ?`, results1[0].ID, supportKey, (error, result2) => {
 
                         if (error) {
 
