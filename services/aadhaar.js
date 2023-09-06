@@ -47,6 +47,7 @@ console.log("data from req", data);
         }
         else{
             data.ADDRESS_ID = results.insertId;
+            console.log("insertid", results);
             console.log("data at the end", data);
             db.executeDML(`insert into aadhaar_verified_list set ?`, data, supportKey, con , (error) => {
                 if (error) {
