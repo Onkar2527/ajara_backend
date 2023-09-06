@@ -119,7 +119,7 @@ exports.create = (req, res) => {
         if (error) {
             console.log("error", error);
             db.rollbackConnection(con)
-            callback(error);
+        
         }
         else {
             console.log("here is result", basicDetailResult);
