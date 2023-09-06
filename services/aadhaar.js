@@ -77,6 +77,7 @@ console.log("data from req", data);
 exports.get = (req, res) => {
     let supportKey = req.headers['supportkey'];
     const q = `select * from aadhaar_verified_list where APPLICANT_NO = ${req.body.APPLICANT_NO} AND AADHAAR_NUMBER = ${req.body.AADHAAR_NUMBER} `
+   console.log(q);
     db.executeQuery(q, supportKey, (error, results) => {
         if (error) {
             console.log("err", error);
