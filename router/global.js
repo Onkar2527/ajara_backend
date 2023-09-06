@@ -19,6 +19,7 @@ router
     .use('/api/document', require('./document'))
     .use('/api/user', require('./userAccess/user'))
     .use('/api/emailVerification', require('./emailVerification'))
+    .use('/api/aadhaar', require('./aadhaar'))
 
 
     //.use('/api/accountHistory', require('./accountHistory'))
@@ -28,6 +29,7 @@ router
     .use('/api/applicantDocuments', require('./applicantDocument'))
 
     .use('/api/applicantsPhoto', require('./applicantsPhoto'))
+    .use('/api/addressInformation', require('./addressInformation'))
 
     .post('/api/user/login', require('../services/userAccess/user').login)
 
