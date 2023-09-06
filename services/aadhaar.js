@@ -78,6 +78,7 @@ exports.get = (req, res) => {
     const q = `select * from aadhaar_verified_list where APPLICANT_ID = ${req.body.APPLICANT_ID}` + (req.body.APPLICANT_NO ? ` AND APPLICANT_NO = ${req.body.APPLICANT_NO}` : ``)
     db.executeQuery(q, supportKey, (error, results) => {
         if (error) {
+            console.log("err", error);
             res.send({
                 "code": 400,
                 "message": "Failed to get facilities details "
