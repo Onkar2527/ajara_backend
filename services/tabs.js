@@ -20,8 +20,8 @@ exports.getTabs = (req, res) => {
             })
         }
         else {
-
-            if (userRoleInfo) {
+            console.log("userrrrrr", userRoleInfo);
+            if (userRoleInfo.length >0) {
                 let q = `select * from view_tab_master where APPLICANT_ID = ? ORDER BY view_tab_master.INDEX`
                 if (userRoleInfo[0].ROLE_ID == 1) {
                     q = `select * from view_tab_master where APPLICANT_ID = ? AND TAB_ID not in (6,7) ORDER BY view_tab_master.INDEX`

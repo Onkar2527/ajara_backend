@@ -32,13 +32,17 @@ function reqData(req) {
         GUARDIAN_NAME: req.body.GUARDIAN_NAME,
         RELATION_WITH_MINOR: req.body.RELATION_WITH_MINOR,
         GUARDIAN_DOB: req.body.GUARDIAN_DOB,
-        IS_INTRODUCED: req.body.IS_INTRODUCED ? '1': 0,
+        IS_INTRODUCED: req.body.IS_INTRODUCED ? '1' : 0,
         E_CUSTOMER_NAME: req.body.E_CUSTOMER_NAME,
         E_CUSTOMER_ID: req.body.E_CUSTOMER_ID,
         E_ACCOUNT_NUMBER: req.body.E_ACCOUNT_NUMBER,
         E_YEARS: req.body.E_YEARS,
         STATUS: req.body.STATUS,
-        IS_OLD_CUSTOMER : req.body.IS_OLD_CUSTOMER ? '1' : '0'
+        IS_OLD_CUSTOMER: req.body.IS_OLD_CUSTOMER ? '1' : '0',
+        CUSTOMER_TYPE_1: req.body.CUSTOMER_TYPE_1,
+        CUSTOMER_TYPE_2: req.body.CUSTOMER_TYPE_2
+
+
 
     }
 
@@ -154,13 +158,13 @@ exports.create = (req, res) => {
                                                 callback(error)
                                             }
                                             else {
-                                                 console.log(", zale ka zale kazale kazale ka ");
+                                                console.log(", zale ka zale kazale kazale ka ");
                                                 callback();
                                             }
                                         })
                                     }
-                                      
-                                      
+
+
                                 })
                             }
 
@@ -348,18 +352,25 @@ exports.getAll = (req, res) => {
 
             let filter = ``
 
-            if (resRoleId[0].ROLE_ID == 1) {
-                filter = `STATUS = 'D'`
-            }
-            else if (resRoleId[0].ROLE_ID == 2) {
-                filter = `STATUS = 'C'`
-            }
-            else if (resRoleId[0].ROLE_ID == 3) {
-                filter = `STATUS = 'V'`
+            if (resRoleId[0]) {
+                if (resRoleId[0].ROLE_ID == 1) {
+                    filter = `STATUS = 'D'`
+                }
+                else if (resRoleId[0].ROLE_ID == 2) {
+                    filter = `STATUS = 'C'`
+                }
+                else if (resRoleId[0].ROLE_ID == 3) {
+                    filter = `STATUS = 'V'`
+                }
+                else {
+                    filter = `STATUS = ''`
+                }
             }
             else {
                 filter = `STATUS = ''`
             }
+
+
 
             let criteria = '';
 
@@ -394,7 +405,7 @@ exports.getAll = (req, res) => {
                             res.send({
                                 "code": 200,
                                 "message": "ok",
-                                "count": resultCount[0].cnt,
+                                "count": resultCount[0] ? resultCount[0].cnt : 0,
                                 "data": results
                             })
                         }

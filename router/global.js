@@ -3,8 +3,8 @@ const router = express.Router()
 const globalService = require('../services/global')
 
 router
-    .all('*', globalService.requireAuthentication)
-    .use('/api', globalService.checkToken)
+    //.all('*', globalService.requireAuthentication)
+   // .use('/api', globalService.checkToken)
     .use('/api/basicDetails', require('./basicDetails'))
     .use('/api/applicantPersonalInformation', require('./applicantPersonalInformation'))
     .use('/api/termDeposite', require('./termDepsit'))
@@ -18,6 +18,7 @@ router
     .use('/api/documentGroup', require('./documentGroup'))
     .use('/api/document', require('./document'))
     .use('/api/user', require('./userAccess/user'))
+    .use('/api/emailVerification', require('./emailVerification'))
 
 
     //.use('/api/accountHistory', require('./accountHistory'))

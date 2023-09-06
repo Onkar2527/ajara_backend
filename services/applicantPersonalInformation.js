@@ -49,17 +49,20 @@ function reqData(req) {
         SELF_EMPLOYMENT_DETAIL: req.body.SELF_EMPLOYMENT_DETAIL,
         BUSINESS_DETAIL: req.body.BUSINESS_DETAIL,
         PROPRIETOR_DETAILS: req.body.PROPRIETOR_DETAILS,
-        MOTHERS_NAME : req.body.MOTHERS_NAME,
-        PAN_NO : req.body.PAN_NO,
-        MOTHERS_MAIDEN_NAME : req.body.MOTHERS_MAIDEN_NAME,
-        NATIONALITY : req.body.NATIONALITY,
-        DATE_OF_BIRTH : req.body.DATE_OF_BIRTH,
-        GENDER : req.body.GENDER,
-        IS_CURRENT_ADDRESS_ON_OVD : req.body.IS_CURRENT_ADDRESS_ON_OVD,
-        ADDRESS_DOCUMENT : req.body.ADDRESS_DOCUMENT,
-        ADDRESS_DOCUMENT_NUMBER : req.body.ADDRESS_DOCUMENT_NUMBER,
-        IS_DOB_MISMATCH : req.body.IS_DOB_MISMATCH ? '1' : '0',
-        IS_VERNACULAR : req.body.IS_VERNACULAR
+        MOTHERS_NAME: req.body.MOTHERS_NAME,
+        PAN_NO: req.body.PAN_NO,
+
+        NATIONALITY: req.body.NATIONALITY,
+        DATE_OF_BIRTH: req.body.DATE_OF_BIRTH,
+        GENDER: req.body.GENDER,
+        IS_CURRENT_ADDRESS_ON_OVD: req.body.IS_CURRENT_ADDRESS_ON_OVD,
+        ADDRESS_DOCUMENT: req.body.ADDRESS_DOCUMENT,
+        ADDRESS_DOCUMENT_NUMBER: req.body.ADDRESS_DOCUMENT_NUMBER,
+        IS_DOB_MISMATCH: req.body.IS_DOB_MISMATCH ? '1' : '0',
+        IS_VERNACULAR: req.body.IS_VERNACULAR,
+
+        MOTHERS_LAST_NAME: req.body.MOTHERS_LAST_NAME,
+        MOTHERS_MIDDLE_NAME: req.body.MOTHERS_MIDDLE_NAME
 
     }
 
