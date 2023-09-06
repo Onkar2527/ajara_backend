@@ -40,7 +40,9 @@ function reqData(req) {
         STATUS: req.body.STATUS,
         IS_OLD_CUSTOMER: req.body.IS_OLD_CUSTOMER ? '1' : '0',
         CUSTOMER_TYPE_1: req.body.CUSTOMER_TYPE_1,
-        CUSTOMER_TYPE_2: req.body.CUSTOMER_TYPE_2
+        CUSTOMER_TYPE_2: req.body.CUSTOMER_TYPE_2,
+        AADHAAR_NO_1: req.body.AADHAAR_NO_1,
+        AADHAAR_NO_2: req.body.AADHAAR_NO_1
 
 
 
