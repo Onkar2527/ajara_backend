@@ -15,7 +15,8 @@ function reqData(req)
             APONITED_ADDRESS:req.body.APONITED_ADDRESS,
             NOMINEE_MIDDLE_NAME : req.body.NOMINEE_MIDDLE_NAME,
             NOMINEE_LAST_NAME : req.body.NOMINEE_LAST_NAME,
-            NOMINEE_DOB : req.body.NOMINEE_DOB
+            NOMINEE_DOB : req.body.NOMINEE_DOB,
+            NOMINEE_AGE : req.body.NOMINEE_AGE
         
     }
 
