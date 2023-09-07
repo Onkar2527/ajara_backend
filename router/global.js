@@ -30,6 +30,7 @@ router
 
     .use('/api/applicantsPhoto', require('./applicantsPhoto'))
     .use('/api/addressInformation', require('./addressInformation'))
+    .use('/api/pan',require('./panVerifiendList'))
 
     .post('/api/user/login', require('../services/userAccess/user').login)
 

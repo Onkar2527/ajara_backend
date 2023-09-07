@@ -33,7 +33,7 @@ function reqData(req) {
         WORK: req.body.WORK,
         ESTABLISHMENT: req.body.ESTABLISHMENT,
         RELIGION: req.body.RELIGION,
-        CAST: req.body.CAST,
+        CASTE: req.body.CASTE,
         MARITAL_STATUS: req.body.MARITAL_STATUS,
         FAMILY_COUNT: req.body.FAMILY_COUNT,
         EDUCATION: req.body.EDUCATION,
@@ -62,7 +62,17 @@ function reqData(req) {
         IS_VERNACULAR: req.body.IS_VERNACULAR,
 
         MOTHERS_LAST_NAME: req.body.MOTHERS_LAST_NAME,
-        MOTHERS_MIDDLE_NAME: req.body.MOTHERS_MIDDLE_NAME
+        MOTHERS_MIDDLE_NAME: req.body.MOTHERS_MIDDLE_NAME,
+        MOBILE_NUMBER_2: req.body.MOBILE_NUMBER_2,
+        OTHER_CASTE: req.body.OTHER_CASTE,
+        OTHER_RELIGION: req.body.OTHER_RELIGION,
+        IS_EMAIL_VERIFIED: req.body.IS_EMAIL_VERIFIED,
+
+        IS_CURRENT_ADDRESS_ON_OVD: req.body.IS_CURRENT_ADDRESS_ON_OVD,
+        ADDRESS_DOCUMENT: req.body.ADDRESS_DOCUMENT,
+        ADDRESS_DOCUMENT_NUMBER: req.body.ADDRESS_DOCUMENT_NUMBER,
+        IS_DOB_MISMATCH: req.body.IS_DOB_MISMATCH,
+        IS_VERNACULAR: req.body.IS_VERNACULAR,
 
     }
 
