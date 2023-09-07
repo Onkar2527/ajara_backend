@@ -42,7 +42,7 @@ function reqData(req) {
         CUSTOMER_TYPE_1: req.body.CUSTOMER_TYPE_1,
         CUSTOMER_TYPE_2: req.body.CUSTOMER_TYPE_2,
         AADHAAR_NO_1: req.body.AADHAAR_NO_1,
-        AADHAAR_NO_2: req.body.AADHAAR_NO_1
+        AADHAAR_NO_2: req.body.AADHAAR_NO_2
 
 
 
