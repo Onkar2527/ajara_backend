@@ -42,7 +42,20 @@ function reqData(req) {
         CUSTOMER_TYPE_1: req.body.CUSTOMER_TYPE_1,
         CUSTOMER_TYPE_2: req.body.CUSTOMER_TYPE_2,
         AADHAAR_NO_1: req.body.AADHAAR_NO_1,
+<<<<<<< HEAD
         AADHAAR_NO_2: req.body.AADHAAR_NO_2
+=======
+        AADHAAR_NO_2: req.body.AADHAAR_NO_1,
+
+
+        IS_OLD_CUSTOMER_1: req.body.IS_OLD_CUSTOMER_1,
+        IS_OLD_CUSTOMER_2: req.body.IS_OLD_CUSTOMER_2,
+
+        CUSTOMER_ID_2: req.body.CUSTOMER_ID_2,
+        CKYC_NUMBER_2: req.body.CKYC_NUMBER_2,
+        CUSTOMER_ID_1: req.body.CUSTOMER_ID_1,
+        CKYC_NUMBER_1: req.body.CKYC_NUMBER_1
+>>>>>>> 9c756623b0fc71444ce1701c4b1e3bf555ce088a
 
 
 
@@ -119,7 +132,7 @@ exports.create = (req, res) => {
         if (error) {
             console.log("error", error);
             db.rollbackConnection(con)
-        
+
         }
         else {
             console.log("here is result", basicDetailResult);
