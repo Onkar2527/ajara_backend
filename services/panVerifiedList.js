@@ -5,9 +5,11 @@ const db = require('../utilities/dbModule');
 function reqData(req)
 {
     data = {
-        APPLICANT_FULL_NAME : req.body.APPLICANT_FULL_NAME,
+            APPLICANT_FULL_NAME : req.body.APPLICANT_FULL_NAME,
             APPLICANT_NO : req.body.APPLICANT_NO,
+            APPLICANT_ID : req.body.APPLICANT_ID,
             PAN_NUMBER : req.body.PAN_NUMBER,
+            IS_VERIFIED : req.body.IS_VERIFIED
             
     }
 
