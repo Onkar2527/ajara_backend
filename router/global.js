@@ -31,6 +31,9 @@ router
     .use('/api/applicantsPhoto', require('./applicantsPhoto'))
     .use('/api/addressInformation', require('./addressInformation'))
     .use('/api/pan',require('./panVerifiendList'))
+    .use('/api/voterId', require('./voterIdVerification'))
+
+    .use('/api/pincode', require('./pincode'))
 
     .post('/api/user/login', require('../services/userAccess/user').login)
 
