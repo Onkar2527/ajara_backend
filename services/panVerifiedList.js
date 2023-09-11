@@ -9,7 +9,8 @@ function reqData(req)
             APPLICANT_NO : req.body.APPLICANT_NO,
             APPLICANT_ID : req.body.APPLICANT_ID,
             PAN_NUMBER : req.body.PAN_NUMBER,
-            IS_VERIFIED : req.body.IS_VERIFIED
+            IS_VERIFIED : req.body.IS_VERIFIED,
+            CATEGORY : req.body.CATEGORY
             
     }
 
