@@ -10,12 +10,10 @@ function reqData(req)
             APPLICANT_ID : req.body.APPLICANT_ID,
             PAN_NUMBER : req.body.PAN_NUMBER,
             IS_VERIFIED : req.body.IS_VERIFIED,
-<<<<<<< HEAD
-            CATEGORY : req.body.CATEGORY
-=======
+          CATEGORY : req.body.CATEGORY,
+
              CATEGORY : req.body.CATEGORY
->>>>>>> fb0e83149773f84b55b351050efc9d8e02a25eb3
-            
+
     }
 
     return data;
