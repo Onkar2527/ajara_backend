@@ -68,7 +68,7 @@ exports.getTaluka = (req, res) =>{
 
 exports.getVillage = (req, res) =>{
     let supportKey = req.headers['supportkey'];
-    db.executeQueryData(`select VILLAGE from pincode_master where 1 ${req.body.filter}`, '', supportKey , (error, result)=>{
+    db.executeQueryData(`select upper(VILLAGE) from pincode_master where 1 ${req.body.filter}`, '', supportKey , (error, result)=>{
         if(error){
             console.log("error",error);
             result.send({

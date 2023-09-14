@@ -12,8 +12,7 @@ function reqData(req)
             IS_VERIFIED : req.body.IS_VERIFIED,
           CATEGORY : req.body.CATEGORY,
 
-             CATEGORY : req.body.CATEGORY
-
+           
     }
 
     return data;
