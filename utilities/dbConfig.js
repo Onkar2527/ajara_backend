@@ -1,4 +1,4 @@
-var mysql = require('mysql');
+var mysql = require('mysql2');
 
 var config = {
     connectionLimit : 10,
@@ -6,7 +6,7 @@ var config = {
     user: process.env.MYSQL_USER,
     password: process.env.MYSQL_PASSWORD,
     database: process.env.MYSQL_DATABASE,
-    timezone: 'IST' ,
+    timezone: "+00:00" ,
     multipleStatements: true,
     charset: 'UTF8_GENERAL_CI'
 

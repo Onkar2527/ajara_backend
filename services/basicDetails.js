@@ -336,99 +336,71 @@ exports.update = (req, res) => {
 
 exports.getAll = (req, res) => {
 
+    let user_data = req.body.user_details;
+
     const supportKey = req.header['supportkey'];
 
-    db.executeQueryData(`select ROLE_ID from user_key_master where USER_KEY = ?`, [req.body.USER_KEY], supportKey, (error, resRoleId) => {
+    var pageIndex = req.body.pageIndex ? req.body.pageIndex : '';
+
+    var pageSize = req.body.pageSize ? req.body.pageSize : '';
+    var start = 0;
+    var end = 0;
+
+    console.log(pageIndex + " " + pageSize)
+    if (pageIndex != '' && pageSize != '') {
+        start = (pageIndex - 1) * pageSize;
+        end = pageSize;
+        console.log(start + " " + end);
+    }
+
+    let sortKey = req.body.sortKey ? req.body.sortKey : 'ID';
+    let sortValue = req.body.sortValue ? req.body.sortValue : 'DESC';
+
+    let filter = ``
+
+    let criteria = '';
+
+    if (pageIndex === '' && pageSize === '')
+        criteria = filter + "  order by " + sortKey + " " + sortValue;
+    else
+        criteria = filter + "  order by " + sortKey + " " + sortValue + " LIMIT " + start + "," + end;
+
+    let countCriteria = ``;
+
+    // if(user_data.ROLE_ID == 1){
+    //     filter = ` AND `
+    // }
+
+    db.executeQuery(`select count(*) as cnt from basic_details where 1 ` + countCriteria, supportKey, (error, resultCount) => {
         if (error) {
             console.log("error", error);
             res.send({
                 "code": 400,
-                "message": "Failed to applications"
+                "message": "failed to get proposal count"
             })
         }
         else {
-            console.log("here you want", resRoleId);
-            var pageIndex = req.body.pageIndex ? req.body.pageIndex : '';
-
-            var pageSize = req.body.pageSize ? req.body.pageSize : '';
-            var start = 0;
-            var end = 0;
-
-            console.log(pageIndex + " " + pageSize)
-            if (pageIndex != '' && pageSize != '') {
-                start = (pageIndex - 1) * pageSize;
-                end = pageSize;
-                console.log(start + " " + end);
-            }
-
-            let sortKey = req.body.sortKey ? req.body.sortKey : 'ID';
-            let sortValue = req.body.sortValue ? req.body.sortValue : 'DESC';
-
-            let filter = ``
-
-            if (resRoleId[0]) {
-                if (resRoleId[0].ROLE_ID == 1) {
-                    filter = `STATUS = 'D'`
-                }
-                else if (resRoleId[0].ROLE_ID == 2) {
-                    filter = `STATUS = 'C'`
-                }
-                else if (resRoleId[0].ROLE_ID == 3) {
-                    filter = `STATUS = 'V'`
-                }
-                else {
-                    filter = `STATUS = ''`
-                }
-            }
-            else {
-                filter = `STATUS = ''`
-            }
-
-
-
-            let criteria = '';
-
-            if (pageIndex === '' && pageSize === '')
-                criteria = filter + " order by " + sortKey + " " + sortValue;
-            else
-                criteria = filter + " order by " + sortKey + " " + sortValue + " LIMIT " + start + "," + end;
-
-            let countCriteria = filter;
-
-
-
-            db.executeQuery(`select count(*) as cnt from basic_details where 1 AND ` + criteria, supportKey, (error, resultCount) => {
+            db.executeQuery(`select * from basic_details where 1 ` + criteria, supportKey, (error, results) => {
                 if (error) {
                     console.log("error", error);
                     res.send({
                         "code": 400,
-                        "message": "failed to get proposal count"
+                        "message": "Failed to get drafts"
                     })
                 }
                 else {
-                    db.executeQuery(`select * from basic_details where 1 AND ` + criteria, supportKey, (error, results) => {
-                        if (error) {
-                            console.log("error", error);
-                            res.send({
-                                "code": 400,
-                                "message": "Failed to get drafts"
-                            })
-                        }
-                        else {
-                            console.log("count,data");
-                            res.send({
-                                "code": 200,
-                                "message": "ok",
-                                "count": resultCount[0] ? resultCount[0].cnt : 0,
-                                "data": results
-                            })
-                        }
+                    console.log("count,data");
+                    res.send({
+                        "code": 200,
+                        "message": "ok",
+                        "count": resultCount[0] ? resultCount[0].cnt : 0,
+                        "data": results
                     })
                 }
             })
-
         }
     })
+
 
 
 }
