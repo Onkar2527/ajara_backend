@@ -5,38 +5,31 @@ const db = require('../utilities/dbModule');
 function reqData(req) {
     data = {
         CLIENT_ID: req.body.CLIENT_ID,
-        EPIC_NO: req.body.EPIC_NO,
-        GENDER: req.body.GENDER,
+        LICENSE_NUMBER: req.body.LICENSE_NUMBER,
         STATE: req.body.STATE,
         NAME: req.body.NAME,
-        RELATION_NAME: req.body.RELATION_NAME,
-        RELATION_TYPE: req.body.RELATION_TYPE,
-        HOUSE_NO: req.body.HOUSE_NO,
+        PERMANENT_ADDRESS: req.body.PERMANENT_ADDRESS,
+        PERMANENT_ZIP: req.body.PERMANENT_ZIP,
+        TEMPORARY_ADDRESS: req.body.TEMPORARY_ADDRESS,
+        TEMPORARY_ZIP: req.body.TEMPORARY_ZIP,
+        CITIZENSHIP: req.body.CITIZENSHIP,
+        OLA_NAME: req.body.OLA_NAME,
+        OLA_CODE: req.body.OLA_CODE,
+        GENDER: req.body.GENDER,
+        FATHER_OR_HUSBAND_NAME: req.body.FATHER_OR_HUSBAND_NAME,
         DOB: req.body.DOB,
-        AGE: req.body.AGE,
-        AREA: req.body.AREA,
-        DISTRICT: req.body.DISTRICT,
+        DOE: req.body.DOE,
+        TRANSPORT_DOE: req.body.TRANSPORT_DOE,
+        DOI: req.body.DOI,
+        TRANSPORT_DOI: req.body.TRANSPORT_DOI,
+        PROFILE_IMAGE: req.body.PROFILE_IMAGE,
+        HAS_IMAGE: req.body.HAS_IMAGE,
+        BLOOD_GROUP: req.body.BLOOD_GROUP,
+        VEHICLE_CLASSES: req.body.VEHICLE_CLASSES,
+        LESS_INFO: req.body.LESS_INFO,
         ADDITIONAL_CHECK: req.body.ADDITIONAL_CHECK,
-        MULTIPLE: req.body.MULTIPLE,
-        LAST_UPDATE: req.body.LAST_UPDATE,
-        ASSEMBLY_CONSTITUENCY: req.body.ASSEMBLY_CONSTITUENCY,
-        ASSEMBLY_CONSTITUENCY_NUMBER: req.body.ASSEMBLY_CONSTITUENCY_NUMBER,
-        POLLING_STATION: req.body.POLLING_STATION,
-        PART_NUMBER: req.body.PART_NUMBER,
-        PART_NAME: req.body.PART_NAME,
-        SLNO_INPART: req.body.SLNO_INPART,
-        PS_LAT_LONG: req.body.PS_LAT_LONG,
-        RLN_NAME_V1: req.body.RLN_NAME_V1,
-        RLN_NAME_V2: req.body.RLN_NAME_V2,
-        RLN_NAME_V3: req.body.RLN_NAME_V3,
-        SECTION_NO: req.body.SECTION_NO,
-        NAME_V1: req.body.NAME_V1,
-        NAME_V2: req.body.NAME_V2,
-        NAME_V3: req.body.NAME_V3,
-        ST_CODE: req.body.ST_CODE,
-        PARLIAMENTARY_CONSTITUENCY: req.body.PARLIAMENTARY_CONSTITUENCY,
-        IS_VERIFIED : req.body.IS_VERIFIES
-
+        INITIAL_DOI: req.body.INITIAL_DOI,
+        CURRENT_STATUS: req.body.CURRENT_STATUS
     }
 
     return data;
@@ -44,13 +37,13 @@ function reqData(req) {
 
 exports.get = (req, res) => {
     let supportKey = req.headers['supportkey'];
-    const q = `select * from voterid_verification_master where EPIC_NO = '${req.body.EPIC_NO}'`
+    const q = `select * from license_verified_list where PAN_NUMBER = '${req.body.PAN_NUMBER}'`
     db.executeQuery(q, supportKey, (error, results) => {
         if (error) {
             console.log(error);
             res.send({
                 "code": 400,
-                "message": "Failed to get voter verification info "
+                "message": "Failed to get license verification info "
             })
         }
         else {
@@ -70,7 +63,7 @@ exports.create = (req, res) => {
 
 
     const data = reqData(req);
-    const q = `insert into voterid_verification_master set ?`
+    const q = `insert into license_verified_list set ?`
 
     db.executeQueryData(q, data, supportKey, (error) => {
 
@@ -78,13 +71,13 @@ exports.create = (req, res) => {
             console.log("error", error);
             res.send({
                 "code": 400,
-                "message": "Failed to save voter info"
+                "message": "Failed to save license info"
             })
         }
         else {
             res.send({
                 "code": 200,
-                "message": "voter information saved successfully"
+                "message": "license information saved successfully"
             })
 
         }
@@ -110,20 +103,20 @@ exports.update = (req, res) => {
     setData2 = setData.slice(0, -1);
 
 
-    const q = `update voterid_verification_master set ${setData2} where ID = ${req.body.EPIC_NO}`
+    const q = `update license_verified_list set ${setData2} where ID = ${req.body.PAN_NUMBER}`
     db.executeQueryData(q, recData, supportKey, (error) => {
         if (error) {
             console.log(error);
             res.send({
                 "code": 400,
-                "message": "Failed to update voter info"
+                "message": "Failed to update license info"
             })
 
         }
         else {
             res.send({
                 "code": 200,
-                "message": "voter information updated successfully"
+                "message": "license information updated successfully"
             })
 
         }

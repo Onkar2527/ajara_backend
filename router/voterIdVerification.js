@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const voterIdVerificationService = require('../services/VoterIdVerification')
+const voterIdVerificationService = require('../services/voterIdVerification')
 
 router 
     .post('/get', voterIdVerificationService.get)

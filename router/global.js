@@ -4,7 +4,7 @@ const globalService = require('../services/global')
 
 router
     //.all('*', globalService.requireAuthentication)
-   // .use('/api', globalService.checkToken)
+    // .use('/api', globalService.checkToken)
     .use('/api/basicDetails', require('./basicDetails'))
     .use('/api/applicantPersonalInformation', require('./applicantPersonalInformation'))
     .use('/api/termDeposite', require('./termDepsit'))
@@ -30,8 +30,10 @@ router
 
     .use('/api/applicantsPhoto', require('./applicantsPhoto'))
     .use('/api/addressInformation', require('./addressInformation'))
-    .use('/api/pan',require('./panVerifiendList'))
+    .use('/api/pan', require('./panVerifiendList'))
     .use('/api/voterId', require('./voterIdVerification'))
+    .use('/api/license', require('./license'))
+    
 
     .use('/api/pincode', require('./pincode'))
 
