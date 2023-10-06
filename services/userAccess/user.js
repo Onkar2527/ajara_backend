@@ -1,9 +1,4 @@
-const rsa = require('../../RSA/rsa');
-
 const db = require('../../utilities/dbModule');
-
-const jwt = require('jsonwebtoken');
-
 
 var userMaster = 'user_master';
 var viewUserMaster = 'view_' + userMaster
@@ -72,6 +67,91 @@ exports.login = (req, res) => {
 
     } catch (error) {
         console.log(error);
+    }
+
+}
+
+exports.getUser = async (req, res) => {
+    try {
+        let BRANCH_ID = req.body.BRANCH_ID;
+        let ROLE_ID = req.body.ROLE_ID;
+
+        let supportKey = req.headers['supportkey'];
+        let query = ``
+
+        if (BRANCH_ID) {
+            query = `select ID from user_master where BRANCH_ID = ${BRANCH_ID} AND ROLE_ID = ${ROLE_ID}`
+        }
+        else {
+            query = `select ID from user_master where ROLE_ID = ${ROLE_ID}`
+        }
+
+        let result = await db.executeQueryAsyncAwait(query, supportKey);
+
+        console.log(query, result);
+
+        res.send({
+            "message": "success",
+            "code": 200,
+            "data": result
+        })
+    }
+    catch (error) {
+        console.log(error);
+        res.send({
+            "message": "Failed to get user details",
+            "code": 400
+        })
+    }
+
+}
+
+exports.getUserBranch = async (req, res) => {
+    try {
+        let supportKey = req.headers['supportkey'];
+        let BRANCH_ID = req.body.BRANCH_ID;
+        let query = `select * from branch_master where ID = ${BRANCH_ID}`
+
+        let result = await db.executeQueryAsyncAwait(query, supportKey);
+
+        res.send({
+            "message": "success",
+            "code": 200,
+            "data": result
+        })
+    }
+    catch (error) {
+        console.log(error)
+        res.send({
+            "message": "Failed to get user's branch",
+            "code": 400
+        })
+    }
+
+}
+
+exports.getUserRole = async (req, res) => {
+
+    try {
+        let supportKey = req.headers['supportkey'];
+        let ROLE_ID = req.body.ROLE_ID;
+
+        let query = `select * from role_master where ID = ${ROLE_ID}`
+
+        let result = await db.executeQueryAsyncAwait(query, supportKey);
+
+        res.send({
+            "message": "success",
+            "code": 200,
+            "data": result
+        })
+    }
+    catch (error) {
+        console.log(error)
+        res.send({
+            "message": "Failed to get user's role",
+            "code": 400
+        })
     }
 
 }

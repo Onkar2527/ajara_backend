@@ -1,5 +1,6 @@
 const mysql = require('mysql2');
 const dbConfig = require('./dbConfig');
+const util = require('util');
 
 var poolConfig = {
     host: process.env.MYSQL_HOST,
@@ -75,6 +76,61 @@ exports.executeDML = (query, values, supportKey, con, callback) => {
 }
 
 
+
+const queryAsync = util.promisify((query, callback) => {
+    dbConfig.getConnection((error, connection) => {
+        if (error) {
+            callback(error);
+            return;
+        }
+        connection.query(query, callback);
+        connection.release();
+    });
+});
+
+// Define the asynchronous version of executeQuery
+exports.executeQueryAsyncAwait = async (query, supportKey) => {
+    try {
+        console.log(query);
+
+        // const connection = await getConnectionAsync();
+
+        const results = await queryAsync(query);
+
+        // connection.release();
+
+        return results;
+    } catch (error) {
+        console.log("Exception  In : " + query + " Error : ", error);
+        throw error;
+    }
+};
+
+const queryDataAsync = util.promisify((query, data, callback) => {
+    dbConfig.getConnection((error, connection) => {
+        if (error) {
+            callback(error);
+            return;
+        }
+        connection.query(query, data, callback);
+        connection.release();
+    });
+});
+
+exports.executeQueryDataAsyncAwait = async (query, data, supportKey) => {
+
+    try {
+        console.log(query, data);
+        const results = await queryDataAsync(query, data);
+
+      
+
+        return results
+    } catch (error) {
+        console.log("Exception  In : " + query + " Error : ", error);
+        throw error;
+    }
+};
 
 
 

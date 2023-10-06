@@ -38,9 +38,10 @@ router
     .use('/api/pincode', require('./pincode'))
 
     .post('/api/user/login', require('../services/userAccess/user').login)
+    .post('/api/user/getUser', require('../services/userAccess/user').getUser)
+    .post('/api/user/getUserBranch',require('../services/userAccess/user').getUserBranch)
+    .post('/api/user/getUserRole',require('../services/userAccess/user').getUserRole)
 
-
-
-
+    .use('/api/status',require('./status'))
 
 module.exports = router
