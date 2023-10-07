@@ -194,7 +194,7 @@ exports.uploadDocument = (req, res) => {
                         })
                     }
                     else {
-                        db.executeQueryData(`update applicant_documents set APPLICANT_ID=?, APPLICANT_NO=?, DOCUMENT_NAME=?, FILE_TYPE=?, FILE_LINK=? where ID = ?`, [req.body.APPLICANT_ID, req.body.APPLICANT_NO, req.body.DOCUMENT_NAME, req.body.FILE_TYPE, filePath, req.body.ID], supportKey, (error, documentInsertResult) => {
+                        db.executeQueryData(`update applicant_documents set APPLICANT_ID=?, APPLICANT_NO=?, DOCUMENT_NAME=?, FILE_TYPE=?, FILE_LINK=?, MAKER_REMARK=? where ID = ?`, [req.body.APPLICANT_ID, req.body.APPLICANT_NO, req.body.DOCUMENT_NAME, req.body.FILE_TYPE, filePath, req.body.MAKER_REMARK, req.body.ID], supportKey, (error, documentInsertResult) => {
                             if (error) {
                                 console.log("error", error);
                                 res.send({
