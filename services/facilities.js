@@ -17,6 +17,8 @@ function reqData(req)
         APPLICANT2_NAME: req.body.APPLICANT2_NAME,
         APPLICANT3_NAME: req.body.APPLICANT3_NAME,
         APPLICANT4_NAME: req.body.APPLICANT4_NAME,
+        UPI: req.body.UPI,
+        MOBILE_BANKING: req.body.MOBILE_BANKING
     }
 
     return data;

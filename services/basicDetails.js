@@ -54,27 +54,163 @@ function reqData(req) {
         CUSTOMER_ID_1: req.body.CUSTOMER_ID_1,
         CKYC_NUMBER_1: req.body.CKYC_NUMBER_1,
 
-        CREATED_BRANCH_ID : req.body.CREATED_BRANCH_ID,
-        MAKER_USER_ID :req.body.MAKER_USER_ID,
-        CHACKER_USER_ID : req.body.CHACKER_USER_ID,
-        VERIFIER_USER_ID:req.body.VERIFIER_USER_ID,
-        TRACK_ID:req.body.TRACK_ID
+        CREATED_BRANCH_ID: req.body.CREATED_BRANCH_ID,
+        MAKER_USER_ID: req.body.MAKER_USER_ID,
+        CHACKER_USER_ID: req.body.CHACKER_USER_ID,
+        VERIFIER_USER_ID: req.body.VERIFIER_USER_ID,
+        TRACK_ID: req.body.TRACK_ID,
+
+        IS_OLD_CUSTOMER_3: req.body.IS_OLD_CUSTOMER_3,
+        CUSTOMER_ID_3: req.body.CUSTOMER_ID_3,
+        CKYC_NUMBER_3: req.body.CKYC_NUMBER_3,
+        VOTER_ID_3: req.body.VOTER_ID_3,
+        LICENSE_NO_3: req.body.LICENSE_NO_3,
+        CUSTOMER_TYPE_3: req.body.CUSTOMER_TYPE_3,
+
+        IS_OLD_CUSTOMER_4: req.body.IS_OLD_CUSTOMER_4,
+        CUSTOMER_ID_4: req.body.CUSTOMER_ID_4,
+        CKYC_NUMBER_4: req.body.CKYC_NUMBER_4,
+        VOTER_ID_4: req.body.VOTER_ID_4,
+        LICENSE_NO_4: req.body.LICENSE_NO_4,
+        CUSTOMER_TYPE_4: req.body.CUSTOMER_TYPE_4,
+        FILLED_DATE_TIME: req.body.FILLED_DATE_TIME,
+        VERIFIED_DATE_TIME: req.body.VERIFIED_DATE_TIME,
+
+        DOB_1: req.body.DOB_1,
+        GENDER_1: req.body.GENDER_1,
+        MOBILE_1: req.body.MOBILE_1,
+        AGE_1: req.body.AGE_1,
+
+        DOB_2: req.body.DOB_2,
+        GENDER_2: req.body.GENDER_2,
+        MOBILE_2: req.body.MOBILE_2,
+        AGE_2: req.body.AGE_2,
+
+        DOB_3: req.body.DOB_3,
+        GENDER_3: req.body.GENDER_3,
+        MOBILE_3: req.body.MOBILE_3,
+        AGE_3: req.body.AGE_3,
+
+        DOB_4: req.body.DOB_4,
+        GENDER_4: req.body.GENDER_4,
+        MOBILE_4: req.body.MOBILE_4,
+        AGE_4: req.body.AGE_4
+
     }
 
     return data;
 
 }
 
+function cpcAccess(req) {
+    let data = {
+        // VERIFIER_USER_ID: req.body.VERIFIER_USER_ID,
+        TRACK_ID: req.body.TRACK_ID,
+    }
+    return data;
+}
+
+function checkerAccess(req) {
+    let data = {
+        VERIFIER_USER_ID: req.body.VERIFIER_USER_ID,
+        TRACK_ID: req.body.TRACK_ID,
+        VERIFIED_DATE_TIME: req.body.VERIFIED_DATE_TIME
+    }
+
+    return data;
+}
+
 function getAllApplicantsInfo(req) {
 
     var data = [
-        { FIRST_NAME: req.body.PRIMARY_APPLICANT_FIRST_NAME, APPLICANT_NO: 1, MIDDLE_NAME: req.body.PRIMARY_APPLICANT_MIDDLE_NAME, LAST_NAME: req.body.PRIMARY_APPLICANT_LAST_NAME, AADHAAR_NUMBER: req.body.AADHAAR_NO_1, APPLICANT_ID: req.body.ID },
-        { FIRST_NAME: req.body.APPLICANT2_FIRST_NAME, APPLICANT_NO: 2, MIDDLE_NAME: req.body.APPLICANT2_MIDDLE_NAME, LAST_NAME: req.body.APPLICANT2_LAST_NAME, AADHAAR_NUMBER: req.body.AADHAAR_NO_2, APPLICANT_ID: req.body.ID },
-        { FIRST_NAME: req.body.APPLICANT3_FIRST_NAME, APPLICANT_NO: 3, MIDDLE_NAME: req.body.APPLICANT3_MIDDLE_NAME, LAST_NAME: req.body.APPLICANT3_LAST_NAME, AADHAAR_NUMBER: req.body.AADHAAR_NUMBER3, APPLICANT_ID: req.body.ID },
-        { FIRST_NAME: req.body.APPLICANT4_FIRST_NAME, APPLICANT_NO: 4, MIDDLE_NAME: req.body.APPLICANT4_MIDDLE_NAME, LAST_NAME: req.body.APPLICANT4_LAST_NAME, AADHAAR_NUMBER: req.body.AADHAAR_NUMBER3, APPLICANT_ID: req.body.ID }
+        {
+            FIRST_NAME: req.body.PRIMARY_APPLICANT_FIRST_NAME,
+            APPLICANT_NO: 1,
+            MIDDLE_NAME: req.body.PRIMARY_APPLICANT_MIDDLE_NAME,
+            LAST_NAME: req.body.PRIMARY_APPLICANT_LAST_NAME,
+            AADHAAR_NUMBER: req.body.AADHAAR_NO_1,
+            APPLICANT_ID: req.body.ID,
+
+            PAN_NO: req.body.PAN_NUMBER,
+            DRIVING_LICENSE_NO: req.body.LICENSE_NO_1,
+            VOTER_ID: req.body.VOTER_ID_1,
+
+            DATE_OF_BIRTH: req.body.DOB_1,
+            GENDER: req.body.GENDER_1,
+            MOBILE_NUMBER: req.body.MOBILE_1
+        },
+        {
+            FIRST_NAME: req.body.APPLICANT2_FIRST_NAME,
+            APPLICANT_NO: 2,
+            MIDDLE_NAME: req.body.APPLICANT2_MIDDLE_NAME,
+            LAST_NAME: req.body.APPLICANT2_LAST_NAME,
+            AADHAAR_NUMBER: req.body.AADHAAR_NO_2,
+            APPLICANT_ID: req.body.ID,
+
+            PAN_NO: req.body.PAN_NUMBER2,
+            DRIVING_LICENSE_NO: req.body.LICENSE_NO_2,
+            VOTER_ID: req.body.VOTER_ID_2,
+
+            DATE_OF_BIRTH: req.body.DOB_2,
+            GENDER: req.body.GENDER_2,
+            MOBILE_NUMBER: req.body.MOBILE_2
+        },
+        {
+            FIRST_NAME: req.body.APPLICANT3_FIRST_NAME,
+            APPLICANT_NO: 3,
+            MIDDLE_NAME: req.body.APPLICANT3_MIDDLE_NAME,
+            LAST_NAME: req.body.APPLICANT3_LAST_NAME,
+            AADHAAR_NUMBER: req.body.AADHAAR_NUMBER3,
+            APPLICANT_ID: req.body.ID,
+
+            PAN_NO: req.body.PAN_NUMBER3,
+            DRIVING_LICENSE_NO: req.body.LICENSE_NO_3,
+            VOTER_ID: req.body.VOTER_ID_3,
+
+            DATE_OF_BIRTH: req.body.DOB_3,
+            GENDER: req.body.GENDER_3,
+            MOBILE_NUMBER: req.body.MOBILE_3
+        },
+        {
+            FIRST_NAME: req.body.APPLICANT4_FIRST_NAME,
+            APPLICANT_NO: 4,
+            MIDDLE_NAME: req.body.APPLICANT4_MIDDLE_NAME,
+            LAST_NAME: req.body.APPLICANT4_LAST_NAME,
+            AADHAAR_NUMBER: req.body.AADHAAR_NUMBER4,
+            APPLICANT_ID: req.body.ID,
+
+            PAN_NO: req.body.PAN_NUMBER4,
+            DRIVING_LICENSE_NO: req.body.LICENSE_NO_4,
+            VOTER_ID: req.body.VOTER_ID_4,
+
+            DATE_OF_BIRTH: req.body.DOB_4,
+            GENDER: req.body.GENDER_4,
+            MOBILE_NUMBER: req.body.MOBILE_4
+        }
     ]
 
     return data
+}
+
+function getCommonApplicantInfo(req) {
+    let data = {
+        RISK_CATEGORY: 'A',
+        RELIGION: 'A',
+        CASTE: 'A',
+        MARITAL_STATUS: 'M',
+        EDUCATION: 'S',
+        BLOOD_TYPE: 'A',
+        GENDER: "M",
+        GUARDIAN_RELATION: 'A',
+        PROFESSION: ' ',
+        NATURE_OF_SERVICE: ' ',
+        SELF_EMPLOYED: ' ',
+        NATURE_OF_BUSINESS: ' ',
+        SOURCE_OF_FUNDS: ' ',
+        NATIONALITY: 'A'
+    }
+
+    return data;
 }
 
 function getAllApplicantDoc(req) {
@@ -119,6 +255,8 @@ exports.create = async (req, res) => {
     let data = reqData(req);
     let allApplicants = getAllApplicantsInfo(req);
     let docApplicants = getAllApplicantDoc(req);
+    let commonFields = getCommonApplicantInfo(req);
+
     let supportKey = req.headers['supportkey'];
 
     let con = db.openConnection();
@@ -130,6 +268,8 @@ exports.create = async (req, res) => {
 
 
     try {
+
+
         let basicInsert = await db.executeQueryDataAsyncAwait(q, data, supportKey);
 
         const q_tab = `insert into frictionless_account_opening.extra_information (APPLICANT_ID, TAB_ID) select ${basicInsert.insertId}, ID from tab_master`
@@ -140,10 +280,12 @@ exports.create = async (req, res) => {
         for (let i = 1; i <= req.body.NO_OF_APPLICANT; i++) {
             let applicantQuery = `insert into ${applicant_table} set ? `
             let applicantPhotos = `insert into applicant_photos set ? `
-            let applicantDocuments = `insert into applicant_documents (DOCUMENT_NAME,APPLICANT_ID,APPLICANT_NO) select DOCUMENT_NAME, ${basicInsert.insertId}, ${i}  from document_master `
+            let applicantDocuments = `insert into applicant_documents (DOCUMENT_NAME,APPLICANT_ID,APPLICANT_NO) select DOCUMENT_NAME, ${basicInsert.insertId}, ${i}  from document_master ORDER BY SEQ_NO`
 
             allApplicants[i - 1]['APPLICANT_ID'] = basicInsert.insertId;
             docApplicants[i - 1]['APPLICANT_ID'] = basicInsert.insertId;
+
+            allApplicants[i - 1] = { ...allApplicants[i - 1], ...commonFields };
             await db.executeQueryDataAsyncAwait(applicantQuery, allApplicants[i - 1], supportKey);
             await db.executeQueryDataAsyncAwait(applicantPhotos, docApplicants[i - 1], supportKey);
             await db.executeQueryAsyncAwait(applicantDocuments, supportKey);
@@ -174,9 +316,25 @@ exports.update1 = async (req, res) => {
     let con = db.openConnection();
     let allApplicants = getAllApplicantsInfo(req);
     let docApplicants = getAllApplicantDoc(req);
+    let commonFields = getCommonApplicantInfo(req);
 
+    let ROLE_ID = req.body.ROLE_ID;
 
-    const data = reqData(req);
+    let data = ``;
+
+    if (ROLE_ID == 1) {
+        data = reqData(req);
+    }
+    else if (ROLE_ID == 2) {
+        data = checkerAccess(req);
+    }
+    else if (ROLE_ID == 3) {
+        data = cpcAccess(req);
+    }
+    else {
+        data = reqData(req);
+    }
+
     let setData = '';
     let recData = [];
 
@@ -194,51 +352,55 @@ exports.update1 = async (req, res) => {
     try {
         await db.executeQueryDataAsyncAwait(q, recData, supportKey);
 
-        for (let i = 1; i <= req.body.NO_OF_APPLICANT; i++) {
-            let applicant = await db.executeQueryAsyncAwait(`select * from ${applicant_table} where APPLICANT_ID = ${req.body.ID} AND APPLICANT_NO = ${i}`);
+        if (ROLE_ID == 1) {
+            for (let i = 1; i <= req.body.NO_OF_APPLICANT; i++) {
+                let applicant = await db.executeQueryAsyncAwait(`select * from ${applicant_table} where APPLICANT_ID = ${req.body.ID} AND APPLICANT_NO = ${i}`);
 
-            if (applicant.length == 0) {
-                let applicantQuery = `insert into ${applicant_table} set ? `
-                let applicantPhotos = `insert into applicant_photos set ? `
-                let applicantDocuments = `insert into applicant_documents (DOCUMENT_NAME,APPLICANT_ID,APPLICANT_NO) select DOCUMENT_NAME, ${req.body.ID}, ${i}  from document_master `
+                if (applicant.length == 0) {
+                    let applicantQuery = `insert into ${applicant_table} set ? `
+                    let applicantPhotos = `insert into applicant_photos set ? `
+                    let applicantDocuments = `insert into applicant_documents (DOCUMENT_NAME,APPLICANT_ID,APPLICANT_NO) select DOCUMENT_NAME, ${req.body.ID}, ${i}  from document_master ORDER BY SEQ_NO`
 
-                await db.executeQueryDataAsyncAwait(applicantQuery, allApplicants[i - 1], supportKey);
-                await db.executeQueryDataAsyncAwait(applicantPhotos, docApplicants[i - 1], supportKey);
-                await db.executeQueryAsyncAwait(applicantDocuments, supportKey);
-            }
+                    allApplicants[i - 1] = { ...allApplicants[i - 1], ...commonFields };
+                    await db.executeQueryDataAsyncAwait(applicantQuery, allApplicants[i - 1], supportKey);
+                    await db.executeQueryDataAsyncAwait(applicantPhotos, docApplicants[i - 1], supportKey);
+                    await db.executeQueryAsyncAwait(applicantDocuments, supportKey);
+                }
 
-            else if (applicant.length > 0) {
+                else if (applicant.length > 0) {
 
-                let applicantsPersonalfeilds = '';
-                let applicantsPersonalArray = [];
+                    let applicantsPersonalfeilds = '';
+                    let applicantsPersonalArray = [];
 
-                // console.log("applicant ",allApplicants[i-1])
-                Object.keys(allApplicants[i - 1]).forEach(key => {
-                    applicantsPersonalfeilds += `${key} = ? ,`;
-                    applicantsPersonalArray.push(allApplicants[i - 1][key]);
-                });
+                    // console.log("applicant ",allApplicants[i-1])
+                    Object.keys(allApplicants[i - 1]).forEach(key => {
+                        applicantsPersonalfeilds += `${key} = ? ,`;
+                        applicantsPersonalArray.push(allApplicants[i - 1][key]);
+                    });
 
-                applicantsPersonalfeilds = applicantsPersonalfeilds.slice(0, -1)
+                    applicantsPersonalfeilds = applicantsPersonalfeilds.slice(0, -1)
 
 
-                let applicantsPhotofeilds = '';
-                let applicantsPhototArray = [];
+                    let applicantsPhotofeilds = '';
+                    let applicantsPhototArray = [];
 
-                // console.log("applicant ",allApplicants[i-1])
-                Object.keys(docApplicants[i - 1]).forEach(key => {
-                    applicantsPhotofeilds += `${key} = ? ,`;
-                    applicantsPhototArray.push(docApplicants[i - 1][key]);
-                });
+                    // console.log("applicant ",allApplicants[i-1])
+                    Object.keys(docApplicants[i - 1]).forEach(key => {
+                        applicantsPhotofeilds += `${key} = ? ,`;
+                        applicantsPhototArray.push(docApplicants[i - 1][key]);
+                    });
 
-                applicantsPhotofeilds = applicantsPhotofeilds.slice(0, -1);
+                    applicantsPhotofeilds = applicantsPhotofeilds.slice(0, -1);
 
-                let applicantQuery = `update ${applicant_table} set ${applicantsPersonalfeilds} where ID = ${applicant[0].ID} `
-                let applicantPhotos = `update applicant_photos set ${applicantsPhotofeilds} where APPLICANT_ID = ${req.body.ID} AND APPLICANT_NO = ${i} `
+                    let applicantQuery = `update ${applicant_table} set ${applicantsPersonalfeilds} where ID = ${applicant[0].ID} `
+                    let applicantPhotos = `update applicant_photos set ${applicantsPhotofeilds} where APPLICANT_ID = ${req.body.ID} AND APPLICANT_NO = ${i} `
 
-                await db.executeQueryDataAsyncAwait(applicantQuery, applicantsPersonalArray, supportKey);
-                await db.executeQueryDataAsyncAwait(applicantPhotos, applicantsPhototArray, supportKey);
+                    await db.executeQueryDataAsyncAwait(applicantQuery, applicantsPersonalArray, supportKey);
+                    await db.executeQueryDataAsyncAwait(applicantPhotos, applicantsPhototArray, supportKey);
+                }
             }
         }
+
 
         res.send({
             "code": 200,

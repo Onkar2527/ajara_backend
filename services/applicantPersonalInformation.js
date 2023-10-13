@@ -88,7 +88,10 @@ function reqData(req) {
         NATURE_OF_SERVICE: req.body.NATURE_OF_SERVICE,
         SELF_EMPLOYED: req.body.SELF_EMPLOYED,
         NATURE_OF_BUSINESS: req.body.NATURE_OF_BUSINESS,
-        SOURCE_OF_FUNDS: req.body.SOURCE_OF_FUNDS
+        SOURCE_OF_FUNDS: req.body.SOURCE_OF_FUNDS,
+
+        PERMANENT_ADDRESS_PROOF:  req.body.PERMANENT_ADDRESS_PROOF,
+        CURRUNT_ADDRESS_PROOF:  req.body.CURRUNT_ADDRESS_PROOF
 
     }
 

@@ -75,15 +75,19 @@ exports.getUser = async (req, res) => {
     try {
         let BRANCH_ID = req.body.BRANCH_ID;
         let ROLE_ID = req.body.ROLE_ID;
+        let USER_ID = req.body.ID;
 
         let supportKey = req.headers['supportkey'];
-        let query = ``
+        let query = ` select * from user_master where 1`
 
         if (BRANCH_ID) {
-            query = `select ID from user_master where BRANCH_ID = ${BRANCH_ID} AND ROLE_ID = ${ROLE_ID}`
+            query += ` AND BRANCH_ID = ${BRANCH_ID} `
         }
-        else {
-            query = `select ID from user_master where ROLE_ID = ${ROLE_ID}`
+        if (ROLE_ID) {
+            query += ` AND ROLE_ID = ${ROLE_ID}`
+        }
+        if(USER_ID){
+            query += ` AND ID = ${USER_ID}`
         }
 
         let result = await db.executeQueryAsyncAwait(query, supportKey);
