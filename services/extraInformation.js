@@ -13,7 +13,8 @@ exports.update = (req, res) =>{
         SEND_TO_REFILL_COUNT : req.body.SEND_TO_REFILL_COUNT,
         CHECKER_REMARK : req.body.CHECKER_REMARK,
         MAKER_REMARK : req.body.MAKER_REMARK,
-        VERIFIER_REMARK : req.body.VERIFIER_REMARK
+        VERIFIER_REMARK : req.body.VERIFIER_REMARK,
+        REFILL_BY:req.body.REFILL_BY
     }
     const supportKey = req.headers['supportkey'];
    db.executeQueryData(`update extra_information set ? where ID = ?`, [dt,req.body.ID], supportKey,(error)=>{

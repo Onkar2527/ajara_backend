@@ -94,7 +94,10 @@ function reqData(req) {
         DOB_4: req.body.DOB_4,
         GENDER_4: req.body.GENDER_4,
         MOBILE_4: req.body.MOBILE_4,
-        AGE_4: req.body.AGE_4
+        AGE_4: req.body.AGE_4,
+
+        OTP_AUTH_1: req.body.OTP_AUTH_1,
+        OTP_AUTH_2: req.body.OTP_AUTH_2
 
     }
 
