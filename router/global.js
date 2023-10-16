@@ -44,4 +44,6 @@ router
 
     .use('/api/status',require('./status'))
 
+    .use('/api/remark',require('./remark'))
+
 module.exports = router

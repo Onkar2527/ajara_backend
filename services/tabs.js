@@ -11,14 +11,8 @@ exports.getTabs = (req, res) => {
 
 
 
-    let q = `select * from view_tab_master where APPLICANT_ID = ? AND TAB_ID not in (6,7) ORDER BY view_tab_master.INDEX`
+    let q = `select * from view_tab_master where APPLICANT_ID = ?  ORDER BY view_tab_master.INDEX`
 
-    if (ROLE_ID == 2 && TRACK_ID == 2) {
-        q = `select * from view_tab_master where APPLICANT_ID = ? AND TAB_ID not in (7) ORDER BY view_tab_master.INDEX`
-    }
-    else if (ROLE_ID == 3 && TRACK_ID == 3) {
-        q = `select * from view_tab_master where APPLICANT_ID = ? AND TAB_ID not in (6) ORDER BY view_tab_master.INDEX`
-    }
 
     db.executeQueryData(q, [APPLICANT_ID], supportKey, (error, ResTabs) => {
         if (error) {
