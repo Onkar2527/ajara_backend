@@ -46,4 +46,6 @@ router
 
     .use('/api/remark',require('./remark'))
 
+    .use('/api/dropdownMaster',require('./dropdownMaster'))
+
 module.exports = router
