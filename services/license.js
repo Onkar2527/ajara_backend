@@ -23,13 +23,9 @@ function reqData(req) {
         DOI: req.body.DOI,
         TRANSPORT_DOI: req.body.TRANSPORT_DOI,
         PROFILE_IMAGE: req.body.PROFILE_IMAGE,
-        HAS_IMAGE: req.body.HAS_IMAGE,
         BLOOD_GROUP: req.body.BLOOD_GROUP,
         VEHICLE_CLASSES: req.body.VEHICLE_CLASSES,
-        LESS_INFO: req.body.LESS_INFO,
-        ADDITIONAL_CHECK: req.body.ADDITIONAL_CHECK,
-        INITIAL_DOI: req.body.INITIAL_DOI,
-        CURRENT_STATUS: req.body.CURRENT_STATUS
+        INITIAL_DOI: req.body.INITIAL_DOI
     }
 
     return data;
@@ -37,7 +33,7 @@ function reqData(req) {
 
 exports.get = (req, res) => {
     let supportKey = req.headers['supportkey'];
-    const q = `select * from license_verified_list where PAN_NUMBER = '${req.body.PAN_NUMBER}'`
+    const q = `select * from license_verified_list where LICENSE_NUMBER = '${req.body.LICENSE_NUMBER}'`
     db.executeQuery(q, supportKey, (error, results) => {
         if (error) {
             console.log(error);
@@ -103,7 +99,7 @@ exports.update = (req, res) => {
     setData2 = setData.slice(0, -1);
 
 
-    const q = `update license_verified_list set ${setData2} where ID = ${req.body.PAN_NUMBER}`
+    const q = `update license_verified_list set ${setData2} where ID = ${req.body.ID}`
     db.executeQueryData(q, recData, supportKey, (error) => {
         if (error) {
             console.log(error);

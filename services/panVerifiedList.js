@@ -90,7 +90,7 @@ exports.update = (req, res) => {
     setData2 = setData.slice(0,-1);
 
 
-    const q = `update pan_verified_list set ${setData2} where ID = ${req.body.PAN_NUMBER}`
+    const q = `update pan_verified_list set ${setData2} where ID = ${req.body.ID}`
     db.executeQueryData(q , recData , supportKey , (error)=>{
         if(error)
         {

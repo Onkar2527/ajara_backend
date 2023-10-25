@@ -35,7 +35,7 @@ function reqData(req) {
         NAME_V3: req.body.NAME_V3,
         ST_CODE: req.body.ST_CODE,
         PARLIAMENTARY_CONSTITUENCY: req.body.PARLIAMENTARY_CONSTITUENCY,
-        IS_VERIFIED : req.body.IS_VERIFIES
+        IS_VERIFIED: req.body.IS_VERIFIED ? 1 : 0
 
     }
 
@@ -110,7 +110,7 @@ exports.update = (req, res) => {
     setData2 = setData.slice(0, -1);
 
 
-    const q = `update voterid_verification_master set ${setData2} where ID = ${req.body.EPIC_NO}`
+    const q = `update voterid_verification_master set ${setData2} where ID = ${req.body.ID}`
     db.executeQueryData(q, recData, supportKey, (error) => {
         if (error) {
             console.log(error);

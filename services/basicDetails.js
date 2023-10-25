@@ -97,7 +97,13 @@ function reqData(req) {
         AGE_4: req.body.AGE_4,
 
         OTP_AUTH_1: req.body.OTP_AUTH_1,
-        OTP_AUTH_2: req.body.OTP_AUTH_2
+        OTP_AUTH_2: req.body.OTP_AUTH_2,
+
+        VOTER_ID_2:req.body.VOTER_ID_2,
+        VOTER_ID_1: req.body.VOTER_ID_1,
+
+        LICENSE_NO_1:req.body.LICENSE_NO_1,
+        LICENSE_NO_2:req.body.LICENSE_NO_2,
 
     }
 
@@ -267,6 +273,8 @@ exports.create = async (req, res) => {
     console.log("data", data);
     console.log("applicants", allApplicants);
 
+    data.MODIFIED_DATE = new Date();
+
     const q = `insert into basic_details set ?`
 
 
@@ -326,13 +334,19 @@ exports.update1 = async (req, res) => {
     let data = ``;
 
     if (ROLE_ID == 1) {
+
         data = reqData(req);
+        if (data.TRACK_ID == 2)
+            data.MODIFIED_DATE = new Date();
     }
     else if (ROLE_ID == 2) {
         data = checkerAccess(req);
+
+        data.MODIFIED_DATE = new Date();
     }
     else if (ROLE_ID == 3) {
         data = cpcAccess(req);
+        data.MODIFIED_DATE = new Date();
     }
     else {
         data = reqData(req);
@@ -478,7 +492,7 @@ exports.getAll = (req, res) => {
         console.log(start + " " + end);
     }
 
-    let sortKey = req.body.sortKey ? req.body.sortKey : 'ID';
+    let sortKey = req.body.sortKey ? req.body.sortKey : 'MODIFIED_DATE';
     let sortValue = req.body.sortValue ? req.body.sortValue : 'DESC';
 
     let filter = ``

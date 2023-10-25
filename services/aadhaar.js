@@ -11,7 +11,8 @@ function reqData(req) {
         DOB: req.body.DOB,
         APPLICANT_FULL_NAME: req.body.APPLICANT_FULL_NAME,
         GENDER: req.body.GENDER,
-        PROFILE_IMAGE: req.body.PROFILE_IMAGE
+        PROFILE_IMAGE: req.body.PROFILE_IMAGE,
+        IS_VERIFIED: req.body.IS_VERIFIED ? 1 : 0
     }
     return data
 }
@@ -26,7 +27,6 @@ exports.create = (req, res) => {
     let con = db.openConnection()
 
     Object.keys(data).forEach(key => {
-
         setData += `${key} ,`;
         recordData.push(data[key]);
     });
@@ -78,11 +78,11 @@ exports.get = (req, res) => {
     let q = ``;
     if (req.body.AADHAAR_NUMBER)
         q = `select * from aadhaar_verified_list where APPLICANT_NO = ${req.body.APPLICANT_NO} AND AADHAAR_NUMBER = ${req.body.AADHAAR_NUMBER} `
-    else{
-        q =`select * from aadhaar_verified_list where 0`
+    else {
+        q = `select * from aadhaar_verified_list where 0`
     }
 
-    
+
     db.executeQuery(q, supportKey, (error, results) => {
         if (error) {
             console.log("err", error);
@@ -126,6 +126,44 @@ exports.get = (req, res) => {
 
 }
 
-exports.update = (req, res) => {
+exports.update = async (req, res) => {
+    let data = reqData(req)
+    let ID = req.body.ID;
+    let supportKey = req.headers['supportKey']
+    var setData = "";
+    var recordData = [];
+
+
+    Object.keys(data).forEach(key => {
+        setData += `${key} ,`;
+        recordData.push(data[key]);
+    });
+
+    let address_result;
+
+    try {
+        if (!data.ADDRESS_ID[0].ID) {
+            address_result = await db.executeQueryDataAsyncAwait(`insert into aadhaar_address set ?`, data.ADDRESS_ID, supportKey);
+            data.ADDRESS_ID = address_result.insertId;
+        }
+        else{
+            await db.executeQueryDataAsyncAwait(`update aadhaar_address set ? where ID = ?`, [data.ADDRESS_ID[0],data.ADDRESS_ID[0].ID], supportKey);
+            data.ADDRESS_ID = data.ADDRESS_ID[0].ID;
+        }
+
+        await db.executeQueryDataAsyncAwait(`update aadhaar_verified_list set ? where ID = ?`, [data,ID], supportKey);
+
+
+        res.send({
+            "code":200
+        })
+    }
+    catch (error) {
+        console.log(error);
+        res.send({
+            "code": 400,
+            "message":"Failed to update aadhaar info"
+        })
+    }
 
 }

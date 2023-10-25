@@ -9,12 +9,11 @@ function reqData(req) {
         APPLICANT_NO: req.body.APPLICANT_NO,
         DOCUMENT_NAME: req.body.DOCUMENT_NAME,
         FILE_TYPE: req.body.FILE_TYPE,
-        IS_APPROVED_CHECKER: req.body.IS_APPROVED_CHECKER,
         CHECKER_REMARK: req.body.CHECKER_REMARK,
         MAKER_REMARK: req.body.MAKER_REMARK,
         VERIFIER_REMARK: req.body.VERIFIER_REMARK,
-        IS_APPROVED_CHECKER: req.body.IS_APPROVED_CHECKER,
-        IS_APPROVED_VERIFIER: req.body.IS_APPROVED_VERIFIER,
+        IS_APPROVED_CHECKER: req.body.IS_APPROVED_CHECKER ? 1 : 0,
+        IS_APPROVED_VERIFIER: req.body.IS_APPROVED_VERIFIER ? 1 : 0,
         REFILL_COUNT: req.body.REFILL_COUNT
 
     }
@@ -49,7 +48,7 @@ exports.getAllApplicants = (req, res) => {
     const supportKey = req.headers['supportkey']
     let resultsArray = [];
 
-    db.executeQueryData(`select * from applicant_documents where APPLICANT_ID = ? ` +(req.body.APPLICANT_NO ? `AND APPLICANT_NO = ? ` : `` ), [req.body.APPLICANT_ID, req.body.APPLICANT_NO], supportKey, (error, applicantsDocResult) => {
+    db.executeQueryData(`select * from applicant_documents where APPLICANT_ID = ? ` + (req.body.APPLICANT_NO ? `AND APPLICANT_NO = ? ` : ``), [req.body.APPLICANT_ID, req.body.APPLICANT_NO], supportKey, (error, applicantsDocResult) => {
         if (error) {
             console.log("error", error);
             res.send({
@@ -194,7 +193,7 @@ exports.uploadDocument = (req, res) => {
                         })
                     }
                     else {
-                        db.executeQueryData(`update applicant_documents set APPLICANT_ID=?, APPLICANT_NO=?, DOCUMENT_NAME=?, FILE_TYPE=?, FILE_LINK=?, MAKER_REMARK=? where ID = ?`, [req.body.APPLICANT_ID, req.body.APPLICANT_NO, req.body.DOCUMENT_NAME, req.body.FILE_TYPE, filePath, req.body.MAKER_REMARK, req.body.ID], supportKey, (error, documentInsertResult) => {
+                        db.executeQueryData(`update applicant_documents set APPLICANT_ID=?, APPLICANT_NO=?, DOCUMENT_NAME=?, FILE_TYPE=?, FILE_LINK=?, MAKER_REMARK=?, IS_APPROVED_CHECKER = ?, IS_APPROVED_VERIFIER = ? where ID = ?`, [req.body.APPLICANT_ID, req.body.APPLICANT_NO, req.body.DOCUMENT_NAME, req.body.FILE_TYPE, filePath, req.body.MAKER_REMARK,req.body.IS_APPROVED_CHECKER, req.body.IS_APPROVED_VERIFIER, req.body.ID], supportKey, (error, documentInsertResult) => {
                             if (error) {
                                 console.log("error", error);
                                 res.send({
