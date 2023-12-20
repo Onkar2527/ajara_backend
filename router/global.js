@@ -33,19 +33,22 @@ router
     .use('/api/pan', require('./panVerifiendList'))
     .use('/api/voterId', require('./voterIdVerification'))
     .use('/api/license', require('./license'))
-    
+
 
     .use('/api/pincode', require('./pincode'))
 
     .post('/api/user/login', require('../services/userAccess/user').login)
     .post('/api/user/getUser', require('../services/userAccess/user').getUser)
-    .post('/api/user/getUserBranch',require('../services/userAccess/user').getUserBranch)
-    .post('/api/user/getUserRole',require('../services/userAccess/user').getUserRole)
+    .post('/api/user/getUserBranch', require('../services/userAccess/user').getUserBranch)
+    .post('/api/user/getUserRole', require('../services/userAccess/user').getUserRole)
 
-    .use('/api/status',require('./status'))
+    .use('/api/status', require('./status'))
 
-    .use('/api/remark',require('./remark'))
+    .use('/api/remark', require('./remark'))
 
-    .use('/api/dropdownMaster',require('./dropdownMaster'))
+    .use('/api/dropdownMaster', require('./dropdownMaster'))
+    .use('/api/dropdownMaster', require('./dropdownMaster'))
+
+    .use('/api/branch', require('./branch'))
 
 module.exports = router
