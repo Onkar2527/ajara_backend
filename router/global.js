@@ -51,4 +51,6 @@ router
 
     .use('/api/branch', require('./branch'))
 
+    .use('/api/list_api', require('./list_api/api'))
+
 module.exports = router
