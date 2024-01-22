@@ -9,10 +9,10 @@ exports.config = {
             port: "",
             database_name: "list_cbs_masters",
             ispass: true,
-            password: 'No.5670@'
+            password: 'fco@kredpool'
         },
         api: {
-            host: "http://172.100.30.89",
+            host: "http://10.128.117.5",
             port: "8888",
             logs: true,
             routes: [

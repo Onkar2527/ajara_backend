@@ -221,9 +221,17 @@ function returnUniqueKey(arr) {
 
 function returnInsertQ(obj) {
     let q = ''
-
+    let sep = '\"'
     for (let key of Object.keys(obj)) {
-        q += `${key} = \"${obj[key]}\",`
+        if (typeof obj[key] == 'string') {
+            if (obj[key].includes('\"')) {
+                sep = '\''
+            }
+            else {
+                sep = '\"'
+            }
+        }
+        q += `${key} = ${sep}${obj[key]}${sep},`
     }
 
     q = q.slice(0, -1);
@@ -343,7 +351,7 @@ exports.onBoardCustomer = async (req, res) => {
 
 
 
-                "countryid": 356,//constant
+                "countryid": 1,//constant
 
                 "stateid": await getStateCode(personalR.CURRENT_STATE),
                 "districtid": await getDistCode(personalR.CURRENT_DISTRICT),//master need to be created
@@ -389,7 +397,7 @@ exports.onBoardCustomer = async (req, res) => {
             "acmst_obj": {
                 // "interestrate": 5, //need to ask to list
 
-                "schemecode": 510, // fixed value for now
+                "schemecode": 200, // fixed value for now
 
                 "acctitle": personalR.FIRST_NAME, //need to be discuss with list
 
@@ -421,7 +429,7 @@ exports.onBoardCustomer = async (req, res) => {
                 "opnormdf": "A"//need to discuss with list
             },
             "accdtl_obj": {
-                "schemecode": 510, //master need to be added, fixed value for now.
+                "schemecode": 200, //master need to be added, fixed value for now.
 
                 // "serialno": 1,//need to discuss with list
                 "changeno": 1,//need to discuss with list
@@ -432,7 +440,7 @@ exports.onBoardCustomer = async (req, res) => {
                 "accopened_atbrn": await getBranchFromCBS(basicR.CREATED_BRANCH_ID)
             },
             "docdtl_obj": {
-                "schemecode": 510, //master need to be added
+                "schemecode": 200, //master need to be added
 
                 "docid": 1, // need to give fixed value for PAN from doc master
 
@@ -464,18 +472,19 @@ exports.onBoardCustomer = async (req, res) => {
         }
 
 
-        let accountCreatedData = await axios.post(posturl, account_opening_data, { headers: { "Authorization": `Bearer ${bearerKey}` } })
+        // let accountCreatedData = await axios.post(posturl, account_opening_data, { headers: { "Authorization": `Bearer ${bearerKey}` } })
 
 
-        let basicInsertQ = `update basic_details set ACCOUNT_NUMBER =  ${accountCreatedData.data['Account number']},CUSTOMER_ID_1 = ${accountCreatedData.data['Customer Code']} where ID = ${applicant_id}`
+        // let basicInsertQ = `update basic_details set ACCOUNT_NUMBER =  "${accountCreatedData.data['Account number']}",CUSTOMER_ID_1 = "${accountCreatedData.data['Customer Code']}" where ID = ${applicant_id}`
 
-        let basicInsertR = await db.executeQueryAsyncAwait(basicInsertQ, '');
-        console.log("Query : ", basicInsertQ, "result ", basicInsertR);
-        console.log("created", accountCreatedData.data)
+        // let basicInsertR = await db.executeQueryAsyncAwait(basicInsertQ, '');
+        // console.log("Query : ", basicInsertQ, "result ", basicInsertR);
+        // console.log("created", accountCreatedData.data);
+        
         res.send({
             "code": 200,
             "data": account_opening_data,
-            "success_data": accountCreatedData.data
+            // "success_data": accountCreatedData.data
         })
     }
 
@@ -787,7 +796,7 @@ exports.getCustomer = async (req, res) => {
             BIRTHDATE: customerData['Customer Details'].BIRTHDATE,
             GENDER: customerData['Customer Details'].GENDER,
 
-            ALREADY_EXIST: customerData['Having individual account:']
+            ALREADY_EXIST: customerData['Having individual account']
 
             // STATE: '',
             // DISTRICT: '',
