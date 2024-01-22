@@ -282,44 +282,43 @@ exports.onBoardCustomer = async (req, res) => {
 
         let account_opening_data = {
             "custobj": {
-                "introbranch": await getBranchFromCBS(basicR.CREATED_BRANCH_ID), //master need to be created,need to be discuss with list they have not added this master.
+                "introbranch": await getBranchFromCBS(basicR.CREATED_BRANCH_ID),
 
-                "typeofcustomer": 1, //master and field need to be added.
+                "typeofcustomer": 1, 
 
                 "middlename": personalR.MIDDLE_NAME,
                 "firstname": personalR.FIRST_NAME,
                 "lastname": personalR.LAST_NAME,
 
-                "createdfor": "S", //need to be discuss with list
+                "createdfor": "S",
 
                 "minor": personalR.IS_MINOR ? "Y" : "N",
 
                 "birthdate": convertDate(personalR.DATE_OF_BIRTH),
 
-                "gender": personalR.GENDER, //need to be discuss with list about values for genders.
+                "gender": personalR.GENDER, 
 
-                "occupationid": Number(personalR.PROFESSION), //master need to be created
+                "occupationid": Number(personalR.PROFESSION), 
 
-                "idtproofid": Number(personalR.ID_PROOF), //need to disscuss with omkar sir   (this is master).
-                "idtproofidno": personalR.ID_PROOF_NUMBER, //need to disscuss with omkar sir
-                "proofdetailsid": Number(personalR.PERMANENT_ADDRESS_PROOF), //need to disscuss with omkar sir   (this is master).
-                "addproofidno": personalR.PERMANENT_ADDRESS_PROOF_NUMBER, //need to disscuss with omkar sir
+                "idtproofid": Number(personalR.ID_PROOF), 
+                "idtproofidno": personalR.ID_PROOF_NUMBER, 
+                "proofdetailsid": Number(personalR.PERMANENT_ADDRESS_PROOF),
+                "addproofidno": personalR.PERMANENT_ADDRESS_PROOF_NUMBER, 
 
-                "riskcat": Number(personalR.RISK_CATEGORY), //master need to be created
+                "riskcat": Number(personalR.RISK_CATEGORY), 
 
-                "panno": personalR.PAN_NO,//"GTFDT8976M", //need to discuss with omkar sir about making this field mendetory
+                "panno": personalR.PAN_NO,//"GTFDT8976M",
 
-                "fatherspouse": personalR.FATHER_OR_SPOUSE, //field need to be added
+                "fatherspouse": personalR.FATHER_OR_SPOUSE, 
 
                 "bankcode": 1,
 
-                "brncode": await getBranchFromCBS(basicR.CREATED_BRANCH_ID), //master need to be created
+                "brncode": await getBranchFromCBS(basicR.CREATED_BRANCH_ID), 
+                "entrystatus": "F",  
 
-                "entrystatus": "F",  //need to be discuss with list
-
-                "entryuser": await getUserNameByID(basicR.MAKER_USER_ID), //master need to be created
-                "verifiedby": await getUserNameByID(basicR.CHACKER_USER_ID), //master need to be created
-                "authuser": await getUserNameByID(basicR.VERIFIER_USER_ID) //master need to be created
+                "entryuser": await getUserNameByID(basicR.MAKER_USER_ID), 
+                "verifiedby": await getUserNameByID(basicR.CHACKER_USER_ID), 
+                "authuser": await getUserNameByID(basicR.VERIFIER_USER_ID) 
             },
             "addobj_P": {
                 "addresstype": "P",
@@ -327,87 +326,85 @@ exports.onBoardCustomer = async (req, res) => {
 
                 "countryid": 356,//constant
                 "stateid": await getStateCode(personalR.PERMANENT_STATE),
-                "districtid": await getDistCode(personalR.PERMANENT_DISTRICT),//master need to be created
-                "talukaid": await getTalukaCode(personalR.PERMANENT_TALUKA),//master need to be created
-                "cityid": await getCityCode(personalR.PERMANENT_CITY),//master need to be created
-                "areaid": await getAreaCode(personalR.PERMANENT_AREA),//master need to be created 
-
+                "districtid": await getDistCode(personalR.PERMANENT_DISTRICT),
+                "talukaid": await getTalukaCode(personalR.PERMANENT_TALUKA),
+                "cityid": await getCityCode(personalR.PERMANENT_CITY),
+                "areaid": await getAreaCode(personalR.PERMANENT_AREA),
                 "mobile": personalR.MOBILE_NUMBER,
                 "pincode": personalR.PERMANENT_PINCODE,
 
-                // "sequenceno": 1,//need to discuss with list
+                // "sequenceno": 1,
 
                 "bankcode": 1,
 
-                "brncode": await getBranchFromCBS(basicR.CREATED_BRANCH_ID),//master need to be created
+                "brncode": await getBranchFromCBS(basicR.CREATED_BRANCH_ID),
                 "entrystatus": "F",
 
-                "entryuser": await getUserNameByID(basicR.MAKER_USER_ID),//master need to be created
-                "verifiedby": await getUserNameByID(basicR.CHACKER_USER_ID),//master need to be created
-                "authuser": await getUserNameByID(basicR.VERIFIER_USER_ID)//master need to be created
+                "entryuser": await getUserNameByID(basicR.MAKER_USER_ID),
+                "verifiedby": await getUserNameByID(basicR.CHACKER_USER_ID),
+                "authuser": await getUserNameByID(basicR.VERIFIER_USER_ID)
             },
             "addobj_C": {
                 "addresstype": "C",
 
 
 
-                "countryid": 1,//constant
+                "countryid": 1,
 
                 "stateid": await getStateCode(personalR.CURRENT_STATE),
-                "districtid": await getDistCode(personalR.CURRENT_DISTRICT),//master need to be created
-                "talukaid": await getTalukaCode(personalR.CURRENT_TALUKA),//master need to be created
-                "cityid": await getCityCode(personalR.CURRENT_CITY),//master need to be created
-                "areaid": await getAreaCode(personalR.CURRENT_AREA),//master need to be created 
+                "districtid": await getDistCode(personalR.CURRENT_DISTRICT),
+                "talukaid": await getTalukaCode(personalR.CURRENT_TALUKA),
+                "cityid": await getCityCode(personalR.CURRENT_CITY),
+                "areaid": await getAreaCode(personalR.CURRENT_AREA),
 
                 "mobile": personalR.MOBILE_NUMBER,
                 "pincode": personalR.CURRENT_PINCODE,
 
-                // "sequenceno": 1,//need to discuss with list
+                // "sequenceno": 1,
 
                 "bankcode": 1,
 
-                "brncode": await getBranchFromCBS(basicR.CREATED_BRANCH_ID),//master need to be created
+                "brncode": await getBranchFromCBS(basicR.CREATED_BRANCH_ID),
 
-                "entryuser": await getUserNameByID(basicR.MAKER_USER_ID),//master need to be created
-                "verifiedby": await getUserNameByID(basicR.CHACKER_USER_ID),//master need to be created
-                "authuser": await getUserNameByID(basicR.VERIFIER_USER_ID)//master need to be created
+                "entryuser": await getUserNameByID(basicR.MAKER_USER_ID),
+                "verifiedby": await getUserNameByID(basicR.CHACKER_USER_ID),
+                "authuser": await getUserNameByID(basicR.VERIFIER_USER_ID)
             },
             "kyccomobj": {
                 "kcc_status": "F",
 
-                "entryuser": await getUserNameByID(basicR.MAKER_USER_ID),//master need to be created
-                "verifiedby": await getUserNameByID(basicR.CHACKER_USER_ID),//master need to be created
-
-                "bankcode": 1,
-                "brncode": await getBranchFromCBS(basicR.CREATED_BRANCH_ID)//master need to be created
-            },
-            "kyccompdtlrobj": {
-
-                // "kcd_srno": 1,//need to discuss with list
-
-
-                "kcd_addproff": Number(personalR.PERMANENT_ADDRESS_PROOF),  //need to discuss with omkar sir
-                "kcd_addidno": personalR.PERMANENT_ADDRESS_PROOF_NUMBER, //need to discuss with omkar sir
-                "kcd_idproof": Number(personalR.ID_PROOF), //need to discuss with omkar sir
-                "kcd_ididno": personalR.ID_PROOF_NUMBER, //need to discuss with omkar sir
+                "entryuser": await getUserNameByID(basicR.MAKER_USER_ID),
+                "verifiedby": await getUserNameByID(basicR.CHACKER_USER_ID),
 
                 "bankcode": 1,
                 "brncode": await getBranchFromCBS(basicR.CREATED_BRANCH_ID)
             },
+            "kyccompdtlrobj": {
+
+                // "kcd_srno": 1,
+
+
+                "kcd_addproff": Number(personalR.PERMANENT_ADDRESS_PROOF),
+                "kcd_addidno": personalR.PERMANENT_ADDRESS_PROOF_NUMBER, 
+                "kcd_idproof": Number(personalR.ID_PROOF),
+                "kcd_ididno": personalR.ID_PROOF_NUMBER, 
+                "bankcode": 1,
+                "brncode": await getBranchFromCBS(basicR.CREATED_BRANCH_ID)
+            },
             "acmst_obj": {
-                // "interestrate": 5, //need to ask to list
+                // "interestrate": 5,
 
-                "schemecode": 200, // fixed value for now
+                "schemecode": 200, 
 
-                "acctitle": personalR.FIRST_NAME, //need to be discuss with list
+                "acctitle": personalR.FIRST_NAME, 
 
-                "jointacc": "N", //default "N" for now
+                "jointacc": "N",
 
-                "constitution": Number(personalR.CONSTITUTION), //master need to be created and field need to be added
+                "constitution": Number(personalR.CONSTITUTION), 
 
-                "operinstructions": Number(depositR.ACCOUNT_OPERATION), //need to discuss with omkar sir
+                "operinstructions": Number(depositR.ACCOUNT_OPERATION), 
 
-                "paymentinstructions": Number(depositR.PAYMENT_INSTRUCTION), //need to discuss with omkar sir
+                "paymentinstructions": Number(depositR.PAYMENT_INSTRUCTION), 
 
                 "entrystatus": "F",
 
@@ -415,7 +412,7 @@ exports.onBoardCustomer = async (req, res) => {
                 "verifiedby": await getUserNameByID(basicR.CHACKER_USER_ID),
                 "authuser": await getUserNameByID(basicR.VERIFIER_USER_ID),
 
-                // "changeno": 1,//need to discuss with list
+                // "changeno": 1,
 
                 "bankcode": 1,
 
@@ -426,13 +423,13 @@ exports.onBoardCustomer = async (req, res) => {
 
                 "accopendt": generateNewDate(),
 
-                "opnormdf": "A"//need to discuss with list
+                "opnormdf": "A"
             },
             "accdtl_obj": {
-                "schemecode": 200, //master need to be added, fixed value for now.
+                "schemecode": 200, 
 
-                // "serialno": 1,//need to discuss with list
-                "changeno": 1,//need to discuss with list
+                // "serialno": 1,
+                "changeno": 1,
                 "bankcode": 1,
 
                 "brncode": await getBranchFromCBS(basicR.CREATED_BRANCH_ID),
@@ -440,26 +437,21 @@ exports.onBoardCustomer = async (req, res) => {
                 "accopened_atbrn": await getBranchFromCBS(basicR.CREATED_BRANCH_ID)
             },
             "docdtl_obj": {
-                "schemecode": 200, //master need to be added
+                "schemecode": 200,
 
-                "docid": 1, // need to give fixed value for PAN from doc master
+                "docid": 1,
 
-                "changeno": 1,//need to discuss with list
+                "changeno": 1,
 
                 "bankcode": 1,
 
-                "brncode": await getBranchFromCBS(basicR.CREATED_BRANCH_ID),//master need to be created
-                "acctobeopn_atbrncd": await getBranchFromCBS(basicR.CREATED_BRANCH_ID),//master need to be created
-                "accopened_atbrn": await getBranchFromCBS(basicR.CREATED_BRANCH_ID)//master need to be created
+                "brncode": await getBranchFromCBS(basicR.CREATED_BRANCH_ID),
+                "acctobeopn_atbrncd": await getBranchFromCBS(basicR.CREATED_BRANCH_ID),
+                "accopened_atbrn": await getBranchFromCBS(basicR.CREATED_BRANCH_ID)
             },
-            "m_kcd_iddocimage": await getDocument('Applicant ID Proof', documentR), //need to be added, discuss with omkar sir. need to be mendetory
-            "m_kcd_adddocimage": await getDocument('Applicant Address Proof', documentR),//need to be added, discuss with omkar sir. need to be mendetory
-            "m_kcd_photo": await getDocument('Applicant Photo', documentR) //from doc master
-
-            // note : need to discuss with list about how are they going to handle existing customer.
-
-            // note : we should mail field need to be discussed and wait for their answer rether then condunting meeting. 
-
+            "m_kcd_iddocimage": await getDocument('Applicant ID Proof', documentR), 
+            "m_kcd_adddocimage": await getDocument('Applicant Address Proof', documentR),
+            "m_kcd_photo": await getDocument('Applicant Photo', documentR)
 
         }
 
@@ -472,19 +464,19 @@ exports.onBoardCustomer = async (req, res) => {
         }
 
 
-        // let accountCreatedData = await axios.post(posturl, account_opening_data, { headers: { "Authorization": `Bearer ${bearerKey}` } })
+        let accountCreatedData = await axios.post(posturl, account_opening_data, { headers: { "Authorization": `Bearer ${bearerKey}` } })
 
 
-        // let basicInsertQ = `update basic_details set ACCOUNT_NUMBER =  "${accountCreatedData.data['Account number']}",CUSTOMER_ID_1 = "${accountCreatedData.data['Customer Code']}" where ID = ${applicant_id}`
+        let basicInsertQ = `update basic_details set ACCOUNT_NUMBER =  "${accountCreatedData.data['Account number']}",CUSTOMER_ID_1 = "${accountCreatedData.data['Customer Code']}" where ID = ${applicant_id}`
 
-        // let basicInsertR = await db.executeQueryAsyncAwait(basicInsertQ, '');
-        // console.log("Query : ", basicInsertQ, "result ", basicInsertR);
-        // console.log("created", accountCreatedData.data);
+        let basicInsertR = await db.executeQueryAsyncAwait(basicInsertQ, '');
+        console.log("Query : ", basicInsertQ, "result ", basicInsertR);
+        console.log("created", accountCreatedData.data);
         
         res.send({
             "code": 200,
             "data": account_opening_data,
-            // "success_data": accountCreatedData.data
+            "success_data": accountCreatedData.data
         })
     }
 

@@ -1,5 +1,5 @@
 exports.config = {
-    mode: "local",
+    mode: "production",
     production: {
         database_config: {
             user:'root',
