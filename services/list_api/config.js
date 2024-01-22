@@ -12,13 +12,14 @@ exports.config = {
             password: 'No.5670@'
         },
         api: {
-            host: "http://103.42.162.39",
-            port: "8085",
+            host: "http://172.100.30.89",
+            port: "8888",
             logs: true,
             routes: [
                 { name: 'jwtToken', url: '/CustomerInfo/api/auth/getJwt', operation: 'get' },
                 { name: 'masters', url: '/MasterLOV/customer/getMasterLOV/', operation: 'get' },
-                { name: 'getCustomer', url: '/CustomerInfo/customer/getCustomerInfo?', operation: 'get' }
+                { name: 'getCustomer', url: '/CustomerInfo/customer/getCustomerInfo?', operation: 'get' },
+                { name: 'onBoard', url: '/OnBoardCustomer/customer/onBoard', operation: 'post' }
             ]
         }
     },

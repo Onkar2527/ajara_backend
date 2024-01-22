@@ -50,16 +50,16 @@ function reqData(req) {
         DEPOSIT_IFSC_CODE: req.body.DEPOSIT_IFSC_CODE,
         DEPOSIT_ACCOUNT_NUMBER: req.body.DEPOSIT_ACCOUNT_NUMBER,
         TDS: req.body.TDS,
-        MATURITY_DATE : req.body.MATURITY_DATE,
+        MATURITY_DATE: req.body.MATURITY_DATE,
         MATURITY_AMOUNT: req.body.MATURITY_AMOUNT,
-        ACCOUNT_TYPE : req.body.ACCOUNT_TYPE,
-        ACCOUNT_OPERATION : req.body.ACCOUNT_OPERATION,
-        MOBILE_NUMBER_2 : req.body.MOBILE_NUMBER_2,
+        ACCOUNT_TYPE: req.body.ACCOUNT_TYPE,
+        ACCOUNT_OPERATION: req.body.ACCOUNT_OPERATION,
+        MOBILE_NUMBER_2: req.body.MOBILE_NUMBER_2,
 
         CHEQUE_BRANCH_NAME: req.body.CHEQUE_BRANCH_NAME,
-        CHEQUE_BANK_NAME : req.body.CHEQUE_BANK_NAME
+        CHEQUE_BANK_NAME: req.body.CHEQUE_BANK_NAME,
 
-
+        PAYMENT_INSTRUCTION: req.body.PAYMENT_INSTRUCTION
 
     }
 

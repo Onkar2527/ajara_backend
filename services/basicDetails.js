@@ -216,7 +216,8 @@ function getCommonApplicantInfo(req) {
         SELF_EMPLOYED: ' ',
         NATURE_OF_BUSINESS: ' ',
         SOURCE_OF_FUNDS: ' ',
-        NATIONALITY: 'A'
+        NATIONALITY: 'A',
+        FATHER_OR_SPOUSE:'F'
     }
 
     return data;

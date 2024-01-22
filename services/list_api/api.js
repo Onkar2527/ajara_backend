@@ -2,6 +2,7 @@ const mysql = require('mysql2/promise');
 const config = require('./config').config
 const axios = require('axios');
 const db = require('../../utilities/dbModule');
+const fs = require('fs/promises')
 
 let connection
 
@@ -103,7 +104,7 @@ async function generateToken() {
 
     let promise = new Promise(async (resolve, reject) => {
         try {
-            let token_result = await getRequest(tokenurl, { proxy: proxy });
+            let token_result = await getRequest(tokenurl);
 
             let token = token_result.token;
 
@@ -157,16 +158,14 @@ async function cacheMasters() {
 
     let [masters_data, masters_fields] = await connection.execute(getmasterQ);
 
-    // console.log("Masters Data", masters_data);
-
-
+    console.log("Masters Data", masters_data);
 
     for (let table of masters_data) {// console
         let checkQ = `SHOW TABLES LIKE '${table.NAME}'`;
 
         let [checkR, checkF] = await connection.execute(checkQ);
 
-        // console.log('table name : ', table.NAME, 'result : ', checkR);
+        console.log('table name : ', table.NAME, 'result : ', checkR);
 
         if (checkR.length > 0) {
             let dropQ = `DROP TABLE ${table.NAME}`
@@ -177,9 +176,9 @@ async function cacheMasters() {
         let masterUrl = `${config[mode].api.host}:${config[mode].api.port}${config[mode].api.routes[1].url}${table.ID}`
 
         let bearerKey = await getJWTToken();
-        let masterResult = await getRequest(masterUrl, { headers: { "Authorization": `Bearer ${bearerKey}` }, proxy: proxy });
+        let masterResult = await getRequest(masterUrl, { headers: { "Authorization": `Bearer ${bearerKey}` } });
 
-        // console.log("masterResult", masterResult);
+        console.log("masterResult", masterResult);
 
         for (let result of masterResult) {
             // let checkQ2 = `SHOW TABLES LIKE '${table.NAME}'`;
@@ -192,7 +191,7 @@ async function cacheMasters() {
 
                 let createTableR = await connection.execute(createTableQ);
 
-                // console.log("query", createTableQ, "result", createTableR);
+                console.log("query", createTableQ, "result", createTableR);
             }
 
             let insertQ = `INSERT INTO ${table.NAME} set ${returnInsertQ(result)}`
@@ -204,6 +203,7 @@ async function cacheMasters() {
     }
 
 }
+
 
 function returnUniqueKey(arr) {
     let res = ''
@@ -238,240 +238,456 @@ function returnInsertQ(obj) {
 
 exports.onBoardCustomer = async (req, res) => {
 
-    let applicant_id = req.body.APPLICANT_ID;
+    try {
+        let applicant_id = req.body.APPLICANT_ID;
 
-    if (!connection) {
-        await connect();
+        if (!connection) {
+            await connect();
+        }
+
+        let basicT = `basic_details`
+        let personalT = `applicants_personal_details`
+        let depositT = `term_deposite`
+        let documentT = `applicant_documents`
+
+        let basicQ = `select * from ${basicT} where ID = ${applicant_id};`;
+        let personalQ = `select * from ${personalT} where APPLICANT_ID = ${applicant_id} AND APPLICANT_NO = 1;`;
+        let depositQ = `select * from ${depositT} where APPLICANT_ID = ${applicant_id};`;
+        let documentQ = `select * from ${documentT} where APPLICANT_ID = ${applicant_id} AND APPLICANT_NO = 1;`;
+
+        let [basicR, basicF] = await db.executeQueryAsyncAwait(basicQ, '');
+        let [personalR, personalF] = await db.executeQueryAsyncAwait(personalQ, '');
+        let [depositR, depositF] = await db.executeQueryAsyncAwait(depositQ, '');
+        let documentR = await db.executeQueryAsyncAwait(documentQ, '');
+
+        console.log("basicR", basicR);
+        console.log("personalR", personalR);
+        console.log("depositR", depositR);
+        console.log("documentR", documentR);
+
+        // let username = await await getUserNameByID(14);
+
+        // res.send({
+        //     "code": 200,
+        //     "data": username
+        // })
+
+        let account_opening_data = {
+            "custobj": {
+                "introbranch": await getBranchFromCBS(basicR.CREATED_BRANCH_ID), //master need to be created,need to be discuss with list they have not added this master.
+
+                "typeofcustomer": 1, //master and field need to be added.
+
+                "middlename": personalR.MIDDLE_NAME,
+                "firstname": personalR.FIRST_NAME,
+                "lastname": personalR.LAST_NAME,
+
+                "createdfor": "S", //need to be discuss with list
+
+                "minor": personalR.IS_MINOR ? "Y" : "N",
+
+                "birthdate": convertDate(personalR.DATE_OF_BIRTH),
+
+                "gender": personalR.GENDER, //need to be discuss with list about values for genders.
+
+                "occupationid": Number(personalR.PROFESSION), //master need to be created
+
+                "idtproofid": Number(personalR.ID_PROOF), //need to disscuss with omkar sir   (this is master).
+                "idtproofidno": personalR.ID_PROOF_NUMBER, //need to disscuss with omkar sir
+                "proofdetailsid": Number(personalR.PERMANENT_ADDRESS_PROOF), //need to disscuss with omkar sir   (this is master).
+                "addproofidno": personalR.PERMANENT_ADDRESS_PROOF_NUMBER, //need to disscuss with omkar sir
+
+                "riskcat": Number(personalR.RISK_CATEGORY), //master need to be created
+
+                "panno": personalR.PAN_NO,//"GTFDT8976M", //need to discuss with omkar sir about making this field mendetory
+
+                "fatherspouse": personalR.FATHER_OR_SPOUSE, //field need to be added
+
+                "bankcode": 1,
+
+                "brncode": await getBranchFromCBS(basicR.CREATED_BRANCH_ID), //master need to be created
+
+                "entrystatus": "F",  //need to be discuss with list
+
+                "entryuser": await getUserNameByID(basicR.MAKER_USER_ID), //master need to be created
+                "verifiedby": await getUserNameByID(basicR.CHACKER_USER_ID), //master need to be created
+                "authuser": await getUserNameByID(basicR.VERIFIER_USER_ID) //master need to be created
+            },
+            "addobj_P": {
+                "addresstype": "P",
+
+
+                "countryid": 356,//constant
+                "stateid": await getStateCode(personalR.PERMANENT_STATE),
+                "districtid": await getDistCode(personalR.PERMANENT_DISTRICT),//master need to be created
+                "talukaid": await getTalukaCode(personalR.PERMANENT_TALUKA),//master need to be created
+                "cityid": await getCityCode(personalR.PERMANENT_CITY),//master need to be created
+                "areaid": await getAreaCode(personalR.PERMANENT_AREA),//master need to be created 
+
+                "mobile": personalR.MOBILE_NUMBER,
+                "pincode": personalR.PERMANENT_PINCODE,
+
+                // "sequenceno": 1,//need to discuss with list
+
+                "bankcode": 1,
+
+                "brncode": await getBranchFromCBS(basicR.CREATED_BRANCH_ID),//master need to be created
+                "entrystatus": "F",
+
+                "entryuser": await getUserNameByID(basicR.MAKER_USER_ID),//master need to be created
+                "verifiedby": await getUserNameByID(basicR.CHACKER_USER_ID),//master need to be created
+                "authuser": await getUserNameByID(basicR.VERIFIER_USER_ID)//master need to be created
+            },
+            "addobj_C": {
+                "addresstype": "C",
+
+
+
+                "countryid": 356,//constant
+
+                "stateid": await getStateCode(personalR.CURRENT_STATE),
+                "districtid": await getDistCode(personalR.CURRENT_DISTRICT),//master need to be created
+                "talukaid": await getTalukaCode(personalR.CURRENT_TALUKA),//master need to be created
+                "cityid": await getCityCode(personalR.CURRENT_CITY),//master need to be created
+                "areaid": await getAreaCode(personalR.CURRENT_AREA),//master need to be created 
+
+                "mobile": personalR.MOBILE_NUMBER,
+                "pincode": personalR.CURRENT_PINCODE,
+
+                // "sequenceno": 1,//need to discuss with list
+
+                "bankcode": 1,
+
+                "brncode": await getBranchFromCBS(basicR.CREATED_BRANCH_ID),//master need to be created
+
+                "entryuser": await getUserNameByID(basicR.MAKER_USER_ID),//master need to be created
+                "verifiedby": await getUserNameByID(basicR.CHACKER_USER_ID),//master need to be created
+                "authuser": await getUserNameByID(basicR.VERIFIER_USER_ID)//master need to be created
+            },
+            "kyccomobj": {
+                "kcc_status": "F",
+
+                "entryuser": await getUserNameByID(basicR.MAKER_USER_ID),//master need to be created
+                "verifiedby": await getUserNameByID(basicR.CHACKER_USER_ID),//master need to be created
+
+                "bankcode": 1,
+                "brncode": await getBranchFromCBS(basicR.CREATED_BRANCH_ID)//master need to be created
+            },
+            "kyccompdtlrobj": {
+
+                // "kcd_srno": 1,//need to discuss with list
+
+
+                "kcd_addproff": Number(personalR.PERMANENT_ADDRESS_PROOF),  //need to discuss with omkar sir
+                "kcd_addidno": personalR.PERMANENT_ADDRESS_PROOF_NUMBER, //need to discuss with omkar sir
+                "kcd_idproof": Number(personalR.ID_PROOF), //need to discuss with omkar sir
+                "kcd_ididno": personalR.ID_PROOF_NUMBER, //need to discuss with omkar sir
+
+                "bankcode": 1,
+                "brncode": await getBranchFromCBS(basicR.CREATED_BRANCH_ID)
+            },
+            "acmst_obj": {
+                // "interestrate": 5, //need to ask to list
+
+                "schemecode": 510, // fixed value for now
+
+                "acctitle": personalR.FIRST_NAME, //need to be discuss with list
+
+                "jointacc": "N", //default "N" for now
+
+                "constitution": Number(personalR.CONSTITUTION), //master need to be created and field need to be added
+
+                "operinstructions": Number(depositR.ACCOUNT_OPERATION), //need to discuss with omkar sir
+
+                "paymentinstructions": Number(depositR.PAYMENT_INSTRUCTION), //need to discuss with omkar sir
+
+                "entrystatus": "F",
+
+                "entryuser": await getUserNameByID(basicR.MAKER_USER_ID),
+                "verifiedby": await getUserNameByID(basicR.CHACKER_USER_ID),
+                "authuser": await getUserNameByID(basicR.VERIFIER_USER_ID),
+
+                // "changeno": 1,//need to discuss with list
+
+                "bankcode": 1,
+
+                "brncode": await getBranchFromCBS(basicR.CREATED_BRANCH_ID),
+
+                "acctobeopn_atbrncd": await getBranchFromCBS(basicR.CREATED_BRANCH_ID),
+                "accopened_atbrn": await getBranchFromCBS(basicR.CREATED_BRANCH_ID),
+
+                "accopendt": generateNewDate(),
+
+                "opnormdf": "A"//need to discuss with list
+            },
+            "accdtl_obj": {
+                "schemecode": 510, //master need to be added, fixed value for now.
+
+                // "serialno": 1,//need to discuss with list
+                "changeno": 1,//need to discuss with list
+                "bankcode": 1,
+
+                "brncode": await getBranchFromCBS(basicR.CREATED_BRANCH_ID),
+                "acctobeopn_atbrncd": await getBranchFromCBS(basicR.CREATED_BRANCH_ID),
+                "accopened_atbrn": await getBranchFromCBS(basicR.CREATED_BRANCH_ID)
+            },
+            "docdtl_obj": {
+                "schemecode": 510, //master need to be added
+
+                "docid": 1, // need to give fixed value for PAN from doc master
+
+                "changeno": 1,//need to discuss with list
+
+                "bankcode": 1,
+
+                "brncode": await getBranchFromCBS(basicR.CREATED_BRANCH_ID),//master need to be created
+                "acctobeopn_atbrncd": await getBranchFromCBS(basicR.CREATED_BRANCH_ID),//master need to be created
+                "accopened_atbrn": await getBranchFromCBS(basicR.CREATED_BRANCH_ID)//master need to be created
+            },
+            "m_kcd_iddocimage": await getDocument('Applicant ID Proof', documentR), //need to be added, discuss with omkar sir. need to be mendetory
+            "m_kcd_adddocimage": await getDocument('Applicant Address Proof', documentR),//need to be added, discuss with omkar sir. need to be mendetory
+            "m_kcd_photo": await getDocument('Applicant Photo', documentR) //from doc master
+
+            // note : need to discuss with list about how are they going to handle existing customer.
+
+            // note : we should mail field need to be discussed and wait for their answer rether then condunting meeting. 
+
+
+        }
+
+        let posturl = `${config[mode].api.host}:${config[mode].api.port}${config[mode].api.routes[3].url}`
+
+        let bearerKey = await getJWTToken();
+
+        if (basicR.IS_OLD_CUSTOMER_1) {
+            account_opening_data.custobj.customerid = basicR.CUSTOMER_ID_1;
+        }
+
+
+        let accountCreatedData = await axios.post(posturl, account_opening_data, { headers: { "Authorization": `Bearer ${bearerKey}` } })
+
+
+        let basicInsertQ = `update basic_details set ACCOUNT_NUMBER =  ${accountCreatedData.data['Account number']},CUSTOMER_ID_1 = ${accountCreatedData.data['Customer Code']} where ID = ${applicant_id}`
+
+        let basicInsertR = await db.executeQueryAsyncAwait(basicInsertQ, '');
+        console.log("Query : ", basicInsertQ, "result ", basicInsertR);
+        console.log("created", accountCreatedData.data)
+        res.send({
+            "code": 200,
+            "data": account_opening_data,
+            "success_data": accountCreatedData.data
+        })
     }
 
-    let basicT = `basic_details`
-    let personalT = `applicants_personal_details`
-    let depositT = `term_deposite`
-    let documentT = `applicant_documents`
-
-    let basicQ = `select * from ${basicT} where ID = ${applicant_id};`;
-    let personalQ = `select * from ${personalT} where APPLICANT_ID = ${applicant_id} AND APPLICANT_NO = 1;`;
-    let depositQ = `select * from ${depositT} where APPLICANT_ID = ${applicant_id};`;
-    let documentQ = `select * from ${documentT} where APPLICANT_ID = ${applicant_id} AND APPLICANT_NO = 1;`;
-
-    let [basicR, basicF] = await db.executeQueryAsyncAwait(basicQ, '');
-    let [personalR, personalF] = await db.executeQueryAsyncAwait(personalQ, '');
-    let [depositR, depositF] = await db.executeQueryAsyncAwait(depositQ, '');
-    let [documentR, documentF] = await db.executeQueryAsyncAwait(documentQ, '');
-
-    console.log("basicR", basicR);
-    console.log("personalR", personalR);
-    console.log("depositR", depositR);
-    console.log("documentR", documentR);
-
-    let username = await getUserNameByID(14);
-
-    res.send({
-        "code": 200,
-        "data": username
-    })
-
-    let account_opening_data = {
-        "custobj": {
-            "introbranch": basicR.CREATED_BRANCH_ID, //master need to be created,need to be discuss with list they have not added this master.
-
-            "typeofcustomer": 1, //master and field need to be added.
-
-            "middlename": personalR.LAST_NAME,
-            "firstname": personalR.MIDDLE_NAME,
-            "lastname": personalR.FIRST_NAME,
-
-            "createdfor": "S", //need to be discuss with list
-
-            "minor": personalR.IS_MINOR ? "Y" : "N",
-
-            "birthdate": convertDate(personalR.DATE_OF_BIRTH),
-
-            "gender": personalR.GENDER, //need to be discuss with list about values for genders.
-
-            "occupationid": personalR.PROFESSION, //master need to be created
-
-            "idtproofid": 1, //need to disscuss with omkar sir   (this is master).
-            "idtproofidno": "1234", //need to disscuss with omkar sir
-            "proofdetailsid": 2, //need to disscuss with omkar sir   (this is master).
-            "addproofidno": "4321", //need to disscuss with omkar sir
-
-            "riskcat": personalR.RISK_CATEGORY, //master need to be created
-
-            "panno": personalR.PAN_NO, //need to discuss with omkar sir about making this field mendetory
-
-            "fatherspouse": "F", //field need to be added
-
-            "bankcode": 1,
-
-            "brncode": basicR.CREATED_BRANCH_ID, //master need to be created
-
-            "entrystatus": "F",  //need to be discuss with list
-
-            "entryuser": getUserNameByID(basicR.MAKER_USER_ID), //master need to be created
-            "verifiedby": getUserNameByID(basicR.CHACKER_USER_ID), //master need to be created
-            "authuser": getUserNameByID(basicR.VERIFIER_USER_ID) //master need to be created
-        },
-        "addobj_P": {
-            "addresstype": "P",
-
-            "regionid": 1, //master need to be created, not mendetory
-            "countryid": 356,//constant
-            "stateid": 21,//master need to be created
-            "districtid": 16,//master need to be created
-            "talukaid": 1,//master need to be created
-            "cityid": 1,//master need to be created
-            "areaid": 1,//master need to be created 
-
-            "mobile": personalR.MOBILE_NUMBER,
-            "pincode": personalR.PERMANENT_PINCODE,
-
-            // "sequenceno": 1,//need to discuss with list
-
-            "bankcode": 1,
-
-            "brncode": basicR.CREATED_BRANCH_ID,//master need to be created
-            "entrystatus": "F",
-
-            "entryuser": getUserNameByID(basicR.MAKER_USER_ID),//master need to be created
-            "verifiedby": getUserNameByID(basicR.CHACKER_USER_ID),//master need to be created
-            "authuser": getUserNameByID(basicR.VERIFIER_USER_ID)//master need to be created
-        },
-        "addobj_C": {
-            "addresstype": "C",
-
-            "regionid": 1,//master need to be created, not mendetory
-
-            "countryid": 356,//constant
-
-            "stateid": 21,//master need to be created
-            "districtid": 16,//master need to be created
-            "talukaid": 1,//master need to be created
-            "cityid": 1,//master need to be created
-
-            "areaid": 1,//master need to be created
-
-            "mobile": personalR.MOBILE_NUMBER,
-            "pincode": personalR.CURRENT_PINCODE,
-
-            // "sequenceno": 1,//need to discuss with list
-
-            "bankcode": 1,
-
-            "brncode": basicR.CREATED_BRANCH_ID,//master need to be created
-
-            "entryuser": getUserNameByID(basicR.MAKER_USER_ID),//master need to be created
-            "verifiedby": getUserNameByID(basicR.CHACKER_USER_ID),//master need to be created
-            "authuser": getUserNameByID(basicR.VERIFIER_USER_ID)//master need to be created
-        },
-        "kyccomobj": {
-            "kcc_status": "F",
-
-            "entryuser": getUserNameByID(basicR.MAKER_USER_ID),//master need to be created
-            "verifiedby": getUserNameByID(basicR.CHACKER_USER_ID),//master need to be created
-
-            "bankcode": 1,
-            "brncode": basicR.CREATED_BRANCH_ID//master need to be created
-        },
-        "kyccompdtlrobj": {
-
-            // "kcd_srno": 1,//need to discuss with list
-
-
-            "kcd_addproff": 1,  //need to discuss with omkar sir
-            "kcd_addidno": 1, //need to discuss with omkar sir
-            "kcd_idproof": 1, //need to discuss with omkar sir
-            "kcd_ididno": 1, //need to discuss with omkar sir
-
-            "bankcode": 1,
-            "brncode": basicR.CREATED_BRANCH_ID
-        },
-        "acmst_obj": {
-            // "interestrate": 5, //need to ask to list
-
-            "schemecode": depositR.ACCOUNT_TYPE,
-
-            "acctitle": personalR.FIRST_NAME, //need to be discuss with list
-
-            "jointacc": "N", //default "N" for now
-
-            "constitution": 1, //master need to be created and field need to be added
-
-            "operinstructions": 1, //need to discuss with omkar sir
-
-            "paymentinstructions": 1, //need to discuss with omkar sir
-
-            "entrystatus": "F",
-
-            "entryuser": getUserNameByID(basicR.MAKER_USER_ID),
-            "verifiedby": getUserNameByID(basicR.CHACKER_USER_ID),
-            "authuser": getUserNameByID(basicR.VERIFIER_USER_ID),
-
-            // "changeno": 1,//need to discuss with list
-
-            "bankcode": 1,
-
-            "brncode": basicR.CREATED_BRANCH_ID,
-
-            "acctobeopn_atbrncd": basicR.CREATED_BRANCH_ID,
-            "accopened_atbrn": basicR.CREATED_BRANCH_ID,
-
-            "accopendt": generateNewDate(),
-
-            "opnormdf": "A"//need to discuss with list
-        },
-        "accdtl_obj": {
-            "schemecode": depositR.ACCOUNT_TYPE, //master need to be added
-
-            // "serialno": 1,//need to discuss with list
-            "changeno": 1,//need to discuss with list
-            "bankcode": 1,
-
-            "brncode": basicR.CREATED_BRANCH_ID,
-            "acctobeopn_atbrncd": basicR.CREATED_BRANCH_ID,
-            "accopened_atbrn": basicR.CREATED_BRANCH_ID
-        },
-        "docdtl_obj": {
-            "schemecode": depositR.ACCOUNT_TYPE, //master need to be added
-
-            "docid": 1, //need to discuss with list
-
-            "changeno": 1,//need to discuss with list
-
-            "bankcode": 1,
-
-            "brncode": basicR.CREATED_BRANCH_ID,//master need to be created
-            "acctobeopn_atbrncd": basicR.CREATED_BRANCH_ID,//master need to be created
-            "accopened_atbrn": basicR.CREATED_BRANCH_ID//master need to be created
-        },
-        "m_kcd_iddocimage": "", //need to be added, discuss with omkar sir. need to be mendetory
-        "m_kcd_adddocimage": "",//need to be added, discuss with omkar sir. need to be mendetory
-        "m_kcd_photo": "" //from doc master
-
-        // note : need to discuss with list about how are they going to handle existing customer.
-
-        // note : we should mail field need to be discussed and wait for their answer rether then condunting meeting. 
+    catch (error) {
+        console.log(error)
+        res.send({
+            "code": 400,
+            "message": "Failed",
+            "error": error
+        })
     }
+
+
+}
+
+async function getDocument(NAME, arr) {
+    let filelink = ''
+    for (let doc of arr) {
+        if (doc.DOCUMENT_NAME == NAME) {
+            filelink = doc.FILE_LINK;
+            break;
+        }
+    }
+
+    if (filelink != '') {
+        let pathD = filelink;
+
+        let res = await fs.readFile(pathD, { encoding: 'utf-8' });
+
+        res = res.replace("data:image/jpeg;base64,", '');
+        return res;
+    }
+
+    else return '';
 }
 
 
 function convertDate(date, srcFormate = 'dd/mm/yyyy') {
+    let dateArr = date.split("/");
 
+    // let converted_date = new Date(dateArr[2], dateArr[1], dateArr[0], 0, 0, 0)
+
+    let converted_date = `${dateArr[0]}-${dateArr[1]}-${dateArr[2]} 00:00:00`
+
+    console.log("Date :", converted_date);
+
+    return converted_date;
 }
 
 function generateNewDate() {
+    let day = new Date().getDate();
+    let month = new Date().getMonth() + 1;
+    let year = new Date().getFullYear();
+
+    let hour = new Date().getHours();
+    let minute = new Date().getMinutes();
+    let second = new Date().getSeconds();
+
+    let date = `${day}-${month}-${year} ${hour}:${minute}:${second}`
+
+    return date;
+}
+// convertDate('10/05/2002');
+
+async function getStateCode(id) {
+    try {
+        if (!connection) {
+            connect()
+        }
+
+
+        let stateQ = `select STATEID from state_master where ID=${id}`;
+
+        let [stateR, stateF] = await connection.execute(stateQ, '');
+
+        console.log("stateR", stateR);
+
+        if (stateR.length > 0) {
+            return stateR[0].STATEID ? Number(stateR[0].STATEID) : 1;
+        }
+        else {
+            return 1;
+        }
+    }
+    catch (error) {
+        console.log(error);
+        return 1;
+
+    }
+}
+
+async function getDistCode(id) {
+    try {
+        if (!connection) {
+            connect()
+        }
+
+        let distQ = `select DISTRICTID from district_master where ID=${id}`;
+
+        let [distR, distF] = await connection.execute(distQ, '');
+
+        console.log("distR", distR);
+
+        if (distR.length > 0) {
+            return distR[0].DISTRICTID ? Number(distR[0].DISTRICTID) : 1;
+        }
+        else {
+            return 1;
+        }
+    }
+    catch (error) {
+        return 1;
+    }
+}
+
+async function getTalukaCode(id) {
+    try {
+        if (!connection) {
+            connect()
+        }
+
+        let talukaQ = `select TALUKAID from taluka_master where ID=${id}`;
+
+        let [talukaR, talukaF] = await connection.execute(talukaQ, '');
+
+        console.log("talukaR", talukaR);
+
+        if (talukaR.length > 0) {
+            return talukaR[0].TALUKAID ? Number(talukaR[0].TALUKAID) : 1;
+        }
+        else {
+            return 1;
+        }
+    }
+    catch (error) {
+        return 1;
+    }
+}
+
+async function getCityCode(id) {
+    try {
+        if (!connection) {
+            connect()
+        }
+
+        let cityQ = `select CITYID from city_master where ID=${id}`;
+
+        let [cityR, cityF] = await connection.execute(cityQ, '');
+
+        console.log("cityR", cityR);
+
+        if (cityR.length > 0) {
+            return cityR[0].CITYID ? Number(cityR[0].CITYID) : 1;
+        }
+        else {
+            return 1;
+        }
+    }
+    catch (error) {
+        return 1;
+    }
+}
+
+async function getAreaCode(id) {
+    try {
+        if (!connection) {
+            connect()
+        }
+
+        let areaQ = `select AREAID from address_master where ID=${id}`;
+
+        let [areaR, areaF] = await connection.execute(areaQ, '');
+
+        console.log("areaR", areaR);
+
+        if (areaR.length > 0) {
+            return areaR[0].AREAID ? Number(areaR[0].AREAID) : 1;
+        }
+        else {
+            return 1;
+        }
+    }
+    catch (error) {
+        return 1;
+    }
+}
+
+async function getBranchFromCBS(branchID) {
+    let branchQ = `select BRANCH_CODE from branch_master where ID  = ${branchID}`;
+
+    let [branchR, branchF] = await db.executeQueryAsyncAwait(branchQ, '');
+
+    console.log("branchR", branchR);
+
+    if (branchR) {
+        return branchR.BRANCH_CODE ? Number(branchR.BRANCH_CODE) : 1;
+    }
+    else {
+        return 1;
+    }
 
 }
 
 async function getUserNameByID(id) {
-    let getUserQ = `select NAME from user_master where ID = ${id}`;
+    let getUserQ = `select USER_NAME from user_master where ID = ${id}`;
 
     let [userR, userF] = await db.executeQueryAsyncAwait(getUserQ, '');
 
     console.log("userR", userR);
 
     if (userR) {
-        return userR.NAME ? userR.NAME : '-';
+        return userR.USER_NAME ? userR.USER_NAME : '-';
     }
     else {
         return '-';
@@ -489,10 +705,7 @@ exports.getMasters = async (req, res) => {
 
         let masterCode = req.body.code;
 
-        let result = []
-
         let masterQ = `select NAME from masters_list where ID = ${masterCode}`
-
 
         let [masterR, masterF] = await connection.execute(masterQ, '');
 
@@ -500,13 +713,13 @@ exports.getMasters = async (req, res) => {
 
         let table_name = ``
 
-        if (masterR) {
-            if (masterR.NAME) {
-                table_name = masterR.NAME;
+        if (masterR.length > 0) {
+            if (masterR[0].NAME) {
+                table_name = masterR[0].NAME;
 
                 let getMasterQ = `select * from ${table_name}`
 
-                result = await connection.query(getMasterQ);
+                let [result, resultF] = await connection.query(getMasterQ);
 
                 res.send({
                     "code": 200,
@@ -543,3 +756,187 @@ exports.getMasters = async (req, res) => {
 
 
 }
+
+
+exports.getCustomer = async (req, res) => {
+    try {
+        let customerID = req.body.CUSTOMER_ID;
+
+        let getCustomer = `${config[mode].api.host}:${config[mode].api.port}${config[mode].api.routes[2].url}customerCode=${customerID}`
+
+        let bearerKey = await getJWTToken();
+        let customerData = await getRequest(getCustomer, { headers: { "Authorization": `Bearer ${bearerKey}` } });
+
+        console.log("customerData", customerData);
+
+
+        let res_body = {
+            // CUSTOMER_ID: '',
+            FIRST_NAME: customerData['Customer Details'].FIRSTNAME,
+            MIDDLE_NAME: customerData['Customer Details'].MIDDLENAME,
+            LAST_NAME: customerData['Customer Details'].LASTNAME,
+            // RISKCAT: '',
+            MOBILE: customerData['Customer Details'].REG_MOBILENO,
+            // OCCUPATION: '',
+            // ID_PROOF: '',
+            // ID_PROOF_NUMBER: '',
+            // ADDRESS_PROOF: '',
+            // ADDRESS_PROOF_NUMBER: '',
+            PAN: customerData['Customer Details'].PANNO,
+            // TITLE: customerData['Customer Details'].TITLE,
+            BIRTHDATE: customerData['Customer Details'].BIRTHDATE,
+            GENDER: customerData['Customer Details'].GENDER,
+
+            ALREADY_EXIST: customerData['Having individual account:']
+
+            // STATE: '',
+            // DISTRICT: '',
+            // TALUKA: '',
+            // CITY: '',
+            // AREA: '',
+            // PINCODE: ''
+        }
+
+        if (customerData) {
+            res.send({
+                "code": 200,
+                "message": "fetched",
+                "original_data": customerData,
+                "data": res_body
+            })
+        }
+        else {
+            res.send({
+                "code": 404,
+                "message": "no customer"
+            })
+        }
+
+
+        // {
+        //     "Customer Details": {
+        //         "CHANGEDATE": "31-01-2024 00:00:00",
+        //         "CUSTUIN": "111111111111",
+        //         "RISKCAT": "1",
+        //         "ENTRYUSER": "LIST",
+        //         "FIRSTNAME": "P",
+        //         "ENTRYDATE": "31-01-2024 00:00:00",
+        //         "FATHERLNM": "KULKARNI",
+        //         "MIDDLENAME": "A",
+        //         "REC_ID": "634136",
+        //         "REG_MOBILENO": "9764074605",
+        //         "INTROBRANCH": "101",
+        //         "FATHERFNM": "A",
+        //         "LASTNAME": "KULKARNI",
+        //         "IDTPROOFIDNO": "BHAPG1234Q",
+        //         "GOVAUTH_SCRNG": "Y",
+        //         "SHORTNAME": "KULK_PA",
+        //         "PROOFDETAILSID": "1",
+        //         "CUSTCDOLDSTYL": "KPA0000005",
+        //         "TDSAPPLICABLE": "Y",
+        //         "ENTRYSTATUS": "F",
+        //         "MINOR": "N",
+        //         "BIRTHDATE": "16-10-1991 00:00:00",
+        //         "TYPEOFCUSTOMER": "1",
+        //         "FATHERMNM": "G",
+        //         "CREATEDDATE": "31-01-2024 01:24:30",
+        //         "CUSTOMERID": "0000103962",
+        //         "OCCUPATIONID": "1",
+        //         "SCN_NO": "1103396",
+        //         "MARITALSTATUS": "M",
+        //         "BRNCODE": "101",
+        //         "MOTHERFNAME": "A",
+        //         "GENDER": "F",
+        //         "IDTPROOFID": "1",
+        //         "KYCSRNO": "7228",
+        //         "AUTHDATE": "31-01-2024 01:24:30",
+        //         "PEP_CUST": "Y",
+        //         "AUTHUSER": "LIST",
+        //         "TEMPCUSTID": "85295",
+        //         "INTRODUCTIONMODE": "1",
+        //         "ADDPROOFIDNO": "1111",
+        //         "FATHERSPOUSE": "S",
+        //         "INTRODATE": "31-01-2024 00:00:00",
+        //         "CREATEDFOR": "A",
+        //         "MOTHERMNAME": "A",
+        //         "INTROVERIFIEDBY": "LIST",
+        //         "BANKCODE": "1",
+        //         "FREEZCUST": "N",
+        //         "CHANGENO": "1",
+        //         "STAFF": "N",
+        //         "PANNO": "BHAPG1234Q",
+        //         "TITLE": "MRS",
+        //         "MOTHERLNAME": "KULKARNI"
+        //     },
+        //     "Address Details": [
+        //         {
+        //             "ENTRYSTATUS": "F",
+        //             "CHANGEDATE": "31-01-2024 00:00:00",
+        //             "ADDRESSTYPE": "P",
+        //             "CITYSERVEYNO": "11",
+        //             "CITYID": "1",
+        //             "VERIFIEDDATE": "31-01-2024 00:00:00",
+        //             "ENTRYUSER": "LIST",
+        //             "ENTRYDATE": "31-01-2024 00:00:00",
+        //             "DISTRICTID": "1",
+        //             "PINCODE": "416416",
+        //             "FLOORNO": "1",
+        //             "REGIONID": "1",
+        //             "CUSTOMERID": "0000103962",
+        //             "REC_ID": "761639",
+        //             "SCN_NO": "1785820",
+        //             "BRNCODE": "101",
+        //             "SEQUENCENO": "1",
+        //             "AUTHDATE": "31-01-2024 01:24:29",
+        //             "AUTHUSER": "LIST",
+        //             "CREATEDBRANCH": "0",
+        //             "VERIFIEDBY": "LIST",
+        //             "TEMPCUSTID": "85295",
+        //             "COUNTRYID": "1",
+        //             "AREAID": "1",
+        //             "FLATPLOTNO": "1",
+        //             "LANDMARK": "aa",
+        //             "BANKCODE": "1",
+        //             "CHANGENO": "1",
+        //             "ADDRESSLINE1": "aa",
+        //             "STREETNAME": "aa",
+        //             "STATEID": "17",
+        //             "APARTMENTBUILDING": "aa",
+        //             "TALUKAID": "1"
+        //         }
+        //     ],
+        //     "Having individual account:": "Y",
+        //     "KYC Details": {
+        //         "KCC_AUTHDT": "31-01-2024 00:00:00",
+        //         "KCD_IDPROOF": "1",
+        //         "KCC_SRNO": "7228",
+        //         "KCC_BRNSRNO": "6960",
+        //         "KCD_ADDPROFF": "1",
+        //         "KCC_DATE": "31-01-2024 00:00:00",
+        //         "KCC_STATUS": "A",
+        //         "KCC_ENTRYBY": "LIST",
+        //         "KCC_NEXTVALIDATIONDT": "31-01-2034 00:00:00",
+        //         "KCC_ENTRYDT": "31-01-2024 00:00:00",
+        //         "KCC_CONFBY": "LIST",
+        //         "KCD_IDIDNO": "BHAPG1234Q",
+        //         "KCC_CONFDT": "2024-01-31 00:00:00",
+        //         "KCC_CUSTID": "0000103962",
+        //         "KCD_SRNO": "7228",
+        //         "KYC_TYPE": "N",
+        //         "KCC_AUTHBY": "LIST",
+        //         "KCC_ENTINBRANCH": "101",
+        //         "KCD_ADDIDNO": "1111"
+        //     }
+        // }
+    }
+    catch (error) {
+        console.log(error);
+        res.send({
+            "code": 400,
+            "error": error
+        })
+    }
+
+}
+
+// getCustomer({body:{CUSTOMER_ID:"0000103963"}})
