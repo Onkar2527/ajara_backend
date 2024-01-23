@@ -1,2 +1,4 @@
 Added column called cbs user name in user_master for onboarding. [Company Desktop] [bank server].
 Added data to above added column. [Company Desktop] [bank server].
+
+Added column SCHEME_CODE in term deposit table. [Company Desktop].

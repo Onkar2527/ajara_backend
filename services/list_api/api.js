@@ -215,7 +215,7 @@ async function cacheMasters() {
 
 }
 
-cacheMasters();
+// cacheMasters();
 
 
 function returnUniqueKey(arr) {
