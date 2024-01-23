@@ -290,7 +290,7 @@ exports.onBoardCustomer = async (req, res) => {
                 "firstname": personalR.FIRST_NAME,
                 "lastname": personalR.LAST_NAME,
 
-                "createdfor": "S",
+                "createdfor": "A",
 
                 "minor": personalR.IS_MINOR ? "Y" : "N",
 
@@ -324,7 +324,7 @@ exports.onBoardCustomer = async (req, res) => {
                 "addresstype": "P",
 
 
-                "countryid": 356,//constant
+                "countryid": 1,//constant
                 "stateid": await getStateCode(personalR.PERMANENT_STATE),
                 "districtid": await getDistCode(personalR.PERMANENT_DISTRICT),
                 "talukaid": await getTalukaCode(personalR.PERMANENT_TALUKA),
@@ -421,7 +421,7 @@ exports.onBoardCustomer = async (req, res) => {
                 "acctobeopn_atbrncd": await getBranchFromCBS(basicR.CREATED_BRANCH_ID),
                 "accopened_atbrn": await getBranchFromCBS(basicR.CREATED_BRANCH_ID),
 
-                "accopendt": generateNewDate(),
+                "accopendt": "04-01-2024 12:09:09",
 
                 "opnormdf": "A"
             },
@@ -681,14 +681,14 @@ async function getBranchFromCBS(branchID) {
 }
 
 async function getUserNameByID(id) {
-    let getUserQ = `select USER_NAME from user_master where ID = ${id}`;
+    let getUserQ = `select CBS_USER_NAME from user_master where ID = ${id}`;
 
     let [userR, userF] = await db.executeQueryAsyncAwait(getUserQ, '');
 
     console.log("userR", userR);
 
     if (userR) {
-        return userR.USER_NAME ? userR.USER_NAME : '-';
+        return userR.CBS_USER_NAME ? userR.CBS_USER_NAME : '-';
     }
     else {
         return '-';
