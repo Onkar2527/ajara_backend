@@ -59,7 +59,8 @@ function reqData(req) {
         CHEQUE_BRANCH_NAME: req.body.CHEQUE_BRANCH_NAME,
         CHEQUE_BANK_NAME: req.body.CHEQUE_BANK_NAME,
 
-        PAYMENT_INSTRUCTION: req.body.PAYMENT_INSTRUCTION
+        PAYMENT_INSTRUCTION: req.body.PAYMENT_INSTRUCTION,
+        SCHEME_CODE:req.body.SCHEME_CODE
 
     }
 
