@@ -104,7 +104,12 @@ async function generateToken() {
 
     let promise = new Promise(async (resolve, reject) => {
         try {
-            let token_result = await getRequest(tokenurl);
+
+            let configuration = {}
+            if (config[mode].api.isproxy) {
+                configuration.proxy = proxy;
+            }
+            let token_result = await getRequest(tokenurl, configuration);
 
             let token = token_result.token;
 
@@ -176,7 +181,13 @@ async function cacheMasters() {
         let masterUrl = `${config[mode].api.host}:${config[mode].api.port}${config[mode].api.routes[1].url}${table.ID}`
 
         let bearerKey = await getJWTToken();
-        let masterResult = await getRequest(masterUrl, { headers: { "Authorization": `Bearer ${bearerKey}` } });
+        let configuration = {
+            headers: { "Authorization": `Bearer ${bearerKey}` }
+        }
+        if (config[mode].api.isproxy) {
+            configuration.proxy = proxy;
+        }
+        let masterResult = await getRequest(masterUrl, configuration);
 
         console.log("masterResult", masterResult);
 
@@ -203,6 +214,8 @@ async function cacheMasters() {
     }
 
 }
+
+cacheMasters();
 
 
 function returnUniqueKey(arr) {
@@ -241,8 +254,6 @@ function returnInsertQ(obj) {
     return q;
 
 }
-
-// cacheMasters();
 
 exports.onBoardCustomer = async (req, res) => {
 
@@ -284,7 +295,7 @@ exports.onBoardCustomer = async (req, res) => {
             "custobj": {
                 "introbranch": await getBranchFromCBS(basicR.CREATED_BRANCH_ID),
 
-                "typeofcustomer": 1, 
+                "typeofcustomer": 1,
 
                 "middlename": personalR.MIDDLE_NAME,
                 "firstname": personalR.FIRST_NAME,
@@ -296,29 +307,29 @@ exports.onBoardCustomer = async (req, res) => {
 
                 "birthdate": convertDate(personalR.DATE_OF_BIRTH),
 
-                "gender": personalR.GENDER, 
+                "gender": personalR.GENDER,
 
-                "occupationid": Number(personalR.PROFESSION), 
+                "occupationid": Number(personalR.PROFESSION),
 
-                "idtproofid": Number(personalR.ID_PROOF), 
-                "idtproofidno": personalR.ID_PROOF_NUMBER, 
+                "idtproofid": Number(personalR.ID_PROOF),
+                "idtproofidno": personalR.ID_PROOF_NUMBER,
                 "proofdetailsid": Number(personalR.PERMANENT_ADDRESS_PROOF),
-                "addproofidno": personalR.PERMANENT_ADDRESS_PROOF_NUMBER, 
+                "addproofidno": personalR.PERMANENT_ADDRESS_PROOF_NUMBER,
 
-                "riskcat": Number(personalR.RISK_CATEGORY), 
+                "riskcat": Number(personalR.RISK_CATEGORY),
 
                 "panno": personalR.PAN_NO,//"GTFDT8976M",
 
-                "fatherspouse": personalR.FATHER_OR_SPOUSE, 
+                "fatherspouse": personalR.FATHER_OR_SPOUSE,
 
                 "bankcode": 1,
 
-                "brncode": await getBranchFromCBS(basicR.CREATED_BRANCH_ID), 
-                "entrystatus": "F",  
+                "brncode": await getBranchFromCBS(basicR.CREATED_BRANCH_ID),
+                "entrystatus": "F",
 
-                "entryuser": await getUserNameByID(basicR.MAKER_USER_ID), 
-                "verifiedby": await getUserNameByID(basicR.CHACKER_USER_ID), 
-                "authuser": await getUserNameByID(basicR.VERIFIER_USER_ID) 
+                "entryuser": await getUserNameByID(basicR.MAKER_USER_ID),
+                "verifiedby": await getUserNameByID(basicR.CHACKER_USER_ID),
+                "authuser": await getUserNameByID(basicR.VERIFIER_USER_ID)
             },
             "addobj_P": {
                 "addresstype": "P",
@@ -385,26 +396,26 @@ exports.onBoardCustomer = async (req, res) => {
 
 
                 "kcd_addproff": Number(personalR.PERMANENT_ADDRESS_PROOF),
-                "kcd_addidno": personalR.PERMANENT_ADDRESS_PROOF_NUMBER, 
+                "kcd_addidno": personalR.PERMANENT_ADDRESS_PROOF_NUMBER,
                 "kcd_idproof": Number(personalR.ID_PROOF),
-                "kcd_ididno": personalR.ID_PROOF_NUMBER, 
+                "kcd_ididno": personalR.ID_PROOF_NUMBER,
                 "bankcode": 1,
                 "brncode": await getBranchFromCBS(basicR.CREATED_BRANCH_ID)
             },
             "acmst_obj": {
                 // "interestrate": 5,
 
-                "schemecode": 200, 
+                "schemecode": 200,
 
-                "acctitle": personalR.FIRST_NAME, 
+                "acctitle": personalR.FIRST_NAME,
 
                 "jointacc": "N",
 
-                "constitution": Number(personalR.CONSTITUTION), 
+                "constitution": Number(personalR.CONSTITUTION),
 
-                "operinstructions": Number(depositR.ACCOUNT_OPERATION), 
+                "operinstructions": Number(depositR.ACCOUNT_OPERATION),
 
-                "paymentinstructions": Number(depositR.PAYMENT_INSTRUCTION), 
+                "paymentinstructions": Number(depositR.PAYMENT_INSTRUCTION),
 
                 "entrystatus": "F",
 
@@ -426,7 +437,7 @@ exports.onBoardCustomer = async (req, res) => {
                 "opnormdf": "A"
             },
             "accdtl_obj": {
-                "schemecode": 200, 
+                "schemecode": 200,
 
                 // "serialno": 1,
                 "changeno": 1,
@@ -449,7 +460,7 @@ exports.onBoardCustomer = async (req, res) => {
                 "acctobeopn_atbrncd": await getBranchFromCBS(basicR.CREATED_BRANCH_ID),
                 "accopened_atbrn": await getBranchFromCBS(basicR.CREATED_BRANCH_ID)
             },
-            "m_kcd_iddocimage": await getDocument('Applicant ID Proof', documentR), 
+            "m_kcd_iddocimage": await getDocument('Applicant ID Proof', documentR),
             "m_kcd_adddocimage": await getDocument('Applicant Address Proof', documentR),
             "m_kcd_photo": await getDocument('Applicant Photo', documentR)
 
@@ -463,8 +474,14 @@ exports.onBoardCustomer = async (req, res) => {
             account_opening_data.custobj.customerid = basicR.CUSTOMER_ID_1;
         }
 
+        let configuration = {
+            headers: { "Authorization": `Bearer ${bearerKey}` }
+        }
+        if (config[mode].api.isproxy) {
+            configuration.proxy = proxy;
+        }
 
-        let accountCreatedData = await axios.post(posturl, account_opening_data, { headers: { "Authorization": `Bearer ${bearerKey}` } })
+        let accountCreatedData = await axios.post(posturl, account_opening_data, configuration)
 
 
         let basicInsertQ = `update basic_details set ACCOUNT_NUMBER =  "${accountCreatedData.data['Account number']}",CUSTOMER_ID_1 = "${accountCreatedData.data['Customer Code']}" where ID = ${applicant_id}`
@@ -472,7 +489,7 @@ exports.onBoardCustomer = async (req, res) => {
         let basicInsertR = await db.executeQueryAsyncAwait(basicInsertQ, '');
         console.log("Query : ", basicInsertQ, "result ", basicInsertR);
         console.log("created", accountCreatedData.data);
-        
+
         res.send({
             "code": 200,
             "data": account_opening_data,
@@ -539,7 +556,6 @@ function generateNewDate() {
 
     return date;
 }
-// convertDate('10/05/2002');
 
 async function getStateCode(id) {
     try {
@@ -766,7 +782,15 @@ exports.getCustomer = async (req, res) => {
         let getCustomer = `${config[mode].api.host}:${config[mode].api.port}${config[mode].api.routes[2].url}customerCode=${customerID}`
 
         let bearerKey = await getJWTToken();
-        let customerData = await getRequest(getCustomer, { headers: { "Authorization": `Bearer ${bearerKey}` } });
+
+        let configuration = {
+            headers: { "Authorization": `Bearer ${bearerKey}` }
+        }
+        if (config[mode].api.isproxy) {
+            configuration.proxy = proxy;
+        }
+
+        let customerData = await getRequest(getCustomer, configuration);
 
         console.log("customerData", customerData);
 
@@ -939,5 +963,3 @@ exports.getCustomer = async (req, res) => {
     }
 
 }
-
-// getCustomer({body:{CUSTOMER_ID:"0000103963"}})

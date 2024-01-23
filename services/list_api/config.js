@@ -1,8 +1,8 @@
 exports.config = {
-    mode: "production",
+    mode: "local",
     production: {
         database_config: {
-            user:'root',
+            user: 'root',
             database_type: "mysql",
             host: "localhost",
             port: "",
@@ -19,12 +19,13 @@ exports.config = {
                 { name: 'masters', url: '/MasterLOV/customer/getMasterLOV/', operation: 'get' },
                 { name: 'getCustomer', url: '/CustomerInfo/customer/getCustomerInfo?', operation: 'get' },
                 { name: 'onBoard', url: '/OnBoardCustomer/customer/onBoard', operation: 'post' }
-            ]
+            ],
+            isproxy: false
         }
     },
     local: {
         database_config: {
-            user:'root',
+            user: 'root',
             database_type: "mysql",
             host: "localhost",
             port: "",
@@ -33,7 +34,7 @@ exports.config = {
             password: 'No.5670@'
         },
         api: {
-            host: "http://172.100.30.89",
+            host: "http://103.42.162.39",
             port: "8888",
             logs: true,
             routes: [
@@ -41,12 +42,13 @@ exports.config = {
                 { name: 'masters', url: '/MasterLOV/customer/getMasterLOV/', operation: 'get' },
                 { name: 'getCustomer', url: '/CustomerInfo/customer/getCustomerInfo?', operation: 'get' },
                 { name: 'onBoard', url: '/OnBoardCustomer/customer/onBoard', operation: 'post' }
-            ]
+            ],
+            isproxy: true
         }
     },
     testing_server: {
         database_config: {
-            user:'root',
+            user: 'root',
             database_type: "mysql",
             host: "localhost",
             port: "",
@@ -55,7 +57,7 @@ exports.config = {
             password: 'Sangli123#'
         },
         api: {
-            host: "http://172.100.30.89",
+            host: "http://103.42.162.39",
             port: "8888",
             logs: true,
             routes: [
@@ -63,7 +65,8 @@ exports.config = {
                 { name: 'masters', url: '/MasterLOV/customer/getMasterLOV/', operation: 'get' },
                 { name: 'getCustomer', url: '/CustomerInfo/customer/getCustomerInfo?', operation: 'get' },
                 { name: 'onBoard', url: '/OnBoardCustomer/customer/onBoard', operation: 'post' }
-            ]
+            ],
+            isproxy: false
         }
     }
 }

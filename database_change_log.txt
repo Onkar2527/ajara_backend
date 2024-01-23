@@ -1,0 +1,2 @@
+Added column called cbs user name in user_master for onboarding. [Company Desktop].
+Added data to above added column. [Company Desktop].
