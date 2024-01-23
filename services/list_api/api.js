@@ -343,7 +343,7 @@ exports.onBoardCustomer = async (req, res) => {
                 "areaid": await getAreaCode(personalR.PERMANENT_AREA),
                 "mobile": personalR.MOBILE_NUMBER,
                 "pincode": personalR.PERMANENT_PINCODE,
-
+                "regionid": 1,
                 // "sequenceno": 1,
 
                 "bankcode": 1,
@@ -367,7 +367,7 @@ exports.onBoardCustomer = async (req, res) => {
                 "talukaid": await getTalukaCode(personalR.CURRENT_TALUKA),
                 "cityid": await getCityCode(personalR.CURRENT_CITY),
                 "areaid": await getAreaCode(personalR.CURRENT_AREA),
-
+                "regionid": 1,
                 "mobile": personalR.MOBILE_NUMBER,
                 "pincode": personalR.CURRENT_PINCODE,
 
@@ -405,7 +405,7 @@ exports.onBoardCustomer = async (req, res) => {
             "acmst_obj": {
                 // "interestrate": 5,
 
-                "schemecode": 200,
+                "schemecode": Number(depositR.SCHEME_CODE),
 
                 "acctitle": personalR.FIRST_NAME,
 
@@ -437,7 +437,7 @@ exports.onBoardCustomer = async (req, res) => {
                 "opnormdf": "A"
             },
             "accdtl_obj": {
-                "schemecode": 200,
+                "schemecode": Number(depositR.SCHEME_CODE),
 
                 // "serialno": 1,
                 "changeno": 1,
@@ -448,7 +448,7 @@ exports.onBoardCustomer = async (req, res) => {
                 "accopened_atbrn": await getBranchFromCBS(basicR.CREATED_BRANCH_ID)
             },
             "docdtl_obj": {
-                "schemecode": 200,
+                "schemecode": Number(depositR.SCHEME_CODE),
 
                 "docid": 1,
 
