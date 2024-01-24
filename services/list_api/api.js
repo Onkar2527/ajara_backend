@@ -407,7 +407,7 @@ exports.onBoardCustomer = async (req, res) => {
 
                 "schemecode": Number(depositR.SCHEME_CODE),
 
-                "acctitle": personalR.FIRST_NAME,
+                "acctitle": `${personalR.FIRST_NAME} ${personalR.MIDDLE_NAME} ${personalR.LAST_NAME}`,
 
                 "jointacc": "N",
 
