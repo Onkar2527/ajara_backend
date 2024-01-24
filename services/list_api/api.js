@@ -293,6 +293,7 @@ exports.onBoardCustomer = async (req, res) => {
 
         let account_opening_data = {
             "custobj": {
+                "title":basicR.CUSTOMER_TYPE_1,
                 "introbranch": await getBranchFromCBS(basicR.CREATED_BRANCH_ID),
 
                 "typeofcustomer": 1,
@@ -407,8 +408,8 @@ exports.onBoardCustomer = async (req, res) => {
 
                 "schemecode": Number(depositR.SCHEME_CODE),
 
-                "acctitle": `${personalR.FIRST_NAME} ${personalR.MIDDLE_NAME} ${personalR.LAST_NAME}`,
-
+                "acctitle": `${personalR.LAST_NAME} ${personalR.FIRST_NAME} ${personalR.MIDDLE_NAME}`,
+                
                 "jointacc": "N",
 
                 "constitution": Number(personalR.CONSTITUTION),
