@@ -306,6 +306,22 @@ exports.onBoardCustomer = async (req, res) => {
 
                 "minor": personalR.IS_MINOR ? "Y" : "N",
 
+                //if minor is y guardian id should be provided.
+
+                //meritial status can be provided.(value will be provided)
+
+                //special cat should be added.
+
+                //relgion and caste can be provided. (masters)
+
+                //services (sms subscription) field can be provided. (y/n)
+
+                //email id can be provided.
+
+                //mother name title.
+
+                //father name title.
+
                 "birthdate": convertDate(personalR.DATE_OF_BIRTH),
 
                 "gender": personalR.GENDER,
@@ -413,6 +429,18 @@ exports.onBoardCustomer = async (req, res) => {
             },
             "acmst_obj": {
                 // "interestrate": 5,
+
+                //actype 
+
+                //spacial catagory
+                //minimum blance catagory
+
+                //statement y/n
+                //passbook y/n
+
+                //nominee details
+
+                //checkbook y/n
 
                 "schemecode": Number(depositR.SCHEME_CODE),
 
