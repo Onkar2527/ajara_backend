@@ -293,7 +293,7 @@ exports.onBoardCustomer = async (req, res) => {
 
         let account_opening_data = {
             "custobj": {
-                "title":basicR.CUSTOMER_TYPE_1,
+                "title": basicR.CUSTOMER_TYPE_1,
                 "introbranch": await getBranchFromCBS(basicR.CREATED_BRANCH_ID),
 
                 "typeofcustomer": 1,
@@ -330,7 +330,15 @@ exports.onBoardCustomer = async (req, res) => {
 
                 "entryuser": await getUserNameByID(basicR.MAKER_USER_ID),
                 "verifiedby": await getUserNameByID(basicR.CHACKER_USER_ID),
-                "authuser": await getUserNameByID(basicR.VERIFIER_USER_ID)
+                "authuser": await getUserNameByID(basicR.VERIFIER_USER_ID),
+                "reg_mobileno": personalR.MOBILE_NUMBER,
+                "fatherlnm": personalR.F_OR_H_LAST_NAME,
+                "fatherfnm": personalR.F_OR_H_FIRST_NAME,
+                "fathermnm": personalR.F_OR_H_MIDDLE_NAME,
+                "motherlname": personalR.MOTHERS_LAST_NAME,
+                "motherfname": personalR.MOTHERS_NAME,
+                "mothermname": personalR.MOTHERS_MIDDLE_NAME,
+                "custuin": personalR.AADHAAR_NUMBER
             },
             "addobj_P": {
                 "addresstype": "P",
@@ -409,7 +417,7 @@ exports.onBoardCustomer = async (req, res) => {
                 "schemecode": Number(depositR.SCHEME_CODE),
 
                 "acctitle": `${personalR.LAST_NAME} ${personalR.FIRST_NAME} ${personalR.MIDDLE_NAME}`,
-                
+
                 "jointacc": "N",
 
                 "constitution": Number(personalR.CONSTITUTION),
