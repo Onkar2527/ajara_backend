@@ -16,6 +16,7 @@ function connect() {
                 password: config[mode].database_config.password,
                 database: config[mode].database_config.database_name,
                 host: config[mode].database_config.host,
+                port: config[mode].database_config.port,
                 namedPlaceholders: true
             }
             connection = await mysql.createConnection(database);
@@ -267,16 +268,22 @@ exports.onBoardCustomer = async (req, res) => {
         let basicT = `basic_details`
         let personalT = `applicants_personal_details`
         let depositT = `term_deposite`
+        let serviceT = `facilities`
         let documentT = `applicant_documents`
+        let financeT = `financial_information`
 
         let basicQ = `select * from ${basicT} where ID = ${applicant_id};`;
         let personalQ = `select * from ${personalT} where APPLICANT_ID = ${applicant_id} AND APPLICANT_NO = 1;`;
         let depositQ = `select * from ${depositT} where APPLICANT_ID = ${applicant_id};`;
         let documentQ = `select * from ${documentT} where APPLICANT_ID = ${applicant_id} AND APPLICANT_NO = 1;`;
+        let serviceQ = `select * from ${serviceT} where APPLICANT_ID = ${applicant_id};`;
+        let financeQ = `select * from ${financeT} where APPLICANT_ID = ${applicant_id} AND APPLICANT_NO = 1;`
 
         let [basicR, basicF] = await db.executeQueryAsyncAwait(basicQ, '');
         let [personalR, personalF] = await db.executeQueryAsyncAwait(personalQ, '');
         let [depositR, depositF] = await db.executeQueryAsyncAwait(depositQ, '');
+        let [serviceR, serviceF] = await db.executeQueryAsyncAwait(serviceQ, '');
+        let [financeR, financeF] = await db.executeQueryAsyncAwait(financeQ, '');
         let documentR = await db.executeQueryAsyncAwait(documentQ, '');
 
         console.log("basicR", basicR);
@@ -297,6 +304,8 @@ exports.onBoardCustomer = async (req, res) => {
                 "introbranch": await getBranchFromCBS(basicR.CREATED_BRANCH_ID),
 
                 "typeofcustomer": 1,
+
+                "annualincome":financeR.INCOME.toString(),
 
                 "middlename": personalR.MIDDLE_NAME,
                 "firstname": personalR.FIRST_NAME,
@@ -321,6 +330,8 @@ exports.onBoardCustomer = async (req, res) => {
                 //mother name title.
 
                 //father name title.
+                "religion": Number(personalR.RELIGION),
+                "caste": Number(personalR.CASTE),
 
                 "birthdate": convertDate(personalR.DATE_OF_BIRTH),
 
@@ -359,7 +370,7 @@ exports.onBoardCustomer = async (req, res) => {
             "addobj_P": {
                 "addresstype": "P",
 
-
+                "emailid": personalR.EMAIL_ID,
                 "countryid": 1,//constant
                 "stateid": await getStateCode(personalR.PERMANENT_STATE),
                 "districtid": await getDistCode(personalR.PERMANENT_DISTRICT),
@@ -441,7 +452,7 @@ exports.onBoardCustomer = async (req, res) => {
                 //nominee details
 
                 //checkbook y/n
-
+                "checkbookfacility": serviceR.CHEQUE_BOOK ? "Y" : "N",
                 "schemecode": Number(depositR.SCHEME_CODE),
 
                 "acctitle": `${personalR.LAST_NAME} ${personalR.FIRST_NAME} ${personalR.MIDDLE_NAME}`,
@@ -469,7 +480,7 @@ exports.onBoardCustomer = async (req, res) => {
                 "acctobeopn_atbrncd": await getBranchFromCBS(basicR.CREATED_BRANCH_ID),
                 "accopened_atbrn": await getBranchFromCBS(basicR.CREATED_BRANCH_ID),
 
-                "accopendt": "04-01-2024 12:09:09",
+                "accopendt": "04-02-2024 12:00:00",
 
                 "opnormdf": "A"
             },
@@ -479,6 +490,8 @@ exports.onBoardCustomer = async (req, res) => {
                 // "serialno": 1,
                 "changeno": 1,
                 "bankcode": 1,
+
+                "checkbookfacility": serviceR.CHEQUE_BOOK ? "Y" : "N",
 
                 "brncode": await getBranchFromCBS(basicR.CREATED_BRANCH_ID),
                 "acctobeopn_atbrncd": await getBranchFromCBS(basicR.CREATED_BRANCH_ID),

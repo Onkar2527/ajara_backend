@@ -9,6 +9,7 @@ var poolConfig = {
     database: process.env.MYSQL_DATABASE,
     timezone: "+00:00",
     multipleStatements: true,
+    port:process.env.MYSQL_PORT,
     dateStrings: true
 }
 

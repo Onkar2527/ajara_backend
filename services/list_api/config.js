@@ -1,5 +1,5 @@
 exports.config = {
-    mode: "production",
+    mode: process.env.ENVIROMENT,
     production: {
         database_config: {
             user: 'root',
@@ -51,7 +51,7 @@ exports.config = {
             user: 'root',
             database_type: "mysql",
             host: "localhost",
-            port: "",
+            port: "3307",
             database_name: "list_cbs_masters",
             ispass: true,
             password: 'Sangli123#'

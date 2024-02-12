@@ -9,6 +9,7 @@ var config = {
     timezone: "+00:00" ,
     multipleStatements: true,
     charset: 'UTF8_GENERAL_CI',
+    port:process.env.MYSQL_PORT,
     dateStrings: true
 
 }

@@ -102,8 +102,8 @@ exports.sendMail = (req, res) => {
         } else {
             console.log('Email sent:', info.response);
             res.send({
-                "code":200,
-                "message":"Fuck you 🖕🏾"
+                "code": 200,
+                "message": "Email sent"
             });
         }
     });
@@ -141,6 +141,6 @@ exports.verifyOtp = (req, res) => {
         })
     }
 };
-app.listen(3000, () => {
-    console.log('Server is running on port 3000');
+app.listen(process.env.EMAIL_PORT, () => {
+    console.log(`Server is running on port ${process.env.EMAIL_PORT}`);
 });
