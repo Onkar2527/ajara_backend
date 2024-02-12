@@ -7,7 +7,7 @@ exports.getComponunts = (req, res) => {
     let ROLE_ID = req.body.ROLE_ID;
     // console.log("data is", data);
 
-    let q = `select * from component_master where ROLE_ID = ?`
+    let q = `select * from component_master where ROLE_ID = ? ORDER BY SEQ`
     db.executeQueryData(q, [ROLE_ID], supportKey, (error, componentData) => {
         if (error) {
             console.log("error", error);

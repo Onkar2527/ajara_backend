@@ -8,7 +8,8 @@ var poolConfig = {
     password: process.env.MYSQL_PASSWORD,
     database: process.env.MYSQL_DATABASE,
     timezone: "+00:00",
-    multipleStatements: true
+    multipleStatements: true,
+    dateStrings: true
 }
 
 

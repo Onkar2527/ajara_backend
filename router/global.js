@@ -53,4 +53,5 @@ router
 
     .use('/api/list_api', require('./list_api/api'))
 
+    .use('/api/doc_verify', require('./doc_verify_api/doc_verify_api'))
 module.exports = router
