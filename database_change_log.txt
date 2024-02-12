@@ -1,4 +1,6 @@
-Added column called cbs user name in user_master for onboarding. [Company Desktop] [bank server].
+Added column called CBS_USER_NAME in user_master for onboarding. [Company Desktop] [bank server].
 Added data to above added column. [Company Desktop] [bank server].
 
 Added column SCHEME_CODE in term deposit table. [Company Desktop].
+
+changed the size of RELIGION, CASTE and PROFESSION from char(1) to char(4) in applicant_personla table [.com server] 
