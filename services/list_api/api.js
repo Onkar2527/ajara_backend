@@ -305,8 +305,8 @@ exports.onBoardCustomer = async (req, res) => {
 
                 "typeofcustomer": 1,
 
-                "annualincome":financeR.INCOME.toString(),
-
+                "annualincome": financeR.INCOME.toString(),
+                "smssubscription": serviceR.SMS_ALERT ? "Y" : "N",
                 "middlename": personalR.MIDDLE_NAME,
                 "firstname": personalR.FIRST_NAME,
                 "lastname": personalR.LAST_NAME,
@@ -466,7 +466,7 @@ exports.onBoardCustomer = async (req, res) => {
                 "paymentinstructions": Number(depositR.PAYMENT_INSTRUCTION),
 
                 "entrystatus": "F",
-
+                "smssubscrbd": serviceR.SMS_ALERT ? "Y" : "N",
                 "entryuser": await getUserNameByID(basicR.MAKER_USER_ID),
                 "verifiedby": await getUserNameByID(basicR.CHACKER_USER_ID),
                 "authuser": await getUserNameByID(basicR.VERIFIER_USER_ID),
@@ -512,8 +512,8 @@ exports.onBoardCustomer = async (req, res) => {
             },
             "m_kcd_iddocimage": await getDocument('Applicant ID Proof', documentR),
             "m_kcd_adddocimage": await getDocument('Applicant Address Proof', documentR),
-            "m_kcd_photo": await getDocument('Applicant Photo', documentR)
-
+            "m_kcd_photo": await getDocument('Applicant Photo', documentR),
+            "m_kcd_sign": ""
         }
 
         let posturl = `${config[mode].api.host}:${config[mode].api.port}${config[mode].api.routes[3].url}`
