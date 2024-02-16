@@ -14,9 +14,9 @@ const https = require('https')
 const fs = require('fs')
 const httpServer = http.createServer(app)
 const options = {
-  key: fs.readFileSync('webkey.key'),
-  cert: fs.readFileSync('webcert.crt'),
-  ca: fs.readFileSync('webca.crt'),
+    key: fs.readFileSync('webkey.key'),
+    cert: fs.readFileSync('webcert.crt'),
+    ca: fs.readFileSync('webca.crt'),
 };
 const httpsServer = https.createServer(options, app)
 
@@ -46,9 +46,18 @@ app.disable('x-powered-by');
 
 app.use('/', globalRoutes)
 
+if (process.env.IS_HTTPS == 1) {
+    httpsServer.listen(port, hostname, async () => {
+        console.log(`Server listening on (https) http://${hostname}:${port}`);
+        // let token = await tokentest();
+        // console.log("token", token);
+    })
+}
+else {
+    httpServer.listen(port, hostname, async () => {
+        console.log(`Server listening on (http) http://${hostname}:${port}`);
+        // let token = await tokentest();
+        // console.log("token", token);
+    })
+}
 
-httpsServer.listen(port, hostname, async () => {
-    console.log(`Server listening on http://${hostname}:${port}`);
-    // let token = await tokentest();
-    // console.log("token", token);
-})
