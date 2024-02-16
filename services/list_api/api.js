@@ -364,8 +364,8 @@ exports.onBoardCustomer = async (req, res) => {
                 "fathermnm": personalR.F_OR_H_MIDDLE_NAME,
                 "motherlname": personalR.MOTHERS_LAST_NAME,
                 "motherfname": personalR.MOTHERS_NAME,
-                "mothermname": personalR.MOTHERS_MIDDLE_NAME,
-                "custuin": personalR.AADHAAR_NUMBER
+                "mothermname": personalR.MOTHERS_MIDDLE_NAME
+                // "custuin": personalR.AADHAAR_NUMBER
             },
             "addobj_P": {
                 "addresstype": "P",
@@ -522,6 +522,9 @@ exports.onBoardCustomer = async (req, res) => {
 
         if (basicR.IS_OLD_CUSTOMER_1) {
             account_opening_data.custobj.customerid = basicR.CUSTOMER_ID_1;
+        }
+        if(personalR.AADHAAR_NUMBER){
+            account_opening_data.custobj.custuin = personalR.AADHAAR_NUMBER;
         }
 
         let configuration = {
