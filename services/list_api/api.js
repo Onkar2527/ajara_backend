@@ -183,7 +183,7 @@ async function cacheMasters() {
 
         let bearerKey = await getJWTToken();
         let configuration = {
-            headers: { "Authorization": `Bearer ${bearerKey}` }
+            headers: { "Authorization": `Bearer ${bearerKey}`, "userName": `fco`, "bankName": "Ajara urban", " branchName": "Head Office", "callerSystem": "FCO" }
         }
         if (config[mode].api.isproxy) {
             configuration.proxy = proxy;
@@ -523,12 +523,12 @@ exports.onBoardCustomer = async (req, res) => {
         if (basicR.IS_OLD_CUSTOMER_1) {
             account_opening_data.custobj.customerid = basicR.CUSTOMER_ID_1;
         }
-        if(personalR.AADHAAR_NUMBER){
+        if (personalR.AADHAAR_NUMBER) {
             account_opening_data.custobj.custuin = personalR.AADHAAR_NUMBER;
         }
 
         let configuration = {
-            headers: { "Authorization": `Bearer ${bearerKey}` }
+            headers: { "Authorization": `Bearer ${bearerKey}`, "userName": `cpc`, "bankName": "Ajara urban", " branchName": "Head Office", "callerSystem": "FCO" }
         }
         if (config[mode].api.isproxy) {
             configuration.proxy = proxy;
@@ -837,7 +837,7 @@ exports.getCustomer = async (req, res) => {
         let bearerKey = await getJWTToken();
 
         let configuration = {
-            headers: { "Authorization": `Bearer ${bearerKey}` }
+            headers: { "Authorization": `Bearer ${bearerKey}`, "userName": `ajara.ba`, "bankName": "Ajara urban", " branchName": "Araja", "callerSystem": "FCO" }
         }
         if (config[mode].api.isproxy) {
             configuration.proxy = proxy;
