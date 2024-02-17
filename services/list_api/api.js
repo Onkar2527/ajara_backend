@@ -183,7 +183,7 @@ async function cacheMasters() {
 
         let bearerKey = await getJWTToken();
         let configuration = {
-            headers: { "Authorization": `Bearer ${bearerKey}` }
+            headers: { "Authorization": `Bearer ${bearerKey}`, "userName": `fco`, "bankName": "Ajara urban", " branchName": "Head Office", "callerSystem": "FCO" }
         }
         if (config[mode].api.isproxy) {
             configuration.proxy = proxy;
@@ -305,8 +305,8 @@ exports.onBoardCustomer = async (req, res) => {
 
                 "typeofcustomer": 1,
 
-                "annualincome":financeR.INCOME.toString(),
-
+                "annualincome": financeR.INCOME.toString(),
+                "smssubscription": serviceR.SMS_ALERT ? "Y" : "N",
                 "middlename": personalR.MIDDLE_NAME,
                 "firstname": personalR.FIRST_NAME,
                 "lastname": personalR.LAST_NAME,
@@ -364,8 +364,8 @@ exports.onBoardCustomer = async (req, res) => {
                 "fathermnm": personalR.F_OR_H_MIDDLE_NAME,
                 "motherlname": personalR.MOTHERS_LAST_NAME,
                 "motherfname": personalR.MOTHERS_NAME,
-                "mothermname": personalR.MOTHERS_MIDDLE_NAME,
-                "custuin": personalR.AADHAAR_NUMBER
+                "mothermname": personalR.MOTHERS_MIDDLE_NAME
+                // "custuin": personalR.AADHAAR_NUMBER
             },
             "addobj_P": {
                 "addresstype": "P",
@@ -466,7 +466,7 @@ exports.onBoardCustomer = async (req, res) => {
                 "paymentinstructions": Number(depositR.PAYMENT_INSTRUCTION),
 
                 "entrystatus": "F",
-
+                "smssubscrbd": serviceR.SMS_ALERT ? "Y" : "N",
                 "entryuser": await getUserNameByID(basicR.MAKER_USER_ID),
                 "verifiedby": await getUserNameByID(basicR.CHACKER_USER_ID),
                 "authuser": await getUserNameByID(basicR.VERIFIER_USER_ID),
@@ -512,8 +512,8 @@ exports.onBoardCustomer = async (req, res) => {
             },
             "m_kcd_iddocimage": await getDocument('Applicant ID Proof', documentR),
             "m_kcd_adddocimage": await getDocument('Applicant Address Proof', documentR),
-            "m_kcd_photo": await getDocument('Applicant Photo', documentR)
-
+            "m_kcd_photo": await getDocument('Applicant Photo', documentR),
+            "m_kcd_sign": ""
         }
 
         let posturl = `${config[mode].api.host}:${config[mode].api.port}${config[mode].api.routes[3].url}`
@@ -523,9 +523,12 @@ exports.onBoardCustomer = async (req, res) => {
         if (basicR.IS_OLD_CUSTOMER_1) {
             account_opening_data.custobj.customerid = basicR.CUSTOMER_ID_1;
         }
+        if (personalR.AADHAAR_NUMBER) {
+            account_opening_data.custobj.custuin = personalR.AADHAAR_NUMBER;
+        }
 
         let configuration = {
-            headers: { "Authorization": `Bearer ${bearerKey}` }
+            headers: { "Authorization": `Bearer ${bearerKey}`, "userName": `cpc`, "bankName": "Ajara urban", " branchName": "Head Office", "callerSystem": "FCO" }
         }
         if (config[mode].api.isproxy) {
             configuration.proxy = proxy;
@@ -834,7 +837,7 @@ exports.getCustomer = async (req, res) => {
         let bearerKey = await getJWTToken();
 
         let configuration = {
-            headers: { "Authorization": `Bearer ${bearerKey}` }
+            headers: { "Authorization": `Bearer ${bearerKey}`, "userName": `ajara.ba`, "bankName": "Ajara urban", " branchName": "Araja", "callerSystem": "FCO" }
         }
         if (config[mode].api.isproxy) {
             configuration.proxy = proxy;
