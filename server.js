@@ -39,6 +39,8 @@ app.disable('x-powered-by');
 
 app.use('/', globalRoutes)
 
+require("./services/list_api/api").syncMasters()
+
 if (process.env.IS_HTTPS == 1) {
 
     const options = {
@@ -53,7 +55,7 @@ if (process.env.IS_HTTPS == 1) {
         // let token = await tokentest();
         // console.log("token", token);
     })
-    
+
 }
 else {
     httpServer.listen(port, hostname, async () => {

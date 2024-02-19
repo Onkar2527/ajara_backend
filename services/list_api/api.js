@@ -3,7 +3,7 @@ const config = require('./config').config
 const axios = require('axios');
 const db = require('../../utilities/dbModule');
 const fs = require('fs/promises')
-
+const schedule = require('node-schedule')
 let connection
 
 const mode = config.mode;
@@ -154,6 +154,7 @@ function getRequest(url, config) {
 
 async function cacheMasters() {
 
+
     if (!connection) {
         await connect();
     }
@@ -215,6 +216,26 @@ async function cacheMasters() {
     }
 
 }
+
+exports.syncMasters = () => {
+    try {
+        const rule = new schedule.RecurrenceRule();
+        rule.hour = 0;
+        rule.minute = 10;
+        rule.tz = 'Asia/Calcutta';
+
+        console.log("inside synce")
+        // const job = schedule.scheduleJob(rule, cacheMasters);
+        var job = schedule.scheduleJob(" 1 1 23 * * 0", cacheMasters);
+        console.log("job", job)
+    }
+    catch (error) {
+        console.log(error);
+
+    }
+}
+
+
 
 // cacheMasters();
 

@@ -3,4 +3,3 @@
 .env
 *.crt
 *.key
-server.js
