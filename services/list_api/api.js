@@ -321,6 +321,7 @@ exports.onBoardCustomer = async (req, res) => {
 
         let account_opening_data = {
             "custobj": {
+                "reg_emailid": personalR.EMAIL_ID,
                 "title": basicR.CUSTOMER_TYPE_1,
                 "introbranch": await getBranchFromCBS(basicR.CREATED_BRANCH_ID),
 
@@ -386,11 +387,11 @@ exports.onBoardCustomer = async (req, res) => {
                 "motherlname": personalR.MOTHERS_LAST_NAME,
                 "motherfname": personalR.MOTHERS_NAME,
                 "mothermname": personalR.MOTHERS_MIDDLE_NAME
+                // "subconstitution": Number(personalR.CONSTITUTION)
                 // "custuin": personalR.AADHAAR_NUMBER
             },
             "addobj_P": {
                 "addresstype": "P",
-
                 "emailid": personalR.EMAIL_ID,
                 "countryid": 1,//constant
                 "stateid": await getStateCode(personalR.PERMANENT_STATE),
@@ -402,23 +403,17 @@ exports.onBoardCustomer = async (req, res) => {
                 "pincode": personalR.PERMANENT_PINCODE,
                 "regionid": 1,
                 // "sequenceno": 1,
-
                 "bankcode": 1,
-
                 "brncode": await getBranchFromCBS(basicR.CREATED_BRANCH_ID),
                 "entrystatus": "F",
-
                 "entryuser": await getUserNameByID(basicR.MAKER_USER_ID),
                 "verifiedby": await getUserNameByID(basicR.CHACKER_USER_ID),
-                "authuser": await getUserNameByID(basicR.VERIFIER_USER_ID)
+                "authuser": await getUserNameByID(basicR.VERIFIER_USER_ID),
+                "addressline1": `${personalR.PERMANENT_ADDRESS} ${personalR.PERMANENT_LANDMARK}`
             },
             "addobj_C": {
                 "addresstype": "C",
-
-
-
                 "countryid": 1,
-
                 "stateid": await getStateCode(personalR.CURRENT_STATE),
                 "districtid": await getDistCode(personalR.CURRENT_DISTRICT),
                 "talukaid": await getTalukaCode(personalR.CURRENT_TALUKA),
@@ -427,16 +422,13 @@ exports.onBoardCustomer = async (req, res) => {
                 "regionid": 1,
                 "mobile": personalR.MOBILE_NUMBER,
                 "pincode": personalR.CURRENT_PINCODE,
-
                 // "sequenceno": 1,
-
                 "bankcode": 1,
-
                 "brncode": await getBranchFromCBS(basicR.CREATED_BRANCH_ID),
-
                 "entryuser": await getUserNameByID(basicR.MAKER_USER_ID),
                 "verifiedby": await getUserNameByID(basicR.CHACKER_USER_ID),
-                "authuser": await getUserNameByID(basicR.VERIFIER_USER_ID)
+                "authuser": await getUserNameByID(basicR.VERIFIER_USER_ID),
+                "addressline1": `${personalR.CURRENT_ADDRESS} ${personalR.CURRENT_LANDMARK}`
             },
             "kyccomobj": {
                 "kcc_status": "F",
