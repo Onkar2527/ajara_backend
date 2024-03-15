@@ -51,7 +51,7 @@ if (process.env.IS_HTTPS == 1) {
     const httpsServer = https.createServer(options, app)
 
     httpsServer.listen(port, hostname, async () => {
-        console.log(`Server listening on (https) http://${hostname}:${port}`);
+        console.log(`Server listening on (https) https://${hostname}:${port}`);
         // let token = await tokentest();
         // console.log("token", token);
     })
