@@ -536,7 +536,7 @@ exports.onBoardCustomer = async (req, res) => {
             "m_kcd_iddocimage": await getDocument('Applicant ID Proof', documentR),
             "m_kcd_adddocimage": await getDocument('Applicant Address Proof', documentR),
             "m_kcd_photo": await getDocument('Applicant Photo', documentR),
-            "m_kcd_sign": await getDocument('Applicant Photo', documentR)
+            "m_kcd_sign": await getDocument('Signature', documentR)
         }
 
         let posturl = `${config[mode].api.host}:${config[mode].api.port}${config[mode].api.routes[3].url}`
