@@ -100,8 +100,9 @@ function reqData(req) {
         PERMANENT_ADDRESS_PROOF_NUMBER: req.body.PERMANENT_ADDRESS_PROOF_NUMBER,
         CURRENT_AREA: req.body.CURRENT_AREA,
         PERMANENT_AREA: req.body.PERMANENT_AREA,
-        FATHER_OR_SPOUSE: req.body.FATHER_OR_SPOUSE
-
+        FATHER_OR_SPOUSE: req.body.FATHER_OR_SPOUSE,
+        MOTHER_TITLE: req.body.MOTHER_TITLE,
+        FATHER_TITLE: req.body.FATHER_TITLE
     }
 
     return data;

@@ -99,12 +99,14 @@ function reqData(req) {
         OTP_AUTH_1: req.body.OTP_AUTH_1,
         OTP_AUTH_2: req.body.OTP_AUTH_2,
 
-        VOTER_ID_2:req.body.VOTER_ID_2,
+        VOTER_ID_2: req.body.VOTER_ID_2,
         VOTER_ID_1: req.body.VOTER_ID_1,
 
-        LICENSE_NO_1:req.body.LICENSE_NO_1,
-        LICENSE_NO_2:req.body.LICENSE_NO_2,
-
+        LICENSE_NO_1: req.body.LICENSE_NO_1,
+        LICENSE_NO_2: req.body.LICENSE_NO_2,
+        
+        DOCUMENTS_AUTHORITY: req.body.DOCUMENTS_AUTHORITY,
+        DOCUMENTS_ISSUE_PLACE: req.body.DOCUMENTS_ISSUE_PLACE,
     }
 
     return data;
@@ -217,7 +219,7 @@ function getCommonApplicantInfo(req) {
         NATURE_OF_BUSINESS: ' ',
         SOURCE_OF_FUNDS: ' ',
         NATIONALITY: 'A',
-        FATHER_OR_SPOUSE:'F'
+        FATHER_OR_SPOUSE: 'F'
     }
 
     return data;

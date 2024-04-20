@@ -386,8 +386,8 @@ exports.onBoardCustomer = async (req, res) => {
                 // "custuin": personalR.AADHAAR_NUMBER,
 
                 "mothertitle": personalR.MOTHER_TITLE,
-                "issuiddocplace": personalR.DOCUMENTS_ISSUE_PLACE,
-                "iddocissuauth": personalR.DOCUMENTS_AUTHORITY,
+                "issuiddocplace": basicR.DOCUMENTS_ISSUE_PLACE,
+                "iddocissuauth": basicR.DOCUMENTS_AUTHORITY,
                 "maritalstatus": personalR.MARITAL_STATUS,//married = 'M', single = 'U',Divorced:'D'
                 "caste_code": Number(personalR.CASTE)
             },
