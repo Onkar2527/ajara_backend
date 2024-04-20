@@ -106,7 +106,10 @@ async function generateToken() {
     let promise = new Promise(async (resolve, reject) => {
         try {
 
-            let configuration = {}
+          
+            let configuration = {
+                headers: { "userName": 'cpc', "bankName": "Ajara", "branchName": "Ajara", "callerSystem": "FCO" }
+            }
             if (config[mode].api.isproxy) {
                 configuration.proxy = proxy;
             }
@@ -115,11 +118,11 @@ async function generateToken() {
             let token = token_result.token;
 
             setData.TOKEN = token;
-            // console.log("real token", token, setData)
+            console.log("real token", token, setData)
 
             let insert_query = `insert into ${table} set CREATED_DATE = '${setData.CREATED_DATE}', TOKEN = '${setData.TOKEN}' ,IS_EXPIRED = '${setData.IS_EXPIRED}'`;
 
-            await connection.execute(insert_query);
+            await connection.execute(insert_query,);
 
             resolve(token);
 
@@ -235,7 +238,7 @@ exports.syncMasters = () => {
     }
 }
 
-
+// generateToken();
 
 // cacheMasters();
 
