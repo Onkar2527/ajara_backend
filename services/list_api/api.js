@@ -106,7 +106,10 @@ async function generateToken() {
     let promise = new Promise(async (resolve, reject) => {
         try {
 
-            let configuration = {}
+          
+            let configuration = {
+                headers: { "userName": 'cpc', "bankName": "Ajara", "branchName": "Ajara", "callerSystem": "FCO" }
+            }
             if (config[mode].api.isproxy) {
                 configuration.proxy = proxy;
             }
@@ -115,11 +118,11 @@ async function generateToken() {
             let token = token_result.token;
 
             setData.TOKEN = token;
-            // console.log("real token", token, setData)
+            console.log("real token", token, setData)
 
             let insert_query = `insert into ${table} set CREATED_DATE = '${setData.CREATED_DATE}', TOKEN = '${setData.TOKEN}' ,IS_EXPIRED = '${setData.IS_EXPIRED}'`;
 
-            await connection.execute(insert_query);
+            await connection.execute(insert_query,);
 
             resolve(token);
 
@@ -184,7 +187,7 @@ async function cacheMasters() {
 
         let bearerKey = await getJWTToken();
         let configuration = {
-            headers: { "Authorization": `Bearer ${bearerKey}`, "userName": `fco`, "bankName": "Ajara urban", " branchName": "Head Office", "callerSystem": "FCO" }
+            headers: { "Authorization": `Bearer ${bearerKey}`, "userName": `fco`, "bankName": "Ajara", " branchName": "Ajara", "callerSystem": "FCO" }
         }
         if (config[mode].api.isproxy) {
             configuration.proxy = proxy;
@@ -235,7 +238,7 @@ exports.syncMasters = () => {
     }
 }
 
-
+// generateToken();
 
 // cacheMasters();
 
@@ -491,7 +494,7 @@ exports.onBoardCustomer = async (req, res) => {
                 "acctobeopn_atbrncd": await getBranchFromCBS(basicR.CREATED_BRANCH_ID),
                 "accopened_atbrn": await getBranchFromCBS(basicR.CREATED_BRANCH_ID),
 
-                "accopendt": "04-01-2024 00:00:00",
+                "accopendt": generateNewDate(),
 
                 "opnormdf": "A"
             },
@@ -548,7 +551,7 @@ exports.onBoardCustomer = async (req, res) => {
         }
 
         let configuration = {
-            headers: { "Authorization": `Bearer ${bearerKey}`, "userName": `cpc`, "bankName": "Ajara urban", " branchName": "Head Office", "callerSystem": "FCO" }
+            headers: { "Authorization": `Bearer ${bearerKey}`, "userName": 'cpc', "bankName": "Ajara", "branchName": "Ajara", "callerSystem": "FCO" }
         }
         if (config[mode].api.isproxy) {
             configuration.proxy = proxy;
@@ -616,6 +619,9 @@ function convertDate(date, srcFormate = 'dd/mm/yyyy') {
     return converted_date;
 }
 
+
+function addZ(n) { return n < 10 ? '0' + n : '' + n; }
+
 function generateNewDate() {
     let day = new Date().getDate();
     let month = new Date().getMonth() + 1;
@@ -625,10 +631,15 @@ function generateNewDate() {
     let minute = new Date().getMinutes();
     let second = new Date().getSeconds();
 
-    let date = `${day}-${month}-${year} ${hour}:${minute}:${second}`
+    
+
+    let date = `${addZ(day)}-${addZ(month)}-${year} ${addZ(hour)}:${addZ(minute)}:${addZ(second)}`
 
     return date;
 }
+
+
+// console.log("current date = ",generateNewDate());
 
 async function getStateCode(id) {
     try {
@@ -878,7 +889,7 @@ exports.getCustomer = async (req, res) => {
         let bearerKey = await getJWTToken();
 
         let configuration = {
-            headers: { "Authorization": `Bearer ${bearerKey}`, "userName": `ajara.ba`, "bankName": "Ajara urban", " branchName": "Araja", "callerSystem": "FCO" }
+            headers: { "Authorization": `Bearer ${bearerKey}`, "userName": `ajara.ba`, "bankName": "Ajara", " branchName": "Ajara", "callerSystem": "FCO" }
         }
         if (config[mode].api.isproxy) {
             configuration.proxy = proxy;

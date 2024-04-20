@@ -12,7 +12,7 @@ exports.config = {
         },
         api: {
             host: "http://10.128.117.5",
-            port: "8888",
+            port: "9999",
             logs: true,
             routes: [
                 { name: 'jwtToken', url: '/CustomerInfo/api/auth/getJwt', operation: 'get' },
