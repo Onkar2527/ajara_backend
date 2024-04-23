@@ -53,7 +53,7 @@ exports.config = {
             host: "0.0.0.0",
             port: "",
             database_name: "list_cbs_masters",
-            ispass: true,
+            ispass: false,
             password: 'kredpool'
         },
         api: {
