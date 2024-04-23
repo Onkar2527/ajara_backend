@@ -106,7 +106,10 @@ async function generateToken() {
     let promise = new Promise(async (resolve, reject) => {
         try {
 
-            let configuration = {}
+
+            let configuration = {
+                headers: { "userName": 'cpc', "bankName": "Ajara", "branchName": "Ajara", "callerSystem": "FCO" }
+            }
             if (config[mode].api.isproxy) {
                 configuration.proxy = proxy;
             }
@@ -115,11 +118,11 @@ async function generateToken() {
             let token = token_result.token;
 
             setData.TOKEN = token;
-            // console.log("real token", token, setData)
+            console.log("real token", token, setData)
 
             let insert_query = `insert into ${table} set CREATED_DATE = '${setData.CREATED_DATE}', TOKEN = '${setData.TOKEN}' ,IS_EXPIRED = '${setData.IS_EXPIRED}'`;
 
-            await connection.execute(insert_query);
+            await connection.execute(insert_query,);
 
             resolve(token);
 
@@ -184,7 +187,7 @@ async function cacheMasters() {
 
         let bearerKey = await getJWTToken();
         let configuration = {
-            headers: { "Authorization": `Bearer ${bearerKey}`, "userName": `fco`, "bankName": "Ajara urban", " branchName": "Head Office", "callerSystem": "FCO" }
+            headers: { "Authorization": `Bearer ${bearerKey}`, "userName": `fco`, "bankName": "Ajara", " branchName": "Ajara", "callerSystem": "FCO" }
         }
         if (config[mode].api.isproxy) {
             configuration.proxy = proxy;
@@ -235,7 +238,7 @@ exports.syncMasters = () => {
     }
 }
 
-
+// generateToken();
 
 // cacheMasters();
 
@@ -292,6 +295,7 @@ exports.onBoardCustomer = async (req, res) => {
         let serviceT = `facilities`
         let documentT = `applicant_documents`
         let financeT = `financial_information`
+        let nomineeT = `nominee_details`
 
         let basicQ = `select * from ${basicT} where ID = ${applicant_id};`;
         let personalQ = `select * from ${personalT} where APPLICANT_ID = ${applicant_id} AND APPLICANT_NO = 1;`;
@@ -299,6 +303,7 @@ exports.onBoardCustomer = async (req, res) => {
         let documentQ = `select * from ${documentT} where APPLICANT_ID = ${applicant_id} AND APPLICANT_NO = 1;`;
         let serviceQ = `select * from ${serviceT} where APPLICANT_ID = ${applicant_id};`;
         let financeQ = `select * from ${financeT} where APPLICANT_ID = ${applicant_id} AND APPLICANT_NO = 1;`
+        let nomineeQ = `select * from ${nomineeT} where APPLICANT_ID = ${applicant_id};`
 
         let [basicR, basicF] = await db.executeQueryAsyncAwait(basicQ, '');
         let [personalR, personalF] = await db.executeQueryAsyncAwait(personalQ, '');
@@ -306,12 +311,13 @@ exports.onBoardCustomer = async (req, res) => {
         let [serviceR, serviceF] = await db.executeQueryAsyncAwait(serviceQ, '');
         let [financeR, financeF] = await db.executeQueryAsyncAwait(financeQ, '');
         let documentR = await db.executeQueryAsyncAwait(documentQ, '');
+        let [nomineeR, nomineeF] = await db.executeQueryAsyncAwait(nomineeQ, '');
 
         console.log("basicR", basicR);
         console.log("personalR", personalR);
         console.log("depositR", depositR);
         console.log("documentR", documentR);
-
+        console.log("nomineeR", nomineeR);
         // let username = await await getUserNameByID(14);
 
         // res.send({
@@ -321,20 +327,35 @@ exports.onBoardCustomer = async (req, res) => {
 
         let account_opening_data = {
             "custobj": {
-                "title": basicR.CUSTOMER_TYPE_1,
+                "reg_mobileno": personalR.MOBILE_NUMBER,
+                "reg_emailid": personalR.EMAIL_ID,
                 "introbranch": await getBranchFromCBS(basicR.CREATED_BRANCH_ID),
-
                 "typeofcustomer": 1,
-
                 "annualincome": financeR.INCOME.toString(),
                 "smssubscription": serviceR.SMS_ALERT ? "Y" : "N",
                 "middlename": personalR.MIDDLE_NAME,
                 "firstname": personalR.FIRST_NAME,
                 "lastname": personalR.LAST_NAME,
-
                 "createdfor": "A",
-
                 "minor": personalR.IS_MINOR ? "Y" : "N",
+                "birthdate": convertDate(personalR.DATE_OF_BIRTH),
+                "gender": personalR.GENDER,
+                "occupationid": Number(personalR.PROFESSION),
+                "title": basicR.CUSTOMER_TYPE_1,
+                "idtproofid": Number(personalR.ID_PROOF),
+                "idtproofidno": personalR.ID_PROOF_NUMBER,
+                "proofdetailsid": Number(personalR.PERMANENT_ADDRESS_PROOF),
+                "addproofidno": personalR.PERMANENT_ADDRESS_PROOF_NUMBER,
+                "riskcat": Number(personalR.RISK_CATEGORY),
+                "panno": personalR.PAN_NO,//"GTFDT8976M",
+                "fatherspouse": personalR.FATHER_OR_SPOUSE,
+                "bankcode": 1,
+                "brncode": await getBranchFromCBS(basicR.CREATED_BRANCH_ID),
+                "entrystatus": "F",
+                "entryuser": await getUserNameByID(basicR.MAKER_USER_ID),
+                "verifiedby": await getUserNameByID(basicR.CHACKER_USER_ID),
+                "authuser": await getUserNameByID(basicR.VERIFIER_USER_ID),
+
 
                 //if minor is y guardian id should be provided.
 
@@ -354,43 +375,24 @@ exports.onBoardCustomer = async (req, res) => {
                 "religion": Number(personalR.RELIGION),
                 "caste": Number(personalR.CASTE),
 
-                "birthdate": convertDate(personalR.DATE_OF_BIRTH),
-
-                "gender": personalR.GENDER,
-
-                "occupationid": Number(personalR.PROFESSION),
-
-                "idtproofid": Number(personalR.ID_PROOF),
-                "idtproofidno": personalR.ID_PROOF_NUMBER,
-                "proofdetailsid": Number(personalR.PERMANENT_ADDRESS_PROOF),
-                "addproofidno": personalR.PERMANENT_ADDRESS_PROOF_NUMBER,
-
-                "riskcat": Number(personalR.RISK_CATEGORY),
-
-                "panno": personalR.PAN_NO,//"GTFDT8976M",
-
-                "fatherspouse": personalR.FATHER_OR_SPOUSE,
-
-                "bankcode": 1,
-
-                "brncode": await getBranchFromCBS(basicR.CREATED_BRANCH_ID),
-                "entrystatus": "F",
-
-                "entryuser": await getUserNameByID(basicR.MAKER_USER_ID),
-                "verifiedby": await getUserNameByID(basicR.CHACKER_USER_ID),
-                "authuser": await getUserNameByID(basicR.VERIFIER_USER_ID),
-                "reg_mobileno": personalR.MOBILE_NUMBER,
                 "fatherlnm": personalR.F_OR_H_LAST_NAME,
                 "fatherfnm": personalR.F_OR_H_FIRST_NAME,
                 "fathermnm": personalR.F_OR_H_MIDDLE_NAME,
+
                 "motherlname": personalR.MOTHERS_LAST_NAME,
                 "motherfname": personalR.MOTHERS_NAME,
-                "mothermname": personalR.MOTHERS_MIDDLE_NAME
-                // "custuin": personalR.AADHAAR_NUMBER
+                "mothermname": personalR.MOTHERS_MIDDLE_NAME,
+                // "subconstitution": Number(personalR.CONSTITUTION)
+                // "custuin": personalR.AADHAAR_NUMBER,
+
+                "mothertitle": personalR.MOTHER_TITLE,
+                "issuiddocplace": basicR.DOCUMENTS_ISSUE_PLACE,
+                "iddocissuauth": basicR.DOCUMENTS_AUTHORITY,
+                "maritalstatus": personalR.MARITAL_STATUS,//married = 'M', single = 'U',Divorced:'D'
+                "caste_code": Number(personalR.CASTE)
             },
             "addobj_P": {
                 "addresstype": "P",
-
                 "emailid": personalR.EMAIL_ID,
                 "countryid": 1,//constant
                 "stateid": await getStateCode(personalR.PERMANENT_STATE),
@@ -402,23 +404,17 @@ exports.onBoardCustomer = async (req, res) => {
                 "pincode": personalR.PERMANENT_PINCODE,
                 "regionid": 1,
                 // "sequenceno": 1,
-
                 "bankcode": 1,
-
                 "brncode": await getBranchFromCBS(basicR.CREATED_BRANCH_ID),
                 "entrystatus": "F",
-
                 "entryuser": await getUserNameByID(basicR.MAKER_USER_ID),
                 "verifiedby": await getUserNameByID(basicR.CHACKER_USER_ID),
-                "authuser": await getUserNameByID(basicR.VERIFIER_USER_ID)
+                "authuser": await getUserNameByID(basicR.VERIFIER_USER_ID),
+                "addressline1": `${personalR.PERMANENT_ADDRESS} ${personalR.PERMANENT_LANDMARK}`
             },
             "addobj_C": {
                 "addresstype": "C",
-
-
-
                 "countryid": 1,
-
                 "stateid": await getStateCode(personalR.CURRENT_STATE),
                 "districtid": await getDistCode(personalR.CURRENT_DISTRICT),
                 "talukaid": await getTalukaCode(personalR.CURRENT_TALUKA),
@@ -427,16 +423,13 @@ exports.onBoardCustomer = async (req, res) => {
                 "regionid": 1,
                 "mobile": personalR.MOBILE_NUMBER,
                 "pincode": personalR.CURRENT_PINCODE,
-
                 // "sequenceno": 1,
-
                 "bankcode": 1,
-
                 "brncode": await getBranchFromCBS(basicR.CREATED_BRANCH_ID),
-
                 "entryuser": await getUserNameByID(basicR.MAKER_USER_ID),
                 "verifiedby": await getUserNameByID(basicR.CHACKER_USER_ID),
-                "authuser": await getUserNameByID(basicR.VERIFIER_USER_ID)
+                "authuser": await getUserNameByID(basicR.VERIFIER_USER_ID),
+                "addressline1": `${personalR.CURRENT_ADDRESS} ${personalR.CURRENT_LANDMARK}`
             },
             "kyccomobj": {
                 "kcc_status": "F",
@@ -501,7 +494,7 @@ exports.onBoardCustomer = async (req, res) => {
                 "acctobeopn_atbrncd": await getBranchFromCBS(basicR.CREATED_BRANCH_ID),
                 "accopened_atbrn": await getBranchFromCBS(basicR.CREATED_BRANCH_ID),
 
-                "accopendt": "04-01-2024 00:00:00",
+                "accopendt": generateNewDate(),
 
                 "opnormdf": "A"
             },
@@ -531,10 +524,19 @@ exports.onBoardCustomer = async (req, res) => {
                 "acctobeopn_atbrncd": await getBranchFromCBS(basicR.CREATED_BRANCH_ID),
                 "accopened_atbrn": await getBranchFromCBS(basicR.CREATED_BRANCH_ID)
             },
+            "acnomobj": {
+                "and_nominame": nomineeR.NOMINEE_NAME,
+                "and_nominaddrs": nomineeR.NOMINEE_ADDRESS,
+                "and_relation": Relation(nomineeR.RELATION),
+                // "and_minority": "Y",
+                "and_dtofbirth": convertDate(nomineeR.DOB),
+                "brncode": await getBranchFromCBS(basicR.CREATED_BRANCH_ID),
+                "and_caretaker": `${nomineeR.APONITED_NAME}  ${nomineeR.APONITED_ADDRESS}`
+            },
             "m_kcd_iddocimage": await getDocument('Applicant ID Proof', documentR),
             "m_kcd_adddocimage": await getDocument('Applicant Address Proof', documentR),
             "m_kcd_photo": await getDocument('Applicant Photo', documentR),
-            "m_kcd_sign": ""
+            "m_kcd_sign": await getDocument('Signature', documentR)
         }
 
         let posturl = `${config[mode].api.host}:${config[mode].api.port}${config[mode].api.routes[3].url}`
@@ -549,7 +551,7 @@ exports.onBoardCustomer = async (req, res) => {
         }
 
         let configuration = {
-            headers: { "Authorization": `Bearer ${bearerKey}`, "userName": `cpc`, "bankName": "Ajara urban", " branchName": "Head Office", "callerSystem": "FCO" }
+            headers: { "Authorization": `Bearer ${bearerKey}`, "userName": 'cpc', "bankName": "Ajara", "branchName": "Ajara", "callerSystem": "FCO" }
         }
         if (config[mode].api.isproxy) {
             configuration.proxy = proxy;
@@ -617,6 +619,9 @@ function convertDate(date, srcFormate = 'dd/mm/yyyy') {
     return converted_date;
 }
 
+
+function addZ(n) { return n < 10 ? '0' + n : '' + n; }
+
 function generateNewDate() {
     let day = new Date().getDate();
     let month = new Date().getMonth() + 1;
@@ -626,10 +631,15 @@ function generateNewDate() {
     let minute = new Date().getMinutes();
     let second = new Date().getSeconds();
 
-    let date = `${day}-${month}-${year} ${hour}:${minute}:${second}`
+
+
+    let date = `${addZ(day)}-${addZ(month)}-${year} ${addZ(hour)}:${addZ(minute)}:${addZ(second)}`
 
     return date;
 }
+
+
+// console.log("current date = ",generateNewDate());
 
 async function getStateCode(id) {
     try {
@@ -795,6 +805,7 @@ exports.getMasters = async (req, res) => {
 
 
         let masterCode = req.body.code;
+        let filter = req.body.filter;
 
         let masterQ = `select NAME from masters_list where ID = ${masterCode}`
 
@@ -808,7 +819,7 @@ exports.getMasters = async (req, res) => {
             if (masterR[0].NAME) {
                 table_name = masterR[0].NAME;
 
-                let getMasterQ = `select * from ${table_name}`
+                let getMasterQ = `select * from ${table_name} where 1 ${filter}`
 
                 let [result, resultF] = await connection.query(getMasterQ);
 
@@ -848,6 +859,27 @@ exports.getMasters = async (req, res) => {
 
 }
 
+function Relation(code) {
+    let valid_codes = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
+
+    if (!valid_codes.includes(code)) {
+        return '';
+    }
+
+    optionList = {
+        'A': 'Father',
+        'B': 'Mother',
+        'C': 'Brother',
+        'D': 'Sister',
+        'E': 'Son',
+        'F': 'Daughter',
+        'G': 'Husband',
+        'H': 'Wife'
+    }
+
+    return optionList[code];
+
+}
 
 exports.getCustomer = async (req, res) => {
     try {
@@ -858,7 +890,7 @@ exports.getCustomer = async (req, res) => {
         let bearerKey = await getJWTToken();
 
         let configuration = {
-            headers: { "Authorization": `Bearer ${bearerKey}`, "userName": `ajara.ba`, "bankName": "Ajara urban", " branchName": "Araja", "callerSystem": "FCO" }
+            headers: { "Authorization": `Bearer ${bearerKey}`, "userName": `ajara.ba`, "bankName": "Ajara", " branchName": "Ajara", "callerSystem": "FCO" }
         }
         if (config[mode].api.isproxy) {
             configuration.proxy = proxy;
