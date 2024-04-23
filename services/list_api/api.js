@@ -106,7 +106,7 @@ async function generateToken() {
     let promise = new Promise(async (resolve, reject) => {
         try {
 
-          
+
             let configuration = {
                 headers: { "userName": 'cpc', "bankName": "Ajara", "branchName": "Ajara", "callerSystem": "FCO" }
             }
@@ -631,7 +631,7 @@ function generateNewDate() {
     let minute = new Date().getMinutes();
     let second = new Date().getSeconds();
 
-    
+
 
     let date = `${addZ(day)}-${addZ(month)}-${year} ${addZ(hour)}:${addZ(minute)}:${addZ(second)}`
 
@@ -805,6 +805,7 @@ exports.getMasters = async (req, res) => {
 
 
         let masterCode = req.body.code;
+        let filter = req.body.filter;
 
         let masterQ = `select NAME from masters_list where ID = ${masterCode}`
 
@@ -818,7 +819,7 @@ exports.getMasters = async (req, res) => {
             if (masterR[0].NAME) {
                 table_name = masterR[0].NAME;
 
-                let getMasterQ = `select * from ${table_name}`
+                let getMasterQ = `select * from ${table_name} where 1 ${filter}`
 
                 let [result, resultF] = await connection.query(getMasterQ);
 
