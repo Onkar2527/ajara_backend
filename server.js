@@ -39,7 +39,7 @@ app.disable('x-powered-by');
 
 app.use('/', globalRoutes)
 
-require("./services/list_api/api").syncMasters()
+// require("./services/list_api/api").syncMasters()
 
 if (process.env.IS_HTTPS == 1) {
 

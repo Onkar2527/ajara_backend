@@ -37,10 +37,7 @@ router
 
     .use('/api/pincode', require('./pincode'))
 
-    .post('/api/user/login', require('../services/userAccess/user').login)
-    .post('/api/user/getUser', require('../services/userAccess/user').getUser)
-    .post('/api/user/getUserBranch', require('../services/userAccess/user').getUserBranch)
-    .post('/api/user/getUserRole', require('../services/userAccess/user').getUserRole)
+    .post('/api/user', require('./userAccess/user'))
 
     .use('/api/status', require('./status'))
 
@@ -54,4 +51,6 @@ router
     .use('/api/list_api', require('./list_api/api'))
 
     .use('/api/doc_verify', require('./doc_verify_api/doc_verify_api'))
+
+    .use('/api/passwordPolicy', require('./password_policy'))
 module.exports = router
