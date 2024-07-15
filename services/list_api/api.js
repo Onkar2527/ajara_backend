@@ -883,9 +883,24 @@ function Relation(code) {
 
 exports.getCustomer = async (req, res) => {
     try {
-        let customerID = req.body.CUSTOMER_ID;
+        let search_mode = req.body.mode;
+        let search_key = 'customerCode';
+        let search_value = req.body.CUSTOMER_ID;
+        if (search_mode == 'CUSTOMER_ID') {
+            search_key = 'customerCode';
+            search_value = req.body.CUSTOMER_ID;
+        }
+        else if (search_mode == 'AADHAAR_NO') {
+            search_key = 'adharNo'
+            search_value = req.body.AADHAAR_NO;
+        }
+        else if (search_mode == 'PAN') {
+            search_key = 'panCardNo';
+            search_value = req.body.PAN_NO;
+        }
 
-        let getCustomer = `${config[mode].api.host}:${config[mode].api.port}${config[mode].api.routes[2].url}customerCode=${customerID}`
+
+        let getCustomer = `${config[mode].api.host}:${config[mode].api.port}${config[mode].api.routes[2].url}${search_key}=${search_value}`
 
         let bearerKey = await getJWTToken();
 
@@ -902,7 +917,8 @@ exports.getCustomer = async (req, res) => {
 
 
         let res_body = {
-            // CUSTOMER_ID: '',
+            CUSTOMER_ID: customerData['Customer Details'].CUSTOMERID,
+            CUSTUIN: customerData['Customer Details'].CUSTUIN,
             FIRST_NAME: customerData['Customer Details'].FIRSTNAME,
             MIDDLE_NAME: customerData['Customer Details'].MIDDLENAME,
             LAST_NAME: customerData['Customer Details'].LASTNAME,

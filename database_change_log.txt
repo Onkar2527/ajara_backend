@@ -8,3 +8,5 @@ changed the size of RELIGION, CASTE and PROFESSION from char(1) to char(4) in ap
 [09-07-2024 14:57]
 user_master : new column PASSWORD_RESET_DATE Type : DATETIME;
 password_policy : new table;
+tab_master : delete for ID 7
+extra_information: delete for TAB_ID 7
