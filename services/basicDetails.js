@@ -104,7 +104,7 @@ function reqData(req) {
 
         LICENSE_NO_1: req.body.LICENSE_NO_1,
         LICENSE_NO_2: req.body.LICENSE_NO_2,
-        
+
         DOCUMENTS_AUTHORITY: req.body.DOCUMENTS_AUTHORITY,
         DOCUMENTS_ISSUE_PLACE: req.body.DOCUMENTS_ISSUE_PLACE,
     }
@@ -115,7 +115,7 @@ function reqData(req) {
 
 function cpcAccess(req) {
     let data = {
-        // VERIFIER_USER_ID: req.body.VERIFIER_USER_ID,
+        VERIFIER_USER_ID: req.body.VERIFIER_USER_ID,
         TRACK_ID: req.body.TRACK_ID,
     }
     return data;
@@ -123,7 +123,7 @@ function cpcAccess(req) {
 
 function checkerAccess(req) {
     let data = {
-        VERIFIER_USER_ID: req.body.VERIFIER_USER_ID,
+        // VERIFIER_USER_ID: req.body.VERIFIER_USER_ID,
         TRACK_ID: req.body.TRACK_ID,
         VERIFIED_DATE_TIME: req.body.VERIFIED_DATE_TIME
     }
@@ -476,9 +476,24 @@ exports.update = (req, res) => {
 
 }
 
+function convertDate(date = null) {
+    if (date)
+        return new Date(date).toISOString().slice(0, 19).replace('T', ' ');
+    else
+        return new Date().toISOString().slice(0, 19).replace('T', ' ');
+}
+
 exports.getAll = (req, res) => {
 
     let user_data = req.body.user_details;
+    let userFilter = req.body.filter;
+
+    let userFilterStr =
+        `
+    ${userFilter.BRANCH_ID ? ` AND CREATED_BRANCH_ID = ${userFilter.BRANCH_ID}` : ''}
+    ${userFilter.TRACK_ID ? ` AND TRACK_ID = ${userFilter.TRACK_ID}` : ''}
+    
+    `
 
     const supportKey = req.header['supportkey'];
 
@@ -509,7 +524,7 @@ exports.getAll = (req, res) => {
 
     let makerFilter = ` AND CHACKER_USER_ID = ${user_data.USER_ID} ${branchFilter}`;
 
-    let verifierFilter = ` AND VERIFIER_USER_ID = ${user_data.USER_ID}`;
+    let verifierFilter = ` ${userFilterStr} AND VERIFIER_USER_ID = ${user_data.USER_ID}  OR (ISNULL(VERIFIER_USER_ID) AND TRACK_ID = 3)`;
 
     if (user_data.ROLE_ID == 1) {
         filter = chakerFilter;
@@ -529,6 +544,8 @@ exports.getAll = (req, res) => {
         criteria = filter + "  order by " + sortKey + " " + sortValue;
 
     let countCriteria = filter;
+
+    console.log("Count C",criteria)
 
     db.executeQuery(`select count(*) as cnt from basic_details where 1 ` + countCriteria, supportKey, (error, resultCount) => {
         if (error) {
