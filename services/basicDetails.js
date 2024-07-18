@@ -107,6 +107,8 @@ function reqData(req) {
 
         DOCUMENTS_AUTHORITY: req.body.DOCUMENTS_AUTHORITY,
         DOCUMENTS_ISSUE_PLACE: req.body.DOCUMENTS_ISSUE_PLACE,
+
+        IS_AADHAAR_DBT: req.body.IS_AADHAAR_DBT,
     }
 
     return data;
@@ -489,10 +491,13 @@ exports.getAll = (req, res) => {
     let userFilter = req.body.filter;
 
     let userFilterStr =
-        `
+    `
     ${userFilter.BRANCH_ID ? ` AND CREATED_BRANCH_ID = ${userFilter.BRANCH_ID}` : ''}
     ${userFilter.TRACK_ID ? ` AND TRACK_ID = ${userFilter.TRACK_ID}` : ''}
-    
+    ${userFilter.IS_AADHAAR_DBT == 'Y' ? ` AND IS_AADHAAR_DBT` : ''}
+    ${userFilter.IS_AADHAAR_DBT == 'N' ? ` AND NOT IS_AADHAAR_DBT OR ISNULL(IS_AADHAAR_DBT)` : ''}
+    ${userFilter.START_DATE ? ` AND CAST(APPLICATION_DATE AS DATE) >= CAST('${convertDate(userFilter.START_DATE)}' AS DATE)` : ''}
+    ${userFilter.END_DATE ? ` AND CAST(APPLICATION_DATE AS DATE) <= CAST('${convertDate(userFilter.END_DATE)}' AS DATE)` : ''}
     `
 
     const supportKey = req.header['supportkey'];
@@ -524,7 +529,7 @@ exports.getAll = (req, res) => {
 
     let makerFilter = ` AND CHACKER_USER_ID = ${user_data.USER_ID} ${branchFilter}`;
 
-    let verifierFilter = ` ${userFilterStr} AND VERIFIER_USER_ID = ${user_data.USER_ID}  OR (ISNULL(VERIFIER_USER_ID) AND TRACK_ID = 3)`;
+    let verifierFilter = ` ${userFilterStr} AND (VERIFIER_USER_ID = ${user_data.USER_ID}  OR (ISNULL(VERIFIER_USER_ID) AND TRACK_ID = 3))`;
 
     if (user_data.ROLE_ID == 1) {
         filter = chakerFilter;
@@ -545,7 +550,7 @@ exports.getAll = (req, res) => {
 
     let countCriteria = filter;
 
-    console.log("Count C",criteria)
+    console.log("Count C", criteria)
 
     db.executeQuery(`select count(*) as cnt from basic_details where 1 ` + countCriteria, supportKey, (error, resultCount) => {
         if (error) {
