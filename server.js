@@ -44,9 +44,8 @@ app.use('/', globalRoutes)
 if (process.env.IS_HTTPS == 1) {
 
     const options = {
-        key: fs.readFileSync('webkey.key'),
-        cert: fs.readFileSync('webcert.crt'),
-        ca: fs.readFileSync('webca.crt'),
+        key: fs.readFileSync('/var/www/html/ssl/203-192-206-209_no_passphrase.key'),
+        cert: fs.readFileSync('/var/www/html/ssl/203_192_206_209_bundle.crt')
     };
     const httpsServer = https.createServer(options, app)
 
