@@ -288,7 +288,7 @@ exports.create = async (req, res) => {
 
         let basicInsert = await db.executeQueryDataAsyncAwait(q, data, supportKey);
 
-        const q_tab = `insert into frictionless_account_opening.extra_information (APPLICANT_ID, TAB_ID) select ${basicInsert.insertId}, ID from tab_master`
+        const q_tab = `insert into extra_information (APPLICANT_ID, TAB_ID) select ${basicInsert.insertId}, ID from tab_master`
 
         await db.executeQueryAsyncAwait(q_tab, supportKey);
 
