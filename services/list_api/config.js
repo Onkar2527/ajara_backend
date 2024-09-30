@@ -50,15 +50,15 @@ exports.config = {
         database_config: {
             user: 'root',
             database_type: "mysql",
-            host: "0.0.0.0",
+            host: "localhost",
             port: "",
-            database_name: "list_cbs_masters",
+            database_name: "list_cbs_uat",
             ispass: false,
-            password: 'kredpool'
+            password: 'fco@kredpool'
         },
         api: {
             host: "http://103.42.162.39",
-            port: "8888",
+            port: "8085",
             logs: true,
             routes: [
                 { name: 'jwtToken', url: '/CustomerInfo/api/auth/getJwt', operation: 'get' },
