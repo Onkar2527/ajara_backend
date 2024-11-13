@@ -53,4 +53,10 @@ router
     .use('/api/doc_verify', require('./doc_verify_api/doc_verify_api'))
 
     .use('/api/passwordPolicy', require('./password_policy'))
+
+    //guardian
+
+    .use('/api/guardianInfo', require('./guardianInformation'))
+  
+    .use('/api/guardianDocument', require('./guardianDocument'))
 module.exports = router
