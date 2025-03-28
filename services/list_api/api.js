@@ -612,7 +612,7 @@ function convertDate(date, srcFormate = 'dd/mm/yyyy') {
 
     // let converted_date = new Date(dateArr[2], dateArr[1], dateArr[0], 0, 0, 0)
 
-    let converted_date = `${dateArr[0]}-${dateArr[1]}-${dateArr[2]} 00:00:00`
+    let converted_date = `${dateArr[0]}-${dateArr[1]}-${dateArr[2]}`
 
     console.log("Date :", converted_date);
 
