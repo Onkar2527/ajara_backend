@@ -238,212 +238,171 @@ function getAllApplicantDoc(req) {
     return data
 }
 
-exports.get = (req, res) => {
-
-    let supportKey = req.headers['supportkey'];
-    const q = `select * from basic_details where ID = ${req.body.ID}`
-    db.executeQuery(q, supportKey, (error, results) => {
-        if (error) {
-            console.log("Error", error);
-            res.send({
-                "code": 400,
-                "message": "Failed to get personal details "
-            })
-        }
-        else {
-            res.send({
-                "code": 200,
-                "message": "OK",
-                "data": results
-            })
-
-        }
-    })
-
-
-
-}
+exports.get = async (req, res) => {
+    const supportKey = req.headers['supportkey'];
+    const q = `select * from basic_details where ID = ?`;
+    try {
+        const results = await db.executeQueryData(q, [req.body.ID], supportKey);
+        res.send({
+            "code": 200,
+            "message": "OK",
+            "data": results
+        });
+    } catch (error) {
+        console.log("Error", error);
+        res.status(400).send({
+            "code": 400,
+            "message": "Failed to get personal details"
+        });
+    }
+};
 
 exports.create = async (req, res) => {
-
     let data = reqData(req);
     let allApplicants = getAllApplicantsInfo(req);
     let docApplicants = getAllApplicantDoc(req);
     let commonFields = getCommonApplicantInfo(req);
-
     let supportKey = req.headers['supportkey'];
-
-    let con = db.openConnection();
-
-    console.log("data", data);
-    console.log("applicants", allApplicants);
-
-    data.MODIFIED_DATE = new Date();
-
-    const q = `insert into basic_details set ?`
-
+    let connection;
 
     try {
+        connection = await db.openConnection();
+        data.MODIFIED_DATE = new Date();
+        const q = `insert into basic_details set ?`;
+        let basicInsert = await db.executeQueryData(q, data, supportKey);
 
-
-        let basicInsert = await db.executeQueryDataAsyncAwait(q, data, supportKey);
-
-        const q_tab = `insert into extra_information (APPLICANT_ID, TAB_ID) select ${basicInsert.insertId}, ID from tab_master`
-
-        await db.executeQueryAsyncAwait(q_tab, supportKey);
-
+        const q_tab = `insert into extra_information (APPLICANT_ID, TAB_ID) select ${basicInsert.insertId}, ID from tab_master`;
+        await db.executeQuery(q_tab, supportKey);
 
         for (let i = 1; i <= req.body.NO_OF_APPLICANT; i++) {
-            let applicantQuery = `insert into ${applicant_table} set ? `
-            let applicantPhotos = `insert into applicant_photos set ? `
-            let applicantDocuments = `insert into applicant_documents (DOCUMENT_NAME,APPLICANT_ID,APPLICANT_NO) select DOCUMENT_NAME, ${basicInsert.insertId}, ${i}  from document_master ORDER BY SEQ_NO`
+            let applicantQuery = `insert into ${applicant_table} set ? `;
+            let applicantPhotos = `insert into applicant_photos set ? `;
+            let applicantDocuments = `insert into applicant_documents (DOCUMENT_NAME,APPLICANT_ID,APPLICANT_NO) select DOCUMENT_NAME, ${basicInsert.insertId}, ${i}  from document_master ORDER BY SEQ_NO`;
 
             allApplicants[i - 1]['APPLICANT_ID'] = basicInsert.insertId;
             docApplicants[i - 1]['APPLICANT_ID'] = basicInsert.insertId;
 
             allApplicants[i - 1] = { ...allApplicants[i - 1], ...commonFields };
-            await db.executeQueryDataAsyncAwait(applicantQuery, allApplicants[i - 1], supportKey);
-            await db.executeQueryDataAsyncAwait(applicantPhotos, docApplicants[i - 1], supportKey);
-            await db.executeQueryAsyncAwait(applicantDocuments, supportKey);
+            await db.executeQueryData(applicantQuery, allApplicants[i - 1], supportKey);
+            await db.executeQueryData(applicantPhotos, docApplicants[i - 1], supportKey);
+            await db.executeQuery(applicantDocuments, supportKey);
         }
 
-        db.commitConnection(con)
+        await db.commitConnection(connection);
         res.send({
             "code": 200,
             "message": "Basic details saved successfully",
             "APPLICANT_ID": basicInsert.insertId
-        })
+        });
 
-    }
-    catch (error) {
+    } catch (error) {
         console.log("error", error);
-        db.rollbackConnection(con)
-        res.send({
+        if (connection) {
+            await db.rollbackConnection(connection);
+        }
+        res.status(400).send({
             "code": 400,
             "message": "Failed to save basic details"
-        })
+        });
     }
-
 }
 
 
 exports.update1 = async (req, res) => {
     const supportKey = req.headers['supportkey'];
-    let con = db.openConnection();
+    let connection;
     let allApplicants = getAllApplicantsInfo(req);
     let docApplicants = getAllApplicantDoc(req);
     let commonFields = getCommonApplicantInfo(req);
-
     let ROLE_ID = req.body.ROLE_ID;
-
     let data = ``;
 
     if (ROLE_ID == 1) {
-
         data = reqData(req);
-        if (data.TRACK_ID == 2)
-            data.MODIFIED_DATE = new Date();
-    }
-    else if (ROLE_ID == 2) {
+        if (data.TRACK_ID == 2) data.MODIFIED_DATE = new Date();
+    } else if (ROLE_ID == 2) {
         data = checkerAccess(req);
-
         data.MODIFIED_DATE = new Date();
-    }
-    else if (ROLE_ID == 3) {
+    } else if (ROLE_ID == 3) {
         data = cpcAccess(req);
         data.MODIFIED_DATE = new Date();
-    }
-    else {
+    } else {
         data = reqData(req);
     }
 
     let setData = '';
     let recData = [];
-
     Object.keys(data).forEach(key => {
         setData += `${key} = ? ,`;
         recData.push(data[key]);
     });
+    setData = setData.slice(0, -1);
 
-    setData2 = setData.slice(0, -1);
-
-    console.log("dtttt ", setData2);
-
-    const q = `update basic_details set ${setData2} where ID = ${req.body.ID}`
+    const q = `update basic_details set ${setData} where ID = ${req.body.ID}`;
 
     try {
-        await db.executeQueryDataAsyncAwait(q, recData, supportKey);
+        connection = await db.openConnection();
+        await db.executeQueryData(q, recData, supportKey);
 
         if (ROLE_ID == 1) {
             for (let i = 1; i <= req.body.NO_OF_APPLICANT; i++) {
-                let applicant = await db.executeQueryAsyncAwait(`select * from ${applicant_table} where APPLICANT_ID = ${req.body.ID} AND APPLICANT_NO = ${i}`);
+                let applicant = await db.executeQuery(`select * from ${applicant_table} where APPLICANT_ID = ${req.body.ID} AND APPLICANT_NO = ${i}`);
 
                 if (applicant.length == 0) {
-                    let applicantQuery = `insert into ${applicant_table} set ? `
-                    let applicantPhotos = `insert into applicant_photos set ? `
-                    let applicantDocuments = `insert into applicant_documents (DOCUMENT_NAME,APPLICANT_ID,APPLICANT_NO) select DOCUMENT_NAME, ${req.body.ID}, ${i}  from document_master ORDER BY SEQ_NO`
+                    let applicantQuery = `insert into ${applicant_table} set ? `;
+                    let applicantPhotos = `insert into applicant_photos set ? `;
+                    let applicantDocuments = `insert into applicant_documents (DOCUMENT_NAME,APPLICANT_ID,APPLICANT_NO) select DOCUMENT_NAME, ${req.body.ID}, ${i}  from document_master ORDER BY SEQ_NO`;
 
                     allApplicants[i - 1] = { ...allApplicants[i - 1], ...commonFields };
-                    await db.executeQueryDataAsyncAwait(applicantQuery, allApplicants[i - 1], supportKey);
-                    await db.executeQueryDataAsyncAwait(applicantPhotos, docApplicants[i - 1], supportKey);
-                    await db.executeQueryAsyncAwait(applicantDocuments, supportKey);
-                }
-
-                else if (applicant.length > 0) {
-
+                    await db.executeQueryData(applicantQuery, allApplicants[i - 1], supportKey);
+                    await db.executeQueryData(applicantPhotos, docApplicants[i - 1], supportKey);
+                    await db.executeQuery(applicantDocuments, supportKey);
+                } else if (applicant.length > 0) {
                     let applicantsPersonalfeilds = '';
                     let applicantsPersonalArray = [];
-
-                    // console.log("applicant ",allApplicants[i-1])
                     Object.keys(allApplicants[i - 1]).forEach(key => {
                         applicantsPersonalfeilds += `${key} = ? ,`;
                         applicantsPersonalArray.push(allApplicants[i - 1][key]);
                     });
-
-                    applicantsPersonalfeilds = applicantsPersonalfeilds.slice(0, -1)
-
+                    applicantsPersonalfeilds = applicantsPersonalfeilds.slice(0, -1);
 
                     let applicantsPhotofeilds = '';
                     let applicantsPhototArray = [];
-
-                    // console.log("applicant ",allApplicants[i-1])
                     Object.keys(docApplicants[i - 1]).forEach(key => {
                         applicantsPhotofeilds += `${key} = ? ,`;
                         applicantsPhototArray.push(docApplicants[i - 1][key]);
                     });
-
                     applicantsPhotofeilds = applicantsPhotofeilds.slice(0, -1);
 
-                    let applicantQuery = `update ${applicant_table} set ${applicantsPersonalfeilds} where ID = ${applicant[0].ID} `
-                    let applicantPhotos = `update applicant_photos set ${applicantsPhotofeilds} where APPLICANT_ID = ${req.body.ID} AND APPLICANT_NO = ${i} `
+                    let applicantQuery = `update ${applicant_table} set ${applicantsPersonalfeilds} where ID = ${applicant[0].ID} `;
+                    let applicantPhotos = `update applicant_photos set ${applicantsPhotofeilds} where APPLICANT_ID = ${req.body.ID} AND APPLICANT_NO = ${i} `;
 
-                    await db.executeQueryDataAsyncAwait(applicantQuery, applicantsPersonalArray, supportKey);
-                    await db.executeQueryDataAsyncAwait(applicantPhotos, applicantsPhototArray, supportKey);
+                    await db.executeQueryData(applicantQuery, applicantsPersonalArray, supportKey);
+                    await db.executeQueryData(applicantPhotos, applicantsPhototArray, supportKey);
                 }
             }
         }
 
-
+        await db.commitConnection(connection);
         res.send({
             "code": 200,
-            "message": "bascic details update successfully"
-        })
+            "message": "Basic details updated successfully"
+        });
 
-    }
-    catch (error) {
+    } catch (error) {
         console.log(error);
-        db.rollbackConnection(con)
-        res.send({
+        if (connection) {
+            await db.rollbackConnection(connection);
+        }
+        res.status(400).send({
             "code": 400,
-            "message": "Failed to update personal_information."
-        })
+            "message": "Failed to update personal information."
+        });
     }
 }
 
-exports.update = (req, res) => {
+exports.update = async (req, res) => {
     const supportKey = req.headers['supportkey'];
-
-
     const data = reqData(req);
     let setData = '';
     let recData = [];
@@ -453,30 +412,25 @@ exports.update = (req, res) => {
         recData.push(data[key]);
     });
 
-    setData2 = setData.slice(0, -1)
+    setData = setData.slice(0, -1);
 
-    const q = `update basic_details set ${setData2} where ID = ${req.body.ID}`
-    db.executeQueryData(q, recData, supportKey, (error) => {
-        if (error) {
-            console.log(error);
-            res.send({
-                "code": 400,
-                "message": "Failed to update basic form details"
-            })
+    const q = `update basic_details set ${setData} where ID = ?`;
+    recData.push(req.body.ID);
 
-        }
-        else {
-            res.send({
-                "code": 200,
-                "message": "basic details updated successfully"
-            })
-
-        }
-
-    })
-
-
-}
+    try {
+        await db.executeQueryData(q, recData, supportKey);
+        res.send({
+            "code": 200,
+            "message": "Basic details updated successfully"
+        });
+    } catch (error) {
+        console.log(error);
+        res.status(400).send({
+            "code": 400,
+            "message": "Failed to update basic form details"
+        });
+    }
+};
 
 function convertDate(date = null) {
     if (date)
@@ -485,103 +439,54 @@ function convertDate(date = null) {
         return new Date().toISOString().slice(0, 19).replace('T', ' ');
 }
 
-exports.getAll = (req, res) => {
+exports.getAll = async (req, res) => {
+    const { user_details, filter: userFilter, pageIndex = '', pageSize = '', sortKey = 'MODIFIED_DATE', sortValue = 'DESC' } = req.body;
+    const supportKey = req.header ? req.header['supportkey'] : '';
 
-    let user_data = req.body.user_details;
-    let userFilter = req.body.filter;
+    const userFilterStr = `
+        ${userFilter.BRANCH_ID ? ` AND CREATED_BRANCH_ID = ${userFilter.BRANCH_ID}` : ''}
+        ${userFilter.TRACK_ID ? ` AND TRACK_ID = ${userFilter.TRACK_ID}` : ''}
+        ${userFilter.IS_AADHAAR_DBT === 'Y' ? ` AND IS_AADHAAR_DBT` : ''}
+        ${userFilter.IS_AADHAAR_DBT === 'N' ? ` AND NOT IS_AADHAAR_DBT OR ISNULL(IS_AADHAAR_DBT)` : ''}
+        ${userFilter.START_DATE ? ` AND CAST(APPLICATION_DATE AS DATE) >= CAST('${convertDate(userFilter.START_DATE)}' AS DATE)` : ''}
+        ${userFilter.END_DATE ? ` AND CAST(APPLICATION_DATE AS DATE) <= CAST('${convertDate(userFilter.END_DATE)}' AS DATE)` : ''}
+    `;
 
-    let userFilterStr =
-    `
-    ${userFilter.BRANCH_ID ? ` AND CREATED_BRANCH_ID = ${userFilter.BRANCH_ID}` : ''}
-    ${userFilter.TRACK_ID ? ` AND TRACK_ID = ${userFilter.TRACK_ID}` : ''}
-    ${userFilter.IS_AADHAAR_DBT == 'Y' ? ` AND IS_AADHAAR_DBT` : ''}
-    ${userFilter.IS_AADHAAR_DBT == 'N' ? ` AND NOT IS_AADHAAR_DBT OR ISNULL(IS_AADHAAR_DBT)` : ''}
-    ${userFilter.START_DATE ? ` AND CAST(APPLICATION_DATE AS DATE) >= CAST('${convertDate(userFilter.START_DATE)}' AS DATE)` : ''}
-    ${userFilter.END_DATE ? ` AND CAST(APPLICATION_DATE AS DATE) <= CAST('${convertDate(userFilter.END_DATE)}' AS DATE)` : ''}
-    `
+    let filter = '';
+    const branchFilter = ` AND CREATED_BRANCH_ID = ${user_details.BRANCH_ID}`;
+    const chakerFilter = ` AND MAKER_USER_ID = ${user_details.USER_ID} ${branchFilter}`;
+    const makerFilter = ` AND CHACKER_USER_ID = ${user_details.USER_ID} ${branchFilter}`;
+    const verifierFilter = ` ${userFilterStr} AND (VERIFIER_USER_ID = ${user_details.USER_ID}  OR (ISNULL(VERIFIER_USER_ID) AND TRACK_ID = 3))`;
 
-    const supportKey = req.header['supportkey'];
+    if (user_details.ROLE_ID == 1) filter = chakerFilter;
+    else if (user_details.ROLE_ID == 2) filter = makerFilter;
+    else if (user_details.ROLE_ID == 3) filter = verifierFilter;
 
-    var pageIndex = req.body.pageIndex ? req.body.pageIndex : '';
-
-    var pageSize = req.body.pageSize ? req.body.pageSize : '';
-    var start = 0;
-    var end = 0;
-
-    console.log(pageIndex + " " + pageSize)
+    let criteria = `${filter} order by ${sortKey} ${sortValue}`;
     if (pageIndex && pageSize) {
-        start = (pageIndex - 1) * pageSize;
-        end = pageSize;
-        console.log(start + " " + end);
+        const start = (pageIndex - 1) * pageSize;
+        criteria += ` LIMIT ${start},${pageSize}`;
     }
 
-    let sortKey = req.body.sortKey ? req.body.sortKey : 'MODIFIED_DATE';
-    let sortValue = req.body.sortValue ? req.body.sortValue : 'DESC';
+    const countCriteria = filter;
 
-    let filter = ``
+    try {
+        const [resultCount, results] = await Promise.all([
+            db.executeQuery(`select count(*) as cnt from basic_details where 1 ${countCriteria}`, supportKey),
+            db.executeQuery(`select * from basic_details where 1 ${criteria}`, supportKey)
+        ]);
 
-    let criteria = '';
-
-
-    let branchFilter = ` AND CREATED_BRANCH_ID = ${user_data.BRANCH_ID}`;
-
-    let chakerFilter = ` AND MAKER_USER_ID = ${user_data.USER_ID} ${branchFilter}`;
-
-    let makerFilter = ` AND CHACKER_USER_ID = ${user_data.USER_ID} ${branchFilter}`;
-
-    let verifierFilter = ` ${userFilterStr} AND (VERIFIER_USER_ID = ${user_data.USER_ID}  OR (ISNULL(VERIFIER_USER_ID) AND TRACK_ID = 3))`;
-
-    if (user_data.ROLE_ID == 1) {
-        filter = chakerFilter;
+        res.send({
+            "code": 200,
+            "message": "ok",
+            "count": resultCount[0] ? resultCount[0].cnt : 0,
+            "data": results
+        });
+    } catch (error) {
+        console.log("error", error);
+        res.status(400).send({
+            "code": 400,
+            "message": "Failed to get drafts"
+        });
     }
-
-    else if (user_data.ROLE_ID == 2) {
-        filter = makerFilter;
-    }
-
-    else if (user_data.ROLE_ID == 3) {
-        filter = verifierFilter;
-    }
-
-    if (pageIndex && pageSize)
-        criteria = filter + "  order by " + sortKey + " " + sortValue + " LIMIT " + start + "," + end;
-    else
-        criteria = filter + "  order by " + sortKey + " " + sortValue;
-
-    let countCriteria = filter;
-
-    console.log("Count C", criteria)
-
-    db.executeQuery(`select count(*) as cnt from basic_details where 1 ` + countCriteria, supportKey, (error, resultCount) => {
-        if (error) {
-            console.log("error", error);
-            res.send({
-                "code": 400,
-                "message": "failed to get proposal count"
-            })
-        }
-        else {
-            db.executeQuery(`select * from basic_details where 1 ` + criteria, supportKey, (error, results) => {
-                if (error) {
-                    console.log("error", error);
-                    res.send({
-                        "code": 400,
-                        "message": "Failed to get drafts"
-                    })
-                }
-                else {
-                    console.log("count,data");
-                    res.send({
-                        "code": 200,
-                        "message": "ok",
-                        "count": resultCount[0] ? resultCount[0].cnt : 0,
-                        "data": results
-                    })
-                }
-            })
-        }
-    })
-
-
-
-}
+};

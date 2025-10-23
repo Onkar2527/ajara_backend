@@ -12,7 +12,7 @@ exports.hit = async (req, res) => {
         let rate = 0;
 
         let getRateQ = `select RATE from doc_verify_rates where CODE = ${DOC_TYPE}`;
-        let getRateR = await db.executeQueryAsyncAwait(getRateQ, "");
+        let getRateR = await db.executeQuery(getRateQ, "");
 
         if (getRateR.length > 0) {
             rate = getRateR[0].RATE;
@@ -31,7 +31,7 @@ exports.hit = async (req, res) => {
 
         let hitQ = `INSERT INTO ${table} set ?`
 
-        await db.executeQueryDataAsyncAwait(hitQ, data, "")
+        await db.executeQueryData(hitQ, data, "")
 
         res.send({
             "code": 200,
@@ -62,7 +62,7 @@ exports.getHits = async (req, res) => {
             getHitQ += ` AND BRANCH_ID = ${BRANCH}`;
         }
 
-        let getHitR = await db.executeQueryAsyncAwait(getHitQ, "");
+        let getHitR = await db.executeQuery(getHitQ, "");
 
         let aadhaar = {
             hits: 0,

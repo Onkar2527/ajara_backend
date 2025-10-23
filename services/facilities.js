@@ -24,65 +24,47 @@ function reqData(req)
     return data;
 }
 
-exports.get = (req, res) =>{
-    let supportKey = req.headers['supportkey'];
-    const q = `select * from facilities where APPLICANT_ID = ${req.body.APPLICANT_ID}`
-    db.executeQuery(q, supportKey, (error, results)=>{
-        if(error)
-        {
-            res.send({
-                "code": 400,
-                "message": "Failed to get facilities details "
-            })
-        }
-        else
-        {
-            res.send({
-                "code": 200,
-                "message": "OK",
-                "data" : results
-            })
+exports.get = async (req, res) => {
+    const supportKey = req.headers['supportkey'];
+    const q = `select * from facilities where APPLICANT_ID = ?`;
+    try {
+        const results = await db.executeQueryData(q, [req.body.APPLICANT_ID], supportKey);
+        res.send({
+            "code": 200,
+            "message": "OK",
+            "data": results
+        });
+    } catch (error) {
+        console.log("error", error);
+        res.status(400).send({
+            "code": 400,
+            "message": "Failed to get facilities details"
+        });
+    }
+};
 
-        }
-    } )
+exports.create = async (req, res) => {
+    const supportKey = req.headers['supportkey'];
+    const data = reqData(req);
+    const q = `insert into facilities set ?`;
 
-}
+    try {
+        await db.executeQueryData(q, data, supportKey);
+        res.send({
+            "code": 200,
+            "message": "Facilities information saved successfully"
+        });
+    } catch (error) {
+        console.log("error", error);
+        res.status(400).send({
+            "code": 400,
+            "message": "Failed to save facilities information"
+        });
+    }
+};
 
-exports.create = (req,res) =>{
-
-const supportKey = req.headers['supportkey'] ;   
-
-    const data =  reqData(req);
-    const q = `insert into facilities set ?`
-
-    db.executeQueryData(q, data, supportKey, (error)=>{
-
-        if(error)
-        {
-            console.log("error", error);
-            res.send({
-                "code": 400,
-                "message": "Failed to save facilities information"
-            })
-        }
-        else
-        {
-            res.send({
-                "code": 200,
-                "message": "facilities information saved successfully"
-            })
-
-        }
-    })
-
-    
-
-}
-
-exports.update = (req, res) => {
-    const supportKey = req.headers['supportkey'] ;   
-
-
+exports.update = async (req, res) => {
+    const supportKey = req.headers['supportkey'];
     const data = reqData(req);
     let setData = '';
     let recData = [];
@@ -92,30 +74,22 @@ exports.update = (req, res) => {
         recData.push(data[key]);
     });
 
-    setData2 = setData.slice(0,-1);
+    setData = setData.slice(0, -1);
 
+    const q = `update facilities set ${setData} where ID = ?`;
+    recData.push(req.body.ID);
 
-    const q = `update facilities set ${setData2} where ID = ${req.body.ID}`
-    db.executeQueryData(q , recData , supportKey , (error)=>{
-        if(error)
-        {
-            console.log(error);
-            res.send({
-                "code": 400,
-                "message": "Failed to update facilities."
-            })
-
-        }
-        else
-        {
-            res.send({
-                "code": 200,
-                "message": "facilities information updated successfully"
-            })
-
-        }
-
-    })
-
-
-}
+    try {
+        await db.executeQueryData(q, recData, supportKey);
+        res.send({
+            "code": 200,
+            "message": "Facilities information updated successfully"
+        });
+    } catch (error) {
+        console.log(error);
+        res.status(400).send({
+            "code": 400,
+            "message": "Failed to update facilities."
+        });
+    }
+};

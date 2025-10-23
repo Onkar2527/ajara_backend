@@ -6,73 +6,43 @@ const applicationkey = process.env.APPLICATION_KEY;
 var addressInformation = "address_information";
 
 
-exports.getAddress = (req, res) => {
+exports.getAddress = async (req, res) => {
+    const { pageIndex = '', pageSize = '', sortKey = 'ID', sortValue = 'DESC', filter = '' } = req.body;
+    const supportKey = req.headers['supportkey'];
 
-    var pageIndex = req.body.pageIndex ? req.body.pageIndex : '';
+    let start = 0;
+    let end = 0;
 
-    var pageSize = req.body.pageSize ? req.body.pageSize : '';
-    var start = 0;
-    var end = 0;
-
-    console.log(pageIndex + " " + pageSize)
-    if (pageIndex != '' && pageSize != '') {
+    if (pageIndex && pageSize) {
         start = (pageIndex - 1) * pageSize;
         end = pageSize;
-        console.log(start + " " + end);
     }
 
-    let sortKey = req.body.sortKey ? req.body.sortKey : 'ID';
-    let sortValue = req.body.sortValue ? req.body.sortValue : 'DESC';
-    let filter = req.body.filter ? req.body.filter : '';
+    const criteria = (pageIndex && pageSize)
+        ? `${filter} order by ${sortKey} ${sortValue} LIMIT ${start},${end}`
+        : `${filter} order by ${sortKey} ${sortValue}`;
 
-    let criteria = '';
+    const countCriteria = filter;
 
-    if (pageIndex === '' && pageSize === '')
-        criteria = filter + " order by " + sortKey + " " + sortValue;
-    else
-        criteria = filter + " order by " + sortKey + " " + sortValue + " LIMIT " + start + "," + end;
-
-    let countCriteria = filter;
-    var supportKey = req.headers['supportkey'];
     try {
-        mm.executeQuery('select count(*) as cnt from pincode_master where 1 ' + countCriteria, supportKey, (error, results1) => {
-            if (error) {
-                console.log(error);
-                //logger.error('APIK:' + req.headers['apikey'] +' '+supportKey+ ' ' + req.method + " " + req.url + ' ' + JSON.stringify(error), req.headers['supportkey']);
-                logger.error(supportKey + ' ' + req.method + " " + req.url + ' ' + JSON.stringify(error), applicationkey);
-                res.send({
-                    "code": 400,
-                    "message": "Failed to get address Information count.",
-                });
-            }
-            else {
-                console.log(results1);
-                mm.executeQuery('select * from pincode_master where 1 ' + criteria, supportKey, (error, results) => {
-                    if (error) {
-                        console.log(error);
-                        //logger.error('APIK:' + req.headers['apikey'] +' '+supportKey+ ' ' + req.method + " " + req.url + ' ' + JSON.stringify(error), req.headers['supportkey']);
-                        logger.error(supportKey + ' ' + req.method + " " + req.url + ' ' + JSON.stringify(error), applicationkey);
-                        res.send({
-                            "code": 400,
-                            "message": "Failed to get address Information."
-                        });
-                    }
-                    else {
+        const [countResult, dataResult] = await Promise.all([
+            mm.executeQuery(`select count(*) as cnt from pincode_master where 1 ${countCriteria}`, supportKey),
+            mm.executeQuery(`select * from pincode_master where 1 ${criteria}`, supportKey)
+        ]);
 
-                        res.send({
-                            "code": 200,
-                            "message": "success",
-                            "count": results1[0].cnt,
-                            "data": results
-                        });
-                    }
-                });
-            }
+        res.send({
+            "code": 200,
+            "message": "success",
+            "count": countResult[0].cnt,
+            "data": dataResult
         });
-    } catch (error) {
-        //logger.error('APIK:' + req.headers['apikey'] +' '+supportKey+ ' ' + req.method + " " + req.url + ' ' + JSON.stringify(error), req.headers['supportkey']);
-        logger.error(supportKey + ' ' + req.method + " " + req.url + ' ' + JSON.stringify(error), applicationkey);
-        console.log(error);
-    }
 
-}
+    } catch (error) {
+        console.log(error);
+        logger.error(`${supportKey} ${req.method} ${req.url} ${JSON.stringify(error)}`, applicationkey);
+        res.status(400).send({
+            "code": 400,
+            "message": "Failed to get address Information."
+        });
+    }
+};

@@ -6,7 +6,7 @@ exports.getRates = async (req, res) => {
     try {
         let getRateQ = `select * from ${table}`;
 
-        let getRateR = await db.executeQueryAsyncAwait(getRateQ, "");
+        let getRateR = await db.executeQuery(getRateQ, "");
 
         res.send({
             "code": 200,
@@ -31,7 +31,7 @@ exports.setRate = async (req, res) => {
 
         let updateRateQ = `update ${table} set RATE = ${RATE} where ID = ${ID}`;
 
-        await db.executeQueryAsyncAwait(updateRateQ, "");
+        await db.executeQuery(updateRateQ, "");
 
         res.send({
             "code": 200,

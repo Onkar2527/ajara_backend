@@ -110,62 +110,52 @@ function reqData(req) {
     return data;
 }
 
-exports.get = (req, res) => {
-    let supportKey = req.headers['supportkey'];
-    const q = `select * from guardian_information where APPLICANT_ID = ${req.body.APPLICANT_ID}` + (req.body.APPLICANT_NO ? ' AND APPLICANT_NO = ' + req.body.APPLICANT_NO: '');
-    db.executeQuery(q, supportKey, (error, results) => {
-        if (error) {
-            console.log("error", error);
-            res.send({
-                "code": 400,
-                "message": "Failed to get guardian information"
-            })
-        }
-        else {
-            res.send({
-                "code": 200,
-                "message": "OK",
-                "data": results
-            })
-
-        }
-    })
-
-}
-
-exports.create = (req, res) => {
+exports.get = async (req, res) => {
     const supportKey = req.headers['supportkey'];
+    const q = `select * from guardian_information where APPLICANT_ID = ?` + (req.body.APPLICANT_NO ? ' AND APPLICANT_NO = ?' : '');
+    const params = [req.body.APPLICANT_ID];
+    if (req.body.APPLICANT_NO) {
+        params.push(req.body.APPLICANT_NO);
+    }
 
+    try {
+        const results = await db.executeQueryData(q, params, supportKey);
+        res.send({
+            "code": 200,
+            "message": "OK",
+            "data": results
+        });
+    } catch (error) {
+        console.log("error", error);
+        res.status(400).send({
+            "code": 400,
+            "message": "Failed to get guardian information"
+        });
+    }
+};
 
+exports.create = async (req, res) => {
+    const supportKey = req.headers['supportkey'];
     const data = reqData(req);
-    const q = `insert into guardian_information set ?`
+    const q = `insert into guardian_information set ?`;
 
-    db.executeQueryData(q, data, supportKey, (error) => {
+    try {
+        await db.executeQueryData(q, data, supportKey);
+        res.send({
+            "code": 200,
+            "message": "Guardian information saved successfully"
+        });
+    } catch (error) {
+        console.log("error", error);
+        res.status(400).send({
+            "code": 400,
+            "message": "Failed to save guardian information"
+        });
+    }
+};
 
-        if (error) {
-            console.log("error", error);
-            res.send({
-                "code": 400,
-                "message": "Failed to save guardian information "
-            })
-        }
-        else {
-            res.send({
-                "code": 200,
-                "message": "guardian information saved successfully"
-            })
-
-        }
-    })
-
-
-
-}
-
-exports.update = (req, res) => {
+exports.update = async (req, res) => {
     const supportKey = req.headers['supportkey'];
-
-
     const data = reqData(req);
     let setData = '';
     let recData = [];
@@ -175,28 +165,22 @@ exports.update = (req, res) => {
         recData.push(data[key]);
     });
 
-    setData2 = setData.slice(0, -1);
+    setData = setData.slice(0, -1);
 
+    const q = `update guardian_information set ${setData} where ID = ?`;
+    recData.push(req.body.ID);
 
-    const q = `update guardian_information set ${setData2} where ID = ${req.body.ID}`
-    db.executeQueryData(q, recData, supportKey, (error) => {
-        if (error) {
-            console.log(error);
-            res.send({
-                "code": 400,
-                "message": "Failed to update other guardian information"
-            })
-
-        }
-        else {
-            res.send({
-                "code": 200,
-                "message": "guardian information updated successfully"
-            })
-
-        }
-
-    })
-
-
-}
+    try {
+        await db.executeQueryData(q, recData, supportKey);
+        res.send({
+            "code": 200,
+            "message": "Guardian information updated successfully"
+        });
+    } catch (error) {
+        console.log(error);
+        res.status(400).send({
+            "code": 400,
+            "message": "Failed to update guardian information"
+        });
+    }
+};

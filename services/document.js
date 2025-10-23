@@ -10,46 +10,38 @@ function reqData(req){
     return data;
 }
 
-exports.get = (req, res) => {
-    let supportKey = req.headers['supportkey'];
+exports.get = async (req, res) => {
+    const supportKey = req.headers['supportkey'];
+    try {
+        const result = await db.executeQuery(`select * from document_master where 1`, supportKey);
+        res.send({
+            "code": 200,
+            "message": "ok",
+            "data": result
+        });
+    } catch (error) {
+        console.log("error", error);
+        res.status(400).send({
+            "code": 400,
+            "message": "failed to get documents"
+        });
+    }
+};
 
-    db.executeQueryData(`select * from document_master where 1`, '', supportKey, (error, result) => {
-        if (error) {
-            console.log("error", error);
-            res.send({
-                "code": 400,
-                "message": "failed to get documents"
-            })
-        }
-        else {
-            res.send({
-                "code": 200,
-                "message": "ok",
-                "data": result
-            })
-        }
-    })
-}
-
-exports.create = (req,res)=>{
-    let supportKey = req.headers['supportkey'];
-    data = reqData(req);
-
-    db.executeQueryData(`insert into document_master set ?` ,data, supportKey,(error)=>{
-        if(error)
-        {
-            console.log("error",error);
-            res.send({
-                "code": 400,
-                "message": "Failed to insert document record"
-            })
-        }
-        else{
-            res.send({
-                "code":200,
-                "message": "Deocument record inserted successful."
-            })
-        }
-    })
-    
-}
+exports.create = async (req, res) => {
+    const supportKey = req.headers['supportkey'];
+    const data = reqData(req);
+    try {
+        await db.executeQueryData(`insert into document_master set ?`, data, supportKey);
+        res.send({
+            "code": 200,
+            "message": "Document record inserted successfully."
+        });
+    } catch (error) {
+        console.log("error", error);
+        res.status(400).send({
+            "code": 400,
+            "message": "Failed to insert document record"
+        });
+    }
+};

@@ -15,63 +15,52 @@ function reqData(req) {
 }
 
 
-exports.get = (req, res) => {
-    const data = reqData(req);
-    const q = `select * from financial_information where APPLICANT_ID = ${req.body.APPLICANT_ID} ` + (req.body.APPLICANT_NO ? 'AND APPLICANT_NO = '+ req.body.APPLICANT_NO : '');
+exports.get = async (req, res) => {
+    const q = `select * from financial_information where APPLICANT_ID = ? ` + (req.body.APPLICANT_NO ? 'AND APPLICANT_NO = ?' : '');
+    const params = [req.body.APPLICANT_ID];
+    if (req.body.APPLICANT_NO) {
+        params.push(req.body.APPLICANT_NO);
+    }
     const supportKey = req.headers['supportkey'];
-    db.executeQuery(q, supportKey ,(error, results)=>{
-        if(error)
-        {
-            console.log("error", error);
-            res.send({
-                "code": 400,
-                "message": "Failed to get financial information"
-            })
-        }
-        else{
-            res.send({
-                "code": 200,
-                "message": "ok",
-                "data": results
-
-            })
-        }
-    
-    } )
-
-}
+    try {
+        const results = await db.executeQueryData(q, params, supportKey);
+        res.send({
+            "code": 200,
+            "message": "ok",
+            "data": results
+        });
+    } catch (error) {
+        console.log("error", error);
+        res.status(400).send({
+            "code": 400,
+            "message": "Failed to get financial information"
+        });
+    }
+};
 
 
-exports.create = (req, res) =>{
-
-    let data = reqData(req)
-
-    const q = `insert into financial_information set ?`
-    const supportKey = req.headers['supportkey']
-    db.executeQueryData(q , data, supportKey , (error)=>{
-        if(error)
-        {
-            console.log("error", error);
-            res.send({
-                "code": 400,
-                "message" : "Failed to save financial information"
-            })
-        }
-        else{
-            res.send({
-                "code": 200,
-                "message": "Financial information saved successful"
-            })
-        }
-    })
-}
+exports.create = async (req, res) => {
+    let data = reqData(req);
+    const q = `insert into financial_information set ?`;
+    const supportKey = req.headers['supportkey'];
+    try {
+        await db.executeQueryData(q, data, supportKey);
+        res.send({
+            "code": 200,
+            "message": "Financial information saved successfully"
+        });
+    } catch (error) {
+        console.log("error", error);
+        res.status(400).send({
+            "code": 400,
+            "message": "Failed to save financial information"
+        });
+    }
+};
 
 
-exports.update = (req, res) =>{
-
-    const supportKey = req.headers['supportkey'] ;   
-
-
+exports.update = async (req, res) => {
+    const supportKey = req.headers['supportkey'];
     const data = reqData(req);
     let setData = '';
     let recData = [];
@@ -81,29 +70,22 @@ exports.update = (req, res) =>{
         recData.push(data[key]);
     });
 
-    setData2 = setData.slice(0,-1);
+    setData = setData.slice(0, -1);
 
+    const q = `update financial_information set ${setData} where ID = ?`;
+    recData.push(req.body.ID);
 
-    const q = `update financial_information set ${setData2} where ID = ${req.body.ID}`
-    db.executeQueryData(q , recData , supportKey , (error)=>{
-        if(error)
-        {
-            console.log(error);
-            res.send({
-                "code": 400,
-                "message": "Failed to update financial information."
-            })
-
-        }
-        else
-        {
-            res.send({
-                "code": 200,
-                "message": "Financial information updated successfully"
-            })
-
-        }
-
-    })
-
-}
+    try {
+        await db.executeQueryData(q, recData, supportKey);
+        res.send({
+            "code": 200,
+            "message": "Financial information updated successfully"
+        });
+    } catch (error) {
+        console.log(error);
+        res.status(400).send({
+            "code": 400,
+            "message": "Failed to update financial information."
+        });
+    }
+};

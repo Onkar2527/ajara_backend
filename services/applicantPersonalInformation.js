@@ -108,65 +108,49 @@ function reqData(req) {
     return data;
 }
 
-exports.get = (req, res) => {
-
-    let supportKey = req.headers['supportkey'];
+exports.get = async (req, res) => {
+    const supportKey = req.headers['supportkey'];
     const q = `select * from applicants_personal_details where APPLICANT_ID = ${req.body.APPLICANT_ID}` + (req.body.APPLICANT_NO ? 'AND APPLICANT_NO = ' + req.body.APPLICANT_NO : '');
     console.log("query", q);
-    db.executeQuery(q, supportKey, (error, results) => {
-        if (error) {
-            console.log("error", error);
-            res.send({
-                "code": 400,
-                "message": "Failed to get applicants personal information"
-            })
-        }
-        else {
-            console.log("result personal", results);
-            res.send({
-                "code": 200,
-                "message": "OK",
-                "data": results
-            })
+    try {
+        const results = await db.executeQuery(q, supportKey);
+        console.log("result personal", results);
+        res.send({
+            "code": 200,
+            "message": "OK",
+            "data": results
+        });
+    } catch (error) {
+        console.log("error", error);
+        res.status(400).send({
+            "code": 400,
+            "message": "Failed to get applicants personal information"
+        });
+    }
+};
 
-        }
-    })
-
-}
-
-exports.create = (req, res) => {
-
+exports.create = async (req, res) => {
     const supportKey = req.headers['supportkey'];
-
     const data = reqData(req);
-    const q = `insert into applicants_persoanl_details set ?`
+    const q = `insert into applicants_personal_details set ?`;
 
-    db.executeQueryData(q, data, supportKey, (error) => {
+    try {
+        await db.executeQueryData(q, data, supportKey);
+        res.send({
+            "code": 200,
+            "message": "Application personal information saved successfully"
+        });
+    } catch (error) {
+        console.log("error", error);
+        res.status(400).send({
+            "code": 400,
+            "message": "Failed to save applicants personal information"
+        });
+    }
+};
 
-        if (error) {
-            console.log("error", error);
-            res.send({
-                "code": 400,
-                "message": "Failed to save applicants personal information"
-            })
-        }
-        else {
-            res.send({
-                "code": 200,
-                "message": "Appliction personal information saved successfully"
-            })
-
-        }
-    })
-
-
-
-}
-
-exports.update = (req, res) => {
+exports.update = async (req, res) => {
     const supportKey = req.headers['supportkey'];
-
-
     const data = reqData(req);
     let setData = '';
     let recData = [];
@@ -176,29 +160,21 @@ exports.update = (req, res) => {
         recData.push(data[key]);
     });
 
-    setData2 = setData.slice(0, -1);
+    setData = setData.slice(0, -1);
 
+    const q = `update applicants_personal_details set ${setData} where ID = ${req.body.ID}`;
 
-    const q = `update applicants_personal_details set ${setData2} where ID = ${req.body.ID}`
-
-    db.executeQueryData(q, recData, supportKey, (error) => {
-        if (error) {
-            console.log(error);
-            res.send({
-                "code": 400,
-                "message": "Failed to update applicants personal_information"
-            })
-
-        }
-        else {
-            res.send({
-                "code": 200,
-                "message": "applicants personal information updated successfully"
-            })
-
-        }
-
-    })
-
-
-}
+    try {
+        await db.executeQueryData(q, recData, supportKey);
+        res.send({
+            "code": 200,
+            "message": "Applicants personal information updated successfully"
+        });
+    } catch (error) {
+        console.log(error);
+        res.status(400).send({
+            "code": 400,
+            "message": "Failed to update applicants personal information"
+        });
+    }
+};

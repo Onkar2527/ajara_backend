@@ -22,7 +22,7 @@ exports.createRemark = async (req, res) => {
 
         let q = `insert into ${remark_table} set ?`
 
-        await db.executeQueryDataAsyncAwait(q, data, supportKey);
+        await db.executeQueryData(q, data, supportKey);
 
         res.send({
             "code": 200,
@@ -46,7 +46,7 @@ exports.getAllRemark = async (req, res) => {
         let APPLICANT_ID = req.body.APPLICANT_ID;
 
         let q = `select * from ${remark_table} where APPLICANT_ID = ${APPLICANT_ID}`;
-        let result = await db.executeQueryAsyncAwait(q, supportKey);
+        let result = await db.executeQuery(q, supportKey);
 
         res.send({
             "code": 200,

@@ -31,62 +31,47 @@ function reqData(req) {
     return data;
 }
 
-exports.get = (req, res) => {
-    let supportKey = req.headers['supportkey'];
-    const q = `select * from license_verified_list where LICENSE_NUMBER = '${req.body.LICENSE_NUMBER}'`
-    db.executeQuery(q, supportKey, (error, results) => {
-        if (error) {
-            console.log(error);
-            res.send({
-                "code": 400,
-                "message": "Failed to get license verification info "
-            })
-        }
-        else {
-            res.send({
-                "code": 200,
-                "message": "OK",
-                "data": results
-            })
-
-        }
-    })
-
-}
-
-exports.create = (req, res) => {
+exports.get = async (req, res) => {
     const supportKey = req.headers['supportkey'];
+    const q = `select * from license_verified_list where LICENSE_NUMBER = ?`;
+    try {
+        const results = await db.executeQueryData(q, [req.body.LICENSE_NUMBER], supportKey);
+        res.send({
+            "code": 200,
+            "message": "OK",
+            "data": results
+        });
+    } catch (error) {
+        console.log(error);
+        res.status(400).send({
+            "code": 400,
+            "message": "Failed to get license verification info"
+        });
+    }
+};
 
-
+exports.create = async (req, res) => {
+    const supportKey = req.headers['supportkey'];
     const data = reqData(req);
-    const q = `insert into license_verified_list set ?`
+    const q = `insert into license_verified_list set ?`;
 
-    db.executeQueryData(q, data, supportKey, (error) => {
+    try {
+        await db.executeQueryData(q, data, supportKey);
+        res.send({
+            "code": 200,
+            "message": "License information saved successfully"
+        });
+    } catch (error) {
+        console.log("error", error);
+        res.status(400).send({
+            "code": 400,
+            "message": "Failed to save license info"
+        });
+    }
+};
 
-        if (error) {
-            console.log("error", error);
-            res.send({
-                "code": 400,
-                "message": "Failed to save license info"
-            })
-        }
-        else {
-            res.send({
-                "code": 200,
-                "message": "license information saved successfully"
-            })
-
-        }
-    })
-
-
-
-}
-
-exports.update = (req, res) => {
+exports.update = async (req, res) => {
     const supportKey = req.headers['supportkey'];
-
-
     const data = reqData(req);
     let setData = '';
     let recData = [];
@@ -96,28 +81,22 @@ exports.update = (req, res) => {
         recData.push(data[key]);
     });
 
-    setData2 = setData.slice(0, -1);
+    setData = setData.slice(0, -1);
 
+    const q = `update license_verified_list set ${setData} where ID = ?`;
+    recData.push(req.body.ID);
 
-    const q = `update license_verified_list set ${setData2} where ID = ${req.body.ID}`
-    db.executeQueryData(q, recData, supportKey, (error) => {
-        if (error) {
-            console.log(error);
-            res.send({
-                "code": 400,
-                "message": "Failed to update license info"
-            })
-
-        }
-        else {
-            res.send({
-                "code": 200,
-                "message": "license information updated successfully"
-            })
-
-        }
-
-    })
-
-
-}
+    try {
+        await db.executeQueryData(q, recData, supportKey);
+        res.send({
+            "code": 200,
+            "message": "License information updated successfully"
+        });
+    } catch (error) {
+        console.log(error);
+        res.status(400).send({
+            "code": 400,
+            "message": "Failed to update license info"
+        });
+    }
+};

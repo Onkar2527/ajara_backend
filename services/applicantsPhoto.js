@@ -8,224 +8,134 @@ const async = require('async');
 
 
 
-exports.get = (req, res) => {
-
+exports.get = async (req, res) => {
     console.log("reqbody", req.body);
-    let supportKey = req.headers['supportkey'];
-    const q = `select * from applicant_photos where APPLICANT_ID = ${req.body.APPLICANT_ID} ` + (req.body.APPLICANT_NO ? 'AND APPLICANT_NO = ' + req.body.APPLICANT_NO : '')
-    db.executeQuery(q, supportKey, (error, results) => {
-        if (error) {
-            console.log("Error", error);
-            res.send({
-                "code": 400,
-                "message": "Failed to get applicant photos informmation "
-            })
-        }
-        else {
-            res.send({
-                "code": 200,
-                "message": "OK",
-                "data": results
-            })
-
-        }
-    })
-
-
-
-}
-
-exports.getAllApplicants = (req, res) => {
-    const supportKey = req.headers['supportkey']
-    let resultsArray = [];
-
-    db.executeQuery(`select * from applicant_photos where APPLICANT_ID = ${req.body.APPLICANT_ID}`, supportKey, (error, applicantsPhotoResult,) => {
-        if (error) {
-            console.log("error", error);
-            res.send({
-                "code": 400,
-                "message": "failed to get applicats photos information"
-            })
-
-        }
-        else {
-            console.log("appPhoto", applicantsPhotoResult);
-
-            if (applicantsPhotoResult.length > 0) {
-                let isPathExists = fs.existsSync(applicantsPhotoResult.IMAGE_LINK)
-                
-                    async.eachSeries(applicantsPhotoResult, function itrateOverAllApplicant(applicant, callback) {
-                        if (applicant.IMAGE_LINK != null && applicant.IMAGE_LINK != undefined && applicant.IMAGE_LINK != '') {
-                            applicant.IMAGE_DATA = fs.readFileSync(applicant.IMAGE_LINK, { encoding: "utf-8" });
-                            resultsArray.push(applicant)
-                            callback();
-                        }
-                        else {
-                            resultsArray.push(applicant)
-                            callback()
-                        }
-                    },
-                        function resultFunction(error) {
-                            if (error) {
-                                console.log("error async", error);
-                            }
-                            else {
-                                res.send({
-                                    "code": 200,
-                                    "data": resultsArray
-                                })
-                            }
-
-
-                        })
-               
-            }
-            else {
-                console.log("applican doent exist");
-            }
-
-        }
-    })
-}
-
-
-
-exports.upload = (req, res) => {
     const supportKey = req.headers['supportkey'];
-    let con = db.openConnection();
+    const q = `select * from applicant_photos where APPLICANT_ID = ? ` + (req.body.APPLICANT_NO ? 'AND APPLICANT_NO = ?' : '');
+    const params = [req.body.APPLICANT_ID];
+    if (req.body.APPLICANT_NO) {
+        params.push(req.body.APPLICANT_NO);
+    }
 
-    db.executeQuery(`select * from applicant_photos where APPLICANT_ID = ${req.body.APPLICANT_ID} AND APPLICANT_NO = ${req.body.APPLICANT_NO}`, supportKey, (error, applicantPhotoRes) => {
-        if (error) {
-            console.log("error", error);
+    try {
+        const results = await db.executeQueryData(q, params, supportKey);
+        res.send({
+            "code": 200,
+            "message": "OK",
+            "data": results
+        });
+    } catch (error) {
+        console.log("Error", error);
+        res.status(400).send({
+            "code": 400,
+            "message": "Failed to get applicant photos information"
+        });
+    }
+};
+
+exports.getAllApplicants = async (req, res) => {
+    const supportKey = req.headers['supportkey'];
+    
+    try {
+        const applicantsPhotoResult = await db.executeQuery(`select * from applicant_photos where APPLICANT_ID = ${req.body.APPLICANT_ID}`, supportKey);
+
+        if (applicantsPhotoResult.length > 0) {
+            const resultsArray = await Promise.all(applicantsPhotoResult.map(async (applicant) => {
+                if (applicant.IMAGE_LINK) {
+                    try {
+                        applicant.IMAGE_DATA = await fs.promises.readFile(applicant.IMAGE_LINK, { encoding: "utf-8" });
+                    } catch (error) {
+                        console.log(error);
+                        applicant.IMAGE_DATA = "";
+                    }
+                }
+                return applicant;
+            }));
+            res.send({ "code": 200, "data": resultsArray });
+        } else {
+            console.log("applicant doesn't exist");
+            res.send({ "code": 200, "data": [] });
         }
-        else {
-            if (applicantPhotoRes.length > 0) {
-
-                const folderName = 'APPLICANT_ID-' + req.body.APPLICANT_ID;
-                const fileName = 'APPLICANT_NO-' + req.body.APPLICANT_NO + '.' + 'jpg'
-                const data = req.body.IMAGE_DATA;
-                let folderPath = `./uploads/applicantsPhotos/${folderName}`;
-                let filePath = folderPath + '/' + fileName;
-
-                if (!fs.existsSync(folderPath)) {
-                    fs.mkdirSync(folderPath)
-
-                    fs.writeFile(filePath, data, (err) => {
-                        if (err) {
-                            console.log("erroe", err);
-                            res.send({
-                                "code": 400,
-                                "message": " failed to upload photo"
-                            })
-                        }
-                        else {
-                            db.executeDML(`update applicant_photos set IMAGE_LINK = ? where APPLICANT_ID = ${req.body.APPLICANT_ID} AND APPLICANT_NO = ${req.body.APPLICANT_NO}`, filePath, supportKey, con, (error) => {
-                                if (error) {
-                                    console.log("error", error);
-                                    db.rollbackConnection(con);
-                                    res.send({
-                                        "code": 400,
-                                        "message": "Failed to upload applicant photo"
-                                    })
+    } catch (error) {
+        console.log("error", error);
+        res.status(400).send({
+            "code": 400,
+            "message": "failed to get applicant photos information"
+        });
+    }
+};
 
 
-                                }
-                                else {
-                                    db.commitConnection(con);
-                                    res.send({
-                                        "code": 200,
-                                        "message": "Photo upload successful."
-                                    })
 
-                                }
-                            })
+exports.upload = async (req, res) => {
+    const supportKey = req.headers['supportkey'];
+    let connection;
 
-                        }
-                    })
-                }
-                else {
+    try {
+        const { APPLICANT_ID, APPLICANT_NO, IMAGE_DATA } = req.body;
 
-                    const folderName = 'APPLICANT_ID-' + req.body.APPLICANT_ID;
-                    const fileName = 'APPLICANT_NO-' + req.body.APPLICANT_NO + '.' + 'jpg'
-                    const data = req.body.IMAGE_DATA;
-                    let folderPath = `./uploads/applicantsPhotos/${folderName}`;
-                    let filePath = folderPath + '/' + fileName;
+        const applicantPhotoRes = await db.executeQueryData(`select * from applicant_photos where APPLICANT_ID = ? AND APPLICANT_NO = ?`, [APPLICANT_ID, APPLICANT_NO], supportKey);
 
-
-                    fs.writeFile(filePath, data, (err) => {
-                        if (err) {
-                            console.log("erroe", err);
-                            res.send({
-                                "code": 400,
-                                "message": " failed to upload photo"
-                            })
-                        }
-                        else {
-                            db.executeDML(`update applicant_photos set IMAGE_LINK = ? where APPLICANT_ID = ${req.body.APPLICANT_ID} AND APPLICANT_NO = ${req.body.APPLICANT_NO}`, filePath, supportKey, con, (error) => {
-                                if (error) {
-                                    console.log("error", error);
-                                    db.rollbackConnection(con);
-                                    res.send({
-                                        "code": 400,
-                                        "message": "Failed to upload applicant photo"
-                                    })
-
-
-                                }
-                                else {
-                                    db.commitConnection(con);
-                                    res.send({
-                                        "code": 200,
-                                        "message": "Photo upload successful."
-                                    })
-
-                                }
-                            })
-                        }
-                    })
-
-                }
-            }
-            else {
-
-                res.send({
-                    "code": 400,
-                    "message": "Applicant does not exist "
-                })
-
-
-            }
-
+        if (applicantPhotoRes.length === 0) {
+            return res.status(400).send({
+                "code": 400,
+                "message": "Applicant does not exist"
+            });
         }
 
-    })
+        const folderName = `APPLICANT_ID-${APPLICANT_ID}`;
+        const fileName = `APPLICANT_NO-${APPLICANT_NO}.jpg`;
+        const folderPath = `./uploads/applicantsPhotos/${folderName}`;
+        const filePath = `${folderPath}/${fileName}`;
 
+        await fs.promises.mkdir(folderPath, { recursive: true });
+        await fs.promises.writeFile(filePath, IMAGE_DATA);
 
-}
+        connection = await db.openConnection();
+        await db.executeQueryData(`update applicant_photos set IMAGE_LINK = ? where APPLICANT_ID = ? AND APPLICANT_NO = ?`, [filePath, APPLICANT_ID, APPLICANT_NO], supportKey);
+        await db.commitConnection(connection);
 
-exports.retrieve = (req, res) => {
+        res.send({
+            "code": 200,
+            "message": "Photo upload successful."
+        });
 
+    } catch (error) {
+        console.log("Error in upload:", error);
+        if (connection) {
+            await db.rollbackConnection(connection);
+        }
+        res.status(400).send({
+            "code": 400,
+            "message": "Failed to upload applicant photo"
+        });
+    }
+};
+
+exports.retrieve = async (req, res) => {
     const supportKey = req.headers['supportkey'];
 
-    db.executeQuery(`select * from applicant_photos where APPLICANT_ID = ${req.body.APPLICANT_ID} AND APPLICANT_NO = ${req.body.APPLICANT_NO}`, supportKey, (error, applicantPhotoResult) => {
-        if (error) {
-            console.log(error);
-            // res.send({"error": error})
+    try {
+        const applicantPhotoResult = await db.executeQuery(`select * from applicant_photos where APPLICANT_ID = ${req.body.APPLICANT_ID} AND APPLICANT_NO = ${req.body.APPLICANT_NO}`, supportKey);
 
-        }
-        else {
-
-            const IMAGE_DATA = fs.readFileSync(applicantPhotoResult[0].IMAGE_LINK, { encoding: "base64" })
-
+        if (applicantPhotoResult.length > 0 && applicantPhotoResult[0].IMAGE_LINK) {
+            const IMAGE_DATA = await fs.promises.readFile(applicantPhotoResult[0].IMAGE_LINK, { encoding: "base64" });
             res.send({
-
                 "code": 200,
                 "message": "ok",
                 "data": IMAGE_DATA
-            })
+            });
+        } else {
+            res.status(404).send({
+                "code": 404,
+                "message": "Image not found"
+            });
         }
-    })
-
-
-
-}
+    } catch (error) {
+        console.log(error);
+        res.status(400).send({
+            "code": 400,
+            "message": "Failed to retrieve image"
+        });
+    }
+};

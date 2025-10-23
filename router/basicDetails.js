@@ -1,12 +1,13 @@
 const express = require('express');
 const router = express.Router();
-
+const asyncHandler = require('../utilities/asyncHandler');
+const basicDetailsService = require('../services/basicDetails');
 
 router 
-    .post('/get', require('../services/basicDetails').get)
-    .post('/create', require('../services/basicDetails').create)
-    .post('/update', require('../services/basicDetails').update1 )
-    .post('/getAll', require('../services/basicDetails').getAll )
+    .post('/get', asyncHandler(basicDetailsService.get))
+    .post('/create', asyncHandler(basicDetailsService.create))
+    .post('/update', asyncHandler(basicDetailsService.update1))
+    .post('/getAll', asyncHandler(basicDetailsService.getAll))
 
 
 

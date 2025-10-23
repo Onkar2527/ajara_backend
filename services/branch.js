@@ -9,7 +9,7 @@ exports.get = async (req, res) => {
 
         let query = `select * from ${branch_master}`
 
-        let result = await db.executeQueryAsyncAwait(query, supportKey);
+        let result = await db.executeQuery(query, supportKey);
 
         res.send({
             "message": "success",

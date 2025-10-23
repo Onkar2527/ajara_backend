@@ -3,92 +3,51 @@ const db = require('../../utilities/dbModule');
 var userMaster = 'user_master';
 var viewUserMaster = 'view_' + userMaster
 
-exports.login = (req, res) => {
+exports.login = async (req, res) => {
     try {
-
-        let username = req.body.USER_NAME;
-        let password = req.body.PASSWORD;
-
-
-        let supportKey = req.headers['supportkey'];
-        console.log("reqData", req.body);
+        const { USER_NAME: username, PASSWORD: password } = req.body;
+        const supportKey = req.headers['supportkey'];
 
         if (!username || !password) {
-            res.send({
+            return res.status(400).send({
                 "code": 400,
-                "message": "username or password parameter missing",
-            });
-        }
-        else {
-            console.log("upcoming credentials ps", username, password);
-            // console.log(`SELECT * FROM ${viewUserMaster}  WHERE  USER_NAME = ? and PASSWORD = ?`);
-            db.executeQueryData(`SELECT * FROM user_master  WHERE BINARY  USER_NAME = ? and BINARY PASSWORD = ?`, [username, password], supportKey, async (error, results1) => {
-                if (error) {
-                    console.log(error);
-
-                    res.send({
-                        "code": 400,
-                        "message": "Failed to get record",
-                    });
-                }
-                else {
-                    console.log("here is login dta", results1);
-
-                    if (results1.length == 1) {
-
-                        const current_dt = new Date().toISOString().slice(0, 19).replace('T', ' ');
-
-                        const query = `UPDATE user_master set LAST_LOGIN_TIME = '${current_dt}' where ID = ${results1[0].ID}`
-
-                        await db.executeQueryAsyncAwait(query, '');
-
-                        const getDaysQ = `select TIMESTAMPDIFF(DAY, '${results1[0].PASSWORD_RESET_DATE}', '${current_dt}') as DAYS`;
-
-                        let numDateR = await db.executeQueryAsyncAwait(getDaysQ, '');
-                        let numDate = 0;
-
-                        if (numDateR.length > 0) {
-                            numDate = numDateR[0]['DAYS'] || 0;
-                        }
-
-                        let send_data = {
-                            ID: results1[0].ID,
-                            ROLE_ID: results1[0].ROLE_ID,
-                            BRANCH_ID: results1[0].BRANCH_ID,
-                            NAME: results1[0].NAME,
-                            USER_NAME: results1[0].USER_NAME,
-                            LAST_LOGIN_TIME: current_dt,
-                            PASSWORD_RESET_DATE: results1[0].PASSWORD_RESET_DATE,
-                            DAYS_OF_RESET_PASS: numDate
-                        }
-
-                        res.send({
-                            "code": 200,
-                            "data": send_data
-                        })
-                    }
-                    else if (results1.length > 1) {
-                        res.send({
-                            "code": 400,
-                            "message": "More than one user."
-                        });
-                    }
-                    else {
-                        res.send({
-                            "code": 404,
-                            "message": "Username OR Password does not exits"
-                        });
-
-                    }
-                }
+                "message": "Username or password parameter missing",
             });
         }
 
+        const results1 = await db.executeQueryData(`SELECT * FROM user_master WHERE BINARY USER_NAME = ? AND BINARY PASSWORD = ?`, [username, password], supportKey);
+
+        if (results1.length === 1) {
+            const current_dt = new Date().toISOString().slice(0, 19).replace('T', ' ');
+            const query = `UPDATE user_master SET LAST_LOGIN_TIME = '${current_dt}' WHERE ID = ${results1[0].ID}`;
+            await db.executeQuery(query, '');
+
+            const getDaysQ = `SELECT TIMESTAMPDIFF(DAY, '${results1[0].PASSWORD_RESET_DATE}', '${current_dt}') AS DAYS`;
+            const numDateR = await db.executeQuery(getDaysQ, '');
+            const numDate = (numDateR.length > 0) ? (numDateR[0]['DAYS'] || 0) : 0;
+
+            const send_data = {
+                ID: results1[0].ID,
+                ROLE_ID: results1[0].ROLE_ID,
+                BRANCH_ID: results1[0].BRANCH_ID,
+                NAME: results1[0].NAME,
+                USER_NAME: results1[0].USER_NAME,
+                LAST_LOGIN_TIME: current_dt,
+                PASSWORD_RESET_DATE: results1[0].PASSWORD_RESET_DATE,
+                DAYS_OF_RESET_PASS: numDate
+            };
+
+            res.send({ "code": 200, "data": send_data });
+        } else if (results1.length > 1) {
+            res.status(400).send({ "code": 400, "message": "More than one user." });
+        } else {
+            res.status(404).send({ "code": 404, "message": "Username OR Password does not exist" });
+        }
     } catch (error) {
         console.log(error);
+        res.status(500).send({ "code": 500, "message": "Internal server error" });
     }
-
-}
+};
 
 exports.getUser = async (req, res) => {
     try {
@@ -109,7 +68,7 @@ exports.getUser = async (req, res) => {
             query += ` AND ID = ${USER_ID}`
         }
 
-        let result = await db.executeQueryAsyncAwait(query, supportKey);
+        let result = await db.executeQuery(query, supportKey);
 
         console.log(query, result);
 
@@ -135,7 +94,7 @@ exports.getUserBranch = async (req, res) => {
         let BRANCH_ID = req.body.BRANCH_ID;
         let query = `select * from branch_master where ID = ${BRANCH_ID}`
 
-        let result = await db.executeQueryAsyncAwait(query, supportKey);
+        let result = await db.executeQuery(query, supportKey);
 
         res.send({
             "message": "success",
@@ -161,7 +120,7 @@ exports.getUserRole = async (req, res) => {
 
         let query = `select * from role_master where ID = ${ROLE_ID}`
 
-        let result = await db.executeQueryAsyncAwait(query, supportKey);
+        let result = await db.executeQuery(query, supportKey);
 
         res.send({
             "message": "success",
@@ -189,14 +148,14 @@ exports.resetPassword = async (req, res) => {
 
         let selectQ = `SELECT * FROM user_master WHERE BINARY USER_NAME = ? and BINARY PASSWORD = ?`;
 
-        let result = await db.executeQueryDataAsyncAwait(selectQ, [username, oldpass], "");
+        let result = await db.executeQueryData(selectQ, [username, oldpass], "");
 
         if (result.length > 0) {
             let user_id = result[0].ID;
 
             let updatePassQ = `update user_master set PASSWORD = ?, PASSWORD_RESET_DATE = ? where ID = ?`
 
-            await db.executeQueryDataAsyncAwait(updatePassQ, [newpass, current_dt, user_id]);
+            await db.executeQueryData(updatePassQ, [newpass, current_dt, user_id]);
 
             res.send({
                 "code": 200,

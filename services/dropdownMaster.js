@@ -80,8 +80,8 @@ exports.get = async (req, res) => {
     try {
         // Execute the count query and the main query concurrently
         const [countResult, results] = await Promise.all([
-            mm.executeQueryAsyncAwait(`select count(*) as cnt from ${dropdownMaster}`, supportKey),
-            mm.executeQueryAsyncAwait(`select * from ${dropdownMaster} where 1 ${criteria}`, supportKey),
+            mm.executeQuery(`select count(*) as cnt from ${dropdownMaster}`, supportKey),
+            mm.executeQuery(`select * from ${dropdownMaster} where 1 ${criteria}`, supportKey),
         ]);
 
         const totalCount = countResult[0].cnt;
@@ -98,10 +98,10 @@ exports.get = async (req, res) => {
 
         // Create an array of promises for fetching field and dropdown data
         const fetchPromises = results.map(async (result) => {
-            const fieldResult = await mm.executeQueryAsyncAwait(`select * from ${dropdownField} where TABLE_NAME = '${result.TABLE_NAME}'`, supportKey);
+            const fieldResult = await mm.executeQuery(`select * from ${dropdownField} where TABLE_NAME = '${result.TABLE_NAME}'`, supportKey);
             result.FIELDS = fieldResult;
 
-            const valueResult = await mm.executeQueryAsyncAwait(`select * from ${result.TABLE_NAME}`, supportKey);
+            const valueResult = await mm.executeQuery(`select * from ${result.TABLE_NAME}`, supportKey);
             result.DROPDOWN_DATA = valueResult;
 
             return result;
@@ -150,11 +150,11 @@ exports.create = async (req, res) => {
         let isTableCreated = null;
 
         // Execute the stored procedure to create the table
-        const createTableResult = await mm.executeQueryDataAsyncAwait(`CALL create_dropdown_table(?)`, [data.TABLE_NAME], supportKey);
+        const createTableResult = await mm.executeQueryData(`CALL create_dropdown_table(?)`, [data.TABLE_NAME], supportKey);
 
         // Retrieve the output parameter value
       
-        executeIfTableExist(data, supportKey, messages, req, res);
+        await executeIfTableExist(data, supportKey, messages, req, res);
 
     } catch (error) {
         console.error(error);
@@ -193,7 +193,7 @@ exports.update = async (req, res) => {
                 "message": errors.errors
             });
         } else {
-            const results = await mm.executeQueryDataAsyncAwait(`UPDATE ` + dropdownMaster + ` SET ${setData}  where ID = ${ID} `, recordData, supportKey);
+            const results = await mm.executeQueryData(`UPDATE ` + dropdownMaster + ` SET ${setData}  where ID = ${ID} `, recordData, supportKey);
             console.log(results);
             res.send({
                 "code": 200,
@@ -216,9 +216,9 @@ exports.delete = async (req, res) => {
     let supportKey = req.headers['supportkey'];
 
     try {
-        await mm.executeQueryAsyncAwait(`DELETE FROM ${dropdownField} WHERE TABLE_NAME = '${table}';`);
+        await mm.executeQuery(`DELETE FROM ${dropdownField} WHERE TABLE_NAME = '${table}';`);
 
-        await mm.executeQueryAsyncAwait(`DELETE FROM ${dropdownMaster} WHERE ID = ${ID};`);
+        await mm.executeQuery(`DELETE FROM ${dropdownMaster} WHERE ID = ${ID};`);
 
         res.send({
             code: 200,
@@ -242,7 +242,7 @@ exports.getFields = async (req, res) => {
     let supportKey = req.headers['supportkey'];
 
     try {
-        let result = await mm.executeQueryAsyncAwait(`select * from ${dropdownField} where TABLE_NAME = '${table}'`, supportKey);
+        let result = await mm.executeQuery(`select * from ${dropdownField} where TABLE_NAME = '${table}'`, supportKey);
 
         res.send({
             code: 200,
@@ -281,8 +281,8 @@ exports.createFields = async (req, res) => {
     }
     else {
         try {
-            await mm.executeQueryAsyncAwait(`ALTER TABLE ${data.TABLE_NAME} ADD ${data.FIELD_NAME} ${data.FIELD_TYPE}`, supportKey);
-            executeCreateQuery(data, dropdownField, supportKey, messages, req, res);
+            await mm.executeQuery(`ALTER TABLE ${data.TABLE_NAME} ADD ${data.FIELD_NAME} ${data.FIELD_TYPE}`, supportKey);
+            await executeCreateQuery(data, dropdownField, supportKey, messages, req, res);
         }
         catch (error) {
             console.error(error);
@@ -312,7 +312,7 @@ exports.updateFields = async (req, res) => {
     else {
 
         try {
-            const old_column_name = await mm.executeQueryAsyncAwait(`SELECT FIELD_NAME FROM ${dropdownField} WHERE ID = ${ID}`, supportKey);
+            const old_column_name = await mm.executeQuery(`SELECT FIELD_NAME FROM ${dropdownField} WHERE ID = ${ID}`, supportKey);
 
             console.log("old column name", old_column_name);
 
@@ -320,7 +320,7 @@ exports.updateFields = async (req, res) => {
                 let query = `ALTER TABLE ${data.TABLE_NAME}
                 CHANGE COLUMN ${old_column_name[0].FIELD_NAME} ${data.FIELD_NAME} ${data.FIELD_TYPE};`
 
-                await mm.executeQueryAsyncAwait(query, supportKey);
+                await mm.executeQuery(query, supportKey);
 
                 let setData = "";
                 let recordData = [];
@@ -335,7 +335,7 @@ exports.updateFields = async (req, res) => {
                     setData = setData.slice(0, -2); // Removes the last two characters
                 }
 
-                const results = await mm.executeQueryDataAsyncAwait(`UPDATE ` + dropdownField + ` SET ${setData}  where ID = ${ID} `, recordData, supportKey);
+                const results = await mm.executeQueryData(`UPDATE ` + dropdownField + ` SET ${setData}  where ID = ${ID} `, recordData, supportKey);
                 console.log(results);
                 res.send({
                     "code": 200,
@@ -366,9 +366,9 @@ exports.deleteFields = async (req, res) => {
     let supportKey = req.headers['supportkey'];
 
     try {
-        await mm.executeQueryAsyncAwait(`DELETE FROM ${dropdownField} WHERE ID = ${ID};`);
+        await mm.executeQuery(`DELETE FROM ${dropdownField} WHERE ID = ${ID};`);
 
-        await mm.executeQueryAsyncAwait(`ALTER TABLE ${table} DROP COLUMN ${column};`);
+        await mm.executeQuery(`ALTER TABLE ${table} DROP COLUMN ${column};`);
 
         res.send({
             code: 200,
@@ -392,7 +392,7 @@ exports.getValues = async (req, res) => {
     let supportKey = req.headers['supportkey'];
 
     try {
-        let result = await mm.executeQueryAsyncAwait(`select * from ${table};`, supportKey);
+        let result = await mm.executeQuery(`select * from ${table};`, supportKey);
 
         res.send({
             code: 200,
@@ -410,7 +410,7 @@ exports.getValues = async (req, res) => {
     }
 }
 
-exports.createValues = (req, res) => {
+exports.createValues = async (req, res) => {
     let data = reqDataValues(req);
 
     const errors = validationResult(req);
@@ -430,7 +430,7 @@ exports.createValues = (req, res) => {
         });
     }
     else {
-        executeCreateQuery(data.DATA, data.TABLE_NAME, supportKey, messages, req, res);
+        await executeCreateQuery(data.DATA, data.TABLE_NAME, supportKey, messages, req, res);
     }
 }
 
@@ -461,7 +461,7 @@ exports.updateValues = async (req, res) => {
                 "message": errors.errors
             });
         } else {
-            const results = await mm.executeQueryDataAsyncAwait(`UPDATE ` + data.TABLE_NAME + ` SET ${setData}  where ID = ${ID} `, recordData, supportKey);
+            const results = await mm.executeQueryData(`UPDATE ` + data.TABLE_NAME + ` SET ${setData}  where ID = ${ID} `, recordData, supportKey);
             console.log(results);
             res.send({
                 "code": 200,
@@ -484,7 +484,7 @@ exports.deleteValues = async (req, res) => {
     let supportKey = req.headers['supportkey'];
 
     try {
-        await mm.executeQueryAsyncAwait(`DELETE FROM ${table} WHERE ID = ${ID};`);
+        await mm.executeQuery(`DELETE FROM ${table} WHERE ID = ${ID};`);
 
         res.send({
             code: 200,
@@ -501,73 +501,45 @@ exports.deleteValues = async (req, res) => {
     }
 }
 
-function executeCreateQuery(data, table, supportKey, messages, req, res) {
+async function executeCreateQuery(data, table, supportKey, messages, req, res) {
     try {
-        mm.executeQueryData('INSERT INTO ' + table + ' SET ?', data, supportKey, (error, results) => {
-            if (error) {
-                console.log(error);
-                // logger.error(supportKey + ' ' + req.method + " " + req.url + ' ' + JSON.stringify(error), applicationkey);
-                res.send({
-                    "code": 400,
-                    "message": messages.error
-                });
-            }
-            else {
-                console.log(results);
-                res.send({
-                    "code": 200,
-                    "message": messages.success
-                });
-            }
+        const results = await mm.executeQueryData('INSERT INTO ' + table + ' SET ?', data, supportKey);
+        console.log(results);
+        res.send({
+            "code": 200,
+            "message": messages.success
+        });
+    } catch (error) {
+        console.log(error);
+        // logger.error(supportKey + ' ' + req.method + " " + req.url + ' ' + JSON.stringify(error), applicationkey);
+        res.status(400).send({
+            "code": 400,
+            "message": messages.error
         });
     }
-    catch (error) {
+}
+
+async function executeIfTableExist(data, supportKey, messages, req, res) {
+    try {
+        const result = await mm.executeQuery(`DESCRIBE  ${data.TABLE_NAME}`, supportKey);
+        const tableSchema = result.map((row) => ({
+            FIELD_NAME: row.Field,
+            FIELD_TYPE: row.Type,
+            TABLE_NAME: data.TABLE_NAME
+        }));
+
+        await Promise.all(tableSchema.map(scheme => 
+            mm.executeQueryData(`INSERT INTO ${dropdownField} SET ?`, scheme, supportKey)
+        ));
+
+        await executeCreateQuery(data, dropdownMaster, supportKey, messages, req, res);
+
+    } catch (error) {
+        console.log(error);
         // logger.error(supportKey + ' ' + req.method + " " + req.url + ' ' + JSON.stringify(error), applicationkey);
-        console.log(error)
+        res.status(400).send({
+            "code": 400,
+            "message": messages.error
+        });
     }
 }
-
-function executeIfTableExist(data, supportKey, messages, req, res) {
-    mm.executeQuery(`DESCRIBE  ${data.TABLE_NAME}`, supportKey, (error, result) => {
-        if (error) {
-            console.log(error);
-            // logger.error(supportKey + ' ' + req.method + " " + req.url + ' ' + JSON.stringify(error), applicationkey);
-            res.send({
-                "code": 400,
-                "message": messages.error
-            });
-        }
-        else {
-            const tableSchema = result.map((row) => {
-                return {
-                    FIELD_NAME: row.Field,
-                    FIELD_TYPE: row.Type,
-                    TABLE_NAME: data.TABLE_NAME
-                };
-            });
-
-            let index = 0;
-            for (let scheme of tableSchema) {
-                mm.executeQueryData(`INSERT INTO ${dropdownField} SET ?`, scheme, supportKey, (error, success) => {
-                    if (error) {
-                        console.log(error);
-                        // logger.error(supportKey + ' ' + req.method + " " + req.url + ' ' + JSON.stringify(error), applicationkey);
-                        res.send({
-                            "code": 400,
-                            "message": messages.error
-                        });
-                    }
-                    else {
-                        index++;
-                        if (index == tableSchema.length) {
-                            executeCreateQuery(data, dropdownMaster, supportKey, messages, req, res);
-                        }
-                    }
-                })
-            }
-
-        }
-    })
-}
-
-

@@ -163,77 +163,47 @@ exports.update = (req, res) => {
 
 
 
-exports.uploadDocument = (req, res) => {
+exports.uploadDocument = async (req, res) => {
     const supportKey = req.headers['supportkey'];
-    let con = db.openConnection();
+    let connection;
+    try {
+        connection = await db.openConnection();
+        const [guardianDocumentRes] = await db.executeQueryDataAsyncAwait(`select * from guardian_documents where 1 AND ID = ?`, [req.body.ID], supportKey);
 
-    db.executeQueryData(`select * from guardian_documents where 1 AND ID = ?`, [req.body.ID], supportKey, (error, guardianDocumentRes) => {
-        if (error) {
-            console.log("error1", error);
-            res.send({
-                "code": 400,
-                "message": "Failed to get guardian document details"
+        if (guardianDocumentRes.length === 0) {
+            return res.status(404).send({
+                "code": 404,
+                "message": "Unable to find document"
             });
         }
-        else {
-            if (guardianDocumentRes.length > 0) {
-                let filePath = '';
-                let fileName = '';
-                let data = req.body.IMAGE_DATA
 
-                if (guardianDocumentRes[0].FILE_LINK != null && guardianDocumentRes[0].FILE_LINK != undefined && guardianDocumentRes[0].FILE_LINK != '') {
-                    filePath = guardianDocumentRes[0].FILE_LINK
-                    console.log("is it here ?",filePath );
-                    
-                }
-                else {
-                    filePath = './uploads/guardianDocuments/' + genrateRandomKey(32) + '.' + 'jpg'
-                    console.log("is it there ?",filePath );
-                }
-
-                console.log("here is file path found in database", filePath);
-
-                fs.writeFile(filePath, data, { flag: 'w' }, (error) => {
-                    if (error) {
-                        console.log("error2", error);
-                        db.rollbackConnection(con)
-                        res.send({
-                            "code": 400,
-                            "message": "Failed to save document"
-                        })
-                    }
-                    else {
-                        db.executeQueryData(`update guardian_documents set APPLICANT_ID=?, APPLICANT_NO=?, DOCUMENT_NAME=?, FILE_TYPE=?, FILE_LINK=?, MAKER_REMARK=?, IS_APPROVED_CHECKER = ?, IS_APPROVED_VERIFIER = ? where ID = ?`, [req.body.APPLICANT_ID, req.body.APPLICANT_NO, req.body.DOCUMENT_NAME, req.body.FILE_TYPE, filePath, req.body.MAKER_REMARK, req.body.IS_APPROVED_CHECKER, req.body.IS_APPROVED_VERIFIER, req.body.ID], supportKey, (error, documentInsertResult) => {
-                            if (error) {
-                                console.log("error3", error);
-                                res.send({
-                                    "code": 400,
-                                    "message": "Failed to update document details."
-                                })
-                            }
-                            else {
-                                res.send({
-                                    "code": 200,
-                                    "message": "Document details saved successfully"
-                                })
-                            }
-                        })
-
-                    }
-
-
-                })
-
-            }
-            else {
-                res.send({
-                    "code": 404,
-                    "message": "Unable to find document"
-                })
-            }
+        let filePath = guardianDocumentRes[0].FILE_LINK;
+        if (!filePath) {
+            filePath = './uploads/guardianDocuments/' + genrateRandomKey(32) + '.' + 'jpg';
         }
-    })
 
+        await fs.promises.writeFile(filePath, req.body.IMAGE_DATA, { flag: 'w' });
+
+        const updateQuery = `update guardian_documents set APPLICANT_ID=?, APPLICANT_NO=?, DOCUMENT_NAME=?, FILE_TYPE=?, FILE_LINK=?, MAKER_REMARK=?, IS_APPROVED_CHECKER = ?, IS_APPROVED_VERIFIER = ? where ID = ?`;
+        const updateParams = [req.body.APPLICANT_ID, req.body.APPLICANT_NO, req.body.DOCUMENT_NAME, req.body.FILE_TYPE, filePath, req.body.MAKER_REMARK, req.body.IS_APPROVED_CHECKER, req.body.IS_APPROVED_VERIFIER, req.body.ID];
+        await db.executeQueryDataAsyncAwait(updateQuery, updateParams, supportKey);
+
+        await db.commitConnection(connection);
+        res.send({
+            "code": 200,
+            "message": "Document details saved successfully"
+        });
+
+    } catch (error) {
+        console.log("Error in uploadDocument:", error);
+        if (connection) {
+            await db.rollbackConnection(connection);
+        }
+        res.status(400).send({
+            "code": 400,
+            "message": "Failed to save document."
+        });
+    }
 }
 
 
@@ -249,4 +219,3 @@ function genrateRandomKey(length) {
 
 
 }
-

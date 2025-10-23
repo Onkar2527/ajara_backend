@@ -35,65 +35,52 @@ function reqData(req) {
 }
 
 
-exports.get = (req, res) =>{
-    let supportKey = req.headers['supportkey'];
-    const q = `select * from loan_information where APPLICANT_ID = ${req.body.APPLICANT_ID}` + (req.body.APPLICANT_NO ? ' AND APPLICANT_NO = '+ req.body.APPLICANT_NO : '')
-    db.executeQuery(q, supportKey, (error, results)=>{
-        if(error)
-        {
-            res.send({
-                "code": 400,
-                "message": "Failed to get loan information"
-            })
-        }
-        else
-        {
-            res.send({
-                "code": 200,
-                "message": "OK",
-                "data" : results
-            })
+exports.get = async (req, res) => {
+    const supportKey = req.headers['supportkey'];
+    const q = `select * from loan_information where APPLICANT_ID = ?` + (req.body.APPLICANT_NO ? ' AND APPLICANT_NO = ?' : '');
+    const params = [req.body.APPLICANT_ID];
+    if (req.body.APPLICANT_NO) {
+        params.push(req.body.APPLICANT_NO);
+    }
 
-        }
-    } )
+    try {
+        const results = await db.executeQueryData(q, params, supportKey);
+        res.send({
+            "code": 200,
+            "message": "OK",
+            "data": results
+        });
+    } catch (error) {
+        console.log("error", error);
+        res.status(400).send({
+            "code": 400,
+            "message": "Failed to get loan information"
+        });
+    }
+};
 
-}
+exports.create = async (req, res) => {
+    const supportKey = req.headers['supportkey'];
+    const data = reqData(req);
+    const q = `insert into loan_information set ?`;
 
-exports.create = (req,res) =>{
-    const supportKey = req.headers['supportkey'] ;   
+    try {
+        await db.executeQueryData(q, data, supportKey);
+        res.send({
+            "code": 200,
+            "message": "Loan information saved successfully"
+        });
+    } catch (error) {
+        console.log("error", error);
+        res.status(400).send({
+            "code": 400,
+            "message": "Failed to save loan information"
+        });
+    }
+};
 
-
-    const data =  reqData(req);
-    const q = `insert into loan_information set ?`
-
-    db.executeQueryData(q, data, supportKey, (error)=>{
-
-        if(error)
-        {
-            console.log("error", error);
-            res.send({
-                "code": 400,
-                "message": "Failed to save loan information"
-            })
-        }
-        else
-        {
-            res.send({
-                "code": 200,
-                "message": "Loan information saved successfully"
-            })
-
-        }
-    })
-
-    
-
-}
-
-exports.update = (req, res) => {
-    const supportKey = req.headers['supportkey'] ;   
-
-
+exports.update = async (req, res) => {
+    const supportKey = req.headers['supportkey'];
     const data = reqData(req);
     let setData = '';
     let recData = [];
@@ -103,30 +90,22 @@ exports.update = (req, res) => {
         recData.push(data[key]);
     });
 
-    setData2 = setData.slice(0,-1);
+    setData = setData.slice(0, -1);
 
+    const q = `update loan_information set ${setData} where ID = ?`;
+    recData.push(req.body.ID);
 
-    const q = `update loan_information set ${setData2} where ID = ${req.body.ID}`
-    db.executeQueryData(q , recData , supportKey , (error)=>{
-        if(error)
-        {
-            console.log(error);
-            res.send({
-                "code": 400,
-                "message": "Failed to update loan information"
-            })
-
-        }
-        else
-        {
-            res.send({
-                "code": 200,
-                "message": "loan information updated successfully"
-            })
-
-        }
-
-    })
-
-
-}
+    try {
+        await db.executeQueryData(q, recData, supportKey);
+        res.send({
+            "code": 200,
+            "message": "Loan information updated successfully"
+        });
+    } catch (error) {
+        console.log(error);
+        res.status(400).send({
+            "code": 400,
+            "message": "Failed to update loan information"
+        });
+    }
+};

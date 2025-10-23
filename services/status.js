@@ -9,7 +9,7 @@ exports.getList = async (req, res) => {
 
         let query = `select * from ${status_table} where 1 ${filter}`
 
-        let result = await db.executeQueryAsyncAwait(query, supportKey);
+        let result = await db.executeQuery(query, supportKey);
 
         res.send({
             "message": "success",

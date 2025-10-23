@@ -24,61 +24,52 @@ function reqData(req) {
 
 
 
-exports.get = (req, res) => {
-    let supportKey = req.headers['supportkey'];
-    const q = `select * from other_bank_account where APPLICANT_ID = ${req.body.APPLICANT_ID}` + (req.body.APPLICANT_NO ? ' AND APPLICANT_NO = '+ req.body.APPLICANT_NO : '' )
-    db.executeQuery(q, supportKey, (error, results) => {
-        if (error) {
-            res.send({
-                "code": 400,
-                "message": "Failed to get other bank account information"
-            })
-        }
-        else {
-            res.send({
-                "code": 200,
-                "message": "OK",
-                "data": results
-            })
-
-        }
-    })
-
-}
-
-exports.create = (req, res) => {
+exports.get = async (req, res) => {
     const supportKey = req.headers['supportkey'];
+    const q = `select * from other_bank_account where APPLICANT_ID = ?` + (req.body.APPLICANT_NO ? ' AND APPLICANT_NO = ?' : '');
+    const params = [req.body.APPLICANT_ID];
+    if (req.body.APPLICANT_NO) {
+        params.push(req.body.APPLICANT_NO);
+    }
 
+    try {
+        const results = await db.executeQueryData(q, params, supportKey);
+        res.send({
+            "code": 200,
+            "message": "OK",
+            "data": results
+        });
+    } catch (error) {
+        console.log("error", error);
+        res.status(400).send({
+            "code": 400,
+            "message": "Failed to get other bank account information"
+        });
+    }
+};
 
+exports.create = async (req, res) => {
+    const supportKey = req.headers['supportkey'];
     const data = reqData(req);
-    const q = `insert into other_bank_account set ?`
+    const q = `insert into other_bank_account set ?`;
 
-    db.executeQueryData(q, data, supportKey, (error) => {
+    try {
+        await db.executeQueryData(q, data, supportKey);
+        res.send({
+            "code": 200,
+            "message": "Other bank account saved successfully"
+        });
+    } catch (error) {
+        console.log("error", error);
+        res.status(400).send({
+            "code": 400,
+            "message": "Failed to save other bank account information"
+        });
+    }
+};
 
-        if (error) {
-            console.log("error", error);
-            res.send({
-                "code": 400,
-                "message": "Failed to save other bank account information"
-            })
-        }
-        else {
-            res.send({
-                "code": 200,
-                "message": "other bank account saved successfully"
-            })
-
-        }
-    })
-
-
-
-}
-
-exports.update = (req, res) => {
+exports.update = async (req, res) => {
     const supportKey = req.headers['supportkey'];
-
-
     const data = reqData(req);
     let setData = '';
     let recData = [];
@@ -88,28 +79,22 @@ exports.update = (req, res) => {
         recData.push(data[key]);
     });
 
-    setData2 = setData.slice(0, -1);
+    setData = setData.slice(0, -1);
 
+    const q = `update other_bank_account set ${setData} where ID = ?`;
+    recData.push(req.body.ID);
 
-    const q = `update other_bank_account set ${setData2} where ID = ${req.body.ID}`
-    db.executeQueryData(q, recData, supportKey, (error) => {
-        if (error) {
-            console.log(error);
-            res.send({
-                "code": 400,
-                "message": "Failed to update other bank account information"
-            })
-
-        }
-        else {
-            res.send({
-                "code": 200,
-                "message": " other bank account information updated successfully"
-            })
-
-        }
-
-    })
-
-
-}
+    try {
+        await db.executeQueryData(q, recData, supportKey);
+        res.send({
+            "code": 200,
+            "message": "Other bank account information updated successfully"
+        });
+    } catch (error) {
+        console.log(error);
+        res.status(400).send({
+            "code": 400,
+            "message": "Failed to update other bank account information"
+        });
+    }
+};

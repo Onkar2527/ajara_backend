@@ -12,8 +12,8 @@ exports.checkSufficientBalance = async (req, res) => {
         let getBalanceQ = `select AMOUNT from ${table}`;
         let getRateQ = `select RATE from doc_verify_rates where CODE = ${doc_code}`
 
-        let getBalanceR = await db.executeQueryAsyncAwait(getBalanceQ, "");
-        let getRateR = await db.executeQueryAsyncAwait(getRateQ, "")
+        let getBalanceR = await db.executeQuery(getBalanceQ, "");
+        let getRateR = await db.executeQuery(getRateQ, "")
 
         console.log(getBalanceR);
 
@@ -54,7 +54,7 @@ exports.getBalanceI = async () => {
 
     try {
         let getBalanceQ = `select AMOUNT from ${table}`;
-        let getBalanceR = await db.executeQueryAsyncAwait(getBalanceQ, "");
+        let getBalanceR = await db.executeQuery(getBalanceQ, "");
 
         if (getBalanceR.length > 0) {
             return getBalanceR[0].AMOUNT;
@@ -72,7 +72,7 @@ exports.getBalanceI = async () => {
 exports.getBalanceE = async (req, res) => {
     try {
         let getBalanceQ = `select AMOUNT from ${table}`;
-        let getBalanceR = await db.executeQueryAsyncAwait(getBalanceQ, "");
+        let getBalanceR = await db.executeQuery(getBalanceQ, "");
 
         if (getBalanceR.length > 0) {
             res.send({
@@ -104,7 +104,7 @@ exports.updateBalanceI = async (newBalance) => {
     try {
         let updateBalQ = `update ${table} set AMOUNT = ${newBalance}`;
 
-        await db.executeQueryAsyncAwait(updateBalQ, "");
+        await db.executeQuery(updateBalQ, "");
     }
 
     catch (error) {
@@ -118,7 +118,7 @@ exports.updateBalanceE = async (req, res) => {
         const newBalance = req.body.NEW_BALANCE;
         let updateBalQ = `update ${table} set AMOUNT = ${newBalance} where ID = 1`;
 
-        await db.executeQueryAsyncAwait(updateBalQ, "");
+        await db.executeQuery(updateBalQ, "");
 
         res.send({
             "code": 200,
@@ -134,5 +134,3 @@ exports.updateBalanceE = async (req, res) => {
         })
     }
 }
-
-

@@ -19,7 +19,7 @@ exports.get = async (req, res) => {
     try {
         let query = 'select * from password_policy';
 
-        let result = await db.executeQueryAsyncAwait(query, "");
+        let result = await db.executeQuery(query, "");
         if (result.length > 0) {
             res.send({
                 "code": 200,
@@ -54,7 +54,7 @@ exports.save = async (req, res) => {
 
         let query = 'update password_policy set ?';
 
-        await db.executeQueryDataAsyncAwait(query, updateData, "");
+        await db.executeQueryData(query, updateData, "");
 
         res.send({
             "code": 200,
