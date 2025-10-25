@@ -133,79 +133,28 @@ function checkerAccess(req) {
     return data;
 }
 
-function getAllApplicantsInfo(req) {
+function getAllApplicantsInfo(applicant, i) {
 
-    var data = [
-        {
-            FIRST_NAME: req.body.PRIMARY_APPLICANT_FIRST_NAME,
-            APPLICANT_NO: 1,
-            MIDDLE_NAME: req.body.PRIMARY_APPLICANT_MIDDLE_NAME,
-            LAST_NAME: req.body.PRIMARY_APPLICANT_LAST_NAME,
-            AADHAAR_NUMBER: req.body.AADHAAR_NO_1,
-            APPLICANT_ID: req.body.ID,
+    const data = {
+        FIRST_NAME: applicant.FIRST_NAME,
+        APPLICANT_NO: i,
+        MIDDLE_NAME: applicant.MIDDLE_NAME,
+        LAST_NAME: applicant.LAST_NAME,
+        AADHAAR_NUMBER: applicant.AADHAAR_NO,
 
-            PAN_NO: req.body.PAN_NUMBER,
-            DRIVING_LICENSE_NO: req.body.LICENSE_NO_1,
-            VOTER_ID: req.body.VOTER_ID_1,
+        PAN_NO: applicant.PAN_NUMBER,
+        DRIVING_LICENSE_NO: applicant.LICENSE_NO,
+        VOTER_ID: applicant.VOTER_ID,
 
-            DATE_OF_BIRTH: req.body.DOB_1,
-            GENDER: req.body.GENDER_1,
-            MOBILE_NUMBER: req.body.MOBILE_1
-        },
-        {
-            FIRST_NAME: req.body.APPLICANT2_FIRST_NAME,
-            APPLICANT_NO: 2,
-            MIDDLE_NAME: req.body.APPLICANT2_MIDDLE_NAME,
-            LAST_NAME: req.body.APPLICANT2_LAST_NAME,
-            AADHAAR_NUMBER: req.body.AADHAAR_NO_2,
-            APPLICANT_ID: req.body.ID,
-
-            PAN_NO: req.body.PAN_NUMBER2,
-            DRIVING_LICENSE_NO: req.body.LICENSE_NO_2,
-            VOTER_ID: req.body.VOTER_ID_2,
-
-            DATE_OF_BIRTH: req.body.DOB_2,
-            GENDER: req.body.GENDER_2,
-            MOBILE_NUMBER: req.body.MOBILE_2
-        },
-        {
-            FIRST_NAME: req.body.APPLICANT3_FIRST_NAME,
-            APPLICANT_NO: 3,
-            MIDDLE_NAME: req.body.APPLICANT3_MIDDLE_NAME,
-            LAST_NAME: req.body.APPLICANT3_LAST_NAME,
-            AADHAAR_NUMBER: req.body.AADHAAR_NUMBER3,
-            APPLICANT_ID: req.body.ID,
-
-            PAN_NO: req.body.PAN_NUMBER3,
-            DRIVING_LICENSE_NO: req.body.LICENSE_NO_3,
-            VOTER_ID: req.body.VOTER_ID_3,
-
-            DATE_OF_BIRTH: req.body.DOB_3,
-            GENDER: req.body.GENDER_3,
-            MOBILE_NUMBER: req.body.MOBILE_3
-        },
-        {
-            FIRST_NAME: req.body.APPLICANT4_FIRST_NAME,
-            APPLICANT_NO: 4,
-            MIDDLE_NAME: req.body.APPLICANT4_MIDDLE_NAME,
-            LAST_NAME: req.body.APPLICANT4_LAST_NAME,
-            AADHAAR_NUMBER: req.body.AADHAAR_NUMBER4,
-            APPLICANT_ID: req.body.ID,
-
-            PAN_NO: req.body.PAN_NUMBER4,
-            DRIVING_LICENSE_NO: req.body.LICENSE_NO_4,
-            VOTER_ID: req.body.VOTER_ID_4,
-
-            DATE_OF_BIRTH: req.body.DOB_4,
-            GENDER: req.body.GENDER_4,
-            MOBILE_NUMBER: req.body.MOBILE_4
-        }
-    ]
+        DATE_OF_BIRTH: applicant.DOB,
+        GENDER: applicant.GENDER,
+        MOBILE_NUMBER: applicant.MOBILE
+    }
 
     return data
 }
 
-function getCommonApplicantInfo(req) {
+function getCommonApplicantInfo() {
     let data = {
         RISK_CATEGORY: 'A',
         RELIGION: 'A',
@@ -243,6 +192,10 @@ exports.get = async (req, res) => {
     const q = `select * from basic_details where ID = ?`;
     try {
         const results = await db.executeQueryData(q, [req.body.ID], supportKey);
+        if (results.length > 0 && results[0].APPLICANTS_DATA) {
+            console.log(results[0].APPLICANTS_DATA);
+            results[0].applicants = results[0].APPLICANTS_DATA;
+        }
         res.send({
             "code": 200,
             "message": "OK",
@@ -259,9 +212,8 @@ exports.get = async (req, res) => {
 
 exports.create = async (req, res) => {
     let data = reqData(req);
-    let allApplicants = getAllApplicantsInfo(req);
-    let docApplicants = getAllApplicantDoc(req);
-    let commonFields = getCommonApplicantInfo(req);
+    const applicants = req.body.applicants;
+    data.APPLICANTS_DATA = JSON.stringify(applicants);
     let supportKey = req.headers['supportkey'];
     let connection;
 
@@ -270,29 +222,31 @@ exports.create = async (req, res) => {
         data.MODIFIED_DATE = new Date();
         const q = `insert into basic_details set ?`;
         let basicInsert = await db.executeQueryData(q, data, supportKey);
+        const proposalId = basicInsert.insertId;
 
-        const q_tab = `insert into extra_information (APPLICANT_ID, TAB_ID) select ${basicInsert.insertId}, ID from tab_master`;
+        const q_tab = `insert into extra_information (APPLICANT_ID, TAB_ID) select ${proposalId}, ID from tab_master`;
         await db.executeQuery(q_tab, supportKey);
 
-        for (let i = 1; i <= req.body.NO_OF_APPLICANT; i++) {
-            let applicantQuery = `insert into ${applicant_table} set ? `;
-            let applicantPhotos = `insert into applicant_photos set ? `;
-            let applicantDocuments = `insert into applicant_documents (DOCUMENT_NAME,APPLICANT_ID,APPLICANT_NO) select DOCUMENT_NAME, ${basicInsert.insertId}, ${i}  from document_master ORDER BY SEQ_NO`;
+        for (let i = 0; i < applicants.length; i++) {
+            const applicant = applicants[i];
+            const applicantNo = i + 1;
+            let applicantPersonalData = { ...getCommonApplicantInfo(), ...getAllApplicantsInfo(applicant, i), APPLICANT_ID: proposalId };
+            let applicantPhotoData = { FIRST_NAME: applicant.FIRST_NAME, MIDDLE_NAME: applicant.MIDDLE_NAME, LAST_NAME: applicant.LAST_NAME, APPLICANT_ID: proposalId, APPLICANT_NO: applicantNo };
 
-            allApplicants[i - 1]['APPLICANT_ID'] = basicInsert.insertId;
-            docApplicants[i - 1]['APPLICANT_ID'] = basicInsert.insertId;
+            let applicantQuery = `insert into applicants_personal_details set ? `;
+            let applicantPhotosQuery = `insert into applicant_photos set ? `;
+            let applicantDocumentsQuery = `insert into applicant_documents (DOCUMENT_NAME,APPLICANT_ID,APPLICANT_NO) select DOCUMENT_NAME, ${proposalId}, ${applicantNo}  from document_master ORDER BY SEQ_NO`;
 
-            allApplicants[i - 1] = { ...allApplicants[i - 1], ...commonFields };
-            await db.executeQueryData(applicantQuery, allApplicants[i - 1], supportKey);
-            await db.executeQueryData(applicantPhotos, docApplicants[i - 1], supportKey);
-            await db.executeQuery(applicantDocuments, supportKey);
+            await db.executeQueryData(applicantQuery, applicantPersonalData, supportKey);
+            await db.executeQueryData(applicantPhotosQuery, applicantPhotoData, supportKey);
+            await db.executeQuery(applicantDocumentsQuery, supportKey);
         }
 
         await db.commitConnection(connection);
         res.send({
             "code": 200,
             "message": "Basic details saved successfully",
-            "APPLICANT_ID": basicInsert.insertId
+            "APPLICANT_ID": proposalId
         });
 
     } catch (error) {
@@ -311,14 +265,13 @@ exports.create = async (req, res) => {
 exports.update1 = async (req, res) => {
     const supportKey = req.headers['supportkey'];
     let connection;
-    let allApplicants = getAllApplicantsInfo(req);
-    let docApplicants = getAllApplicantDoc(req);
-    let commonFields = getCommonApplicantInfo(req);
     let ROLE_ID = req.body.ROLE_ID;
     let data = ``;
+    const applicants = req.body.applicants;
 
     if (ROLE_ID == 1) {
         data = reqData(req);
+        data.APPLICANTS_DATA = JSON.stringify(applicants);
         if (data.TRACK_ID == 2) data.MODIFIED_DATE = new Date();
     } else if (ROLE_ID == 2) {
         data = checkerAccess(req);
@@ -345,40 +298,28 @@ exports.update1 = async (req, res) => {
         await db.executeQueryData(q, recData, supportKey);
 
         if (ROLE_ID == 1) {
-            for (let i = 1; i <= req.body.NO_OF_APPLICANT; i++) {
-                let applicant = await db.executeQuery(`select * from ${applicant_table} where APPLICANT_ID = ${req.body.ID} AND APPLICANT_NO = ${i}`);
+            for (let i = 0; i < applicants.length; i++) {
+                const applicant = applicants[i];
+                const applicantNo = i + 1;
+                const existingApplicant = await db.executeQuery(`select * from applicants_personal_details where APPLICANT_ID = ${req.body.ID} AND APPLICANT_NO = ${applicantNo}`);
 
-                if (applicant.length == 0) {
-                    let applicantQuery = `insert into ${applicant_table} set ? `;
-                    let applicantPhotos = `insert into applicant_photos set ? `;
-                    let applicantDocuments = `insert into applicant_documents (DOCUMENT_NAME,APPLICANT_ID,APPLICANT_NO) select DOCUMENT_NAME, ${req.body.ID}, ${i}  from document_master ORDER BY SEQ_NO`;
+                if (existingApplicant.length > 0) {
+                    // Update existing applicant
+                    let applicantPersonalData = { ...getAllApplicantsInfo(applicant, i) };
+                    let updateQuery = `update applicants_personal_details set ? where ID = ?`;
+                    await db.executeQueryData(updateQuery, [applicantPersonalData, existingApplicant[0].ID], supportKey);
+                } else {
+                    // Insert new applicant
+                    let applicantPersonalData = { ...getCommonApplicantInfo(), ...getAllApplicantsInfo(applicant, i), APPLICANT_ID: req.body.ID }; 
+                    let applicantPhotoData = { FIRST_NAME: applicant.FIRST_NAME, MIDDLE_NAME: applicant.MIDDLE_NAME, LAST_NAME: applicant.LAST_NAME, APPLICANT_ID: req.body.ID, APPLICANT_NO: applicantNo };
 
-                    allApplicants[i - 1] = { ...allApplicants[i - 1], ...commonFields };
-                    await db.executeQueryData(applicantQuery, allApplicants[i - 1], supportKey);
-                    await db.executeQueryData(applicantPhotos, docApplicants[i - 1], supportKey);
-                    await db.executeQuery(applicantDocuments, supportKey);
-                } else if (applicant.length > 0) {
-                    let applicantsPersonalfeilds = '';
-                    let applicantsPersonalArray = [];
-                    Object.keys(allApplicants[i - 1]).forEach(key => {
-                        applicantsPersonalfeilds += `${key} = ? ,`;
-                        applicantsPersonalArray.push(allApplicants[i - 1][key]);
-                    });
-                    applicantsPersonalfeilds = applicantsPersonalfeilds.slice(0, -1);
+                    let applicantQuery = `insert into applicants_personal_details set ? `;
+                    let applicantPhotosQuery = `insert into applicant_photos set ? `;
+                    let applicantDocumentsQuery = `insert into applicant_documents (DOCUMENT_NAME,APPLICANT_ID,APPLICANT_NO) select DOCUMENT_NAME, ${req.body.ID}, ${applicantNo}  from document_master ORDER BY SEQ_NO`;
 
-                    let applicantsPhotofeilds = '';
-                    let applicantsPhototArray = [];
-                    Object.keys(docApplicants[i - 1]).forEach(key => {
-                        applicantsPhotofeilds += `${key} = ? ,`;
-                        applicantsPhototArray.push(docApplicants[i - 1][key]);
-                    });
-                    applicantsPhotofeilds = applicantsPhotofeilds.slice(0, -1);
-
-                    let applicantQuery = `update ${applicant_table} set ${applicantsPersonalfeilds} where ID = ${applicant[0].ID} `;
-                    let applicantPhotos = `update applicant_photos set ${applicantsPhotofeilds} where APPLICANT_ID = ${req.body.ID} AND APPLICANT_NO = ${i} `;
-
-                    await db.executeQueryData(applicantQuery, applicantsPersonalArray, supportKey);
-                    await db.executeQueryData(applicantPhotos, applicantsPhototArray, supportKey);
+                    await db.executeQueryData(applicantQuery, applicantPersonalData, supportKey);
+                    await db.executeQueryData(applicantPhotosQuery, applicantPhotoData, supportKey);
+                    await db.executeQuery(applicantDocumentsQuery, supportKey);
                 }
             }
         }

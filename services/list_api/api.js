@@ -1,10 +1,38 @@
+const mysql = require('mysql2/promise');
+const config = require('./config').config
 const axios = require('axios');
 const db = require('../../utilities/dbModule');
-const fs = require('fs/promises');
-const schedule = require('node-schedule');
-const config = require('./config').config;
+const fs = require('fs/promises')
+const schedule = require('node-schedule')
+let connection
 
 const mode = config.mode;
+
+function connect() {
+    let promise = new Promise(async (resolve, reject) => {
+        try {
+            const database = {
+                user: config[mode].database_config.user,
+                password: config[mode].database_config.password,
+                database: config[mode].database_config.database_name,
+                host: config[mode].database_config.host,
+                port: config[mode].database_config.port,
+                namedPlaceholders: true
+            }
+            connection = await mysql.createConnection(database);
+
+            resolve(connection)
+        }
+        catch (error) {
+            // console.log(error);
+            reject(error);
+        }
+
+    })
+
+    return promise;
+}
+
 
 let proxy = {
     host: '127.0.0.1',
@@ -13,90 +41,149 @@ let proxy = {
 
 
 async function getJWTToken() {
+
+    if (!connection) {
+        await connect();
+    }
+
+    let maxID
+
     const table = `jwt_token`;
-    const get_max_id = `SELECT ID FROM ${table} ORDER BY ID DESC LIMIT 0, 1`;
 
-    try {
-        const max_query_result = await db.executeQuery(get_max_id, '');
+    let get_max_id = `SELECT ID FROM ${table} ORDER BY ID DESC LIMIT 0, 1`;
 
-        if (max_query_result.length > 0) {
-            const maxID = max_query_result[0].ID;
-            const get_query = `SELECT TOKEN FROM ${table} WHERE ID = ${maxID} AND IS_EXPIRED = 0;`;
-            const get_token_result = await db.executeQuery(get_query, '');
+    let token = ``
 
-            if (get_token_result.length > 0) {
-                return get_token_result[0].TOKEN;
+    let promise = new Promise(async (resolve, reject) => {
+        try {
+            let [max_query_result, max_query_fields] = await connection.execute(get_max_id);
+
+            if (max_query_result.length > 0) {
+                // console.log(max_query_result);
+                maxID = max_query_result[0].ID;
+                let get_query = `select TOKEN from ${table} where ID = ${maxID} AND IS_EXPIRED = 0;`
+                let [get_token_result, get_token_fields] = await connection.execute(get_query);
+
+                if (get_token_result.length > 0) {
+                    token = get_token_result[0].TOKEN;
+                    resolve(token);
+                }
+                else {
+                    token = await generateToken()
+                    resolve(token);
+                }
+            }
+            else {
+                token = await generateToken()
+                resolve(token);
             }
         }
-        return await generateToken();
-    } catch (error) {
-        console.log(error);
-        throw error;
-    }
+        catch (error) {
+            // console.log(error);
+            reject(error);
+        }
+    });
+
+    return promise;
 }
 
 
 async function generateToken() {
     const table = `jwt_token`;
-    const setData = {
+
+    if (!connection) {
+        await connect();
+    }
+
+    setData = {
         CREATED_DATE: '22/10/2023',
         TOKEN: '',
         IS_EXPIRED: 0
-    };
-    const tokenurl = `${config[mode].api.host}:${config[mode].api.port}${config[mode].api.routes[0].url}`;
-
-    try {
-        let configuration = {
-            headers: { "userName": 'cpc', "bankName": "Ajara", "branchName": "Ajara", "callerSystem": "FCO" }
-        };
-        if (config[mode].api.isproxy) {
-            configuration.proxy = proxy;
-        }
-        const token_result = await getRequest(tokenurl, configuration);
-        const token = token_result.token;
-        setData.TOKEN = token;
-
-        const insert_query = `INSERT INTO ${table} SET ?`;
-        await db.executeQueryData(insert_query, setData, '');
-
-        return token;
-    } catch (error) {
-        console.log(error);
-        throw error;
     }
+
+    let tokenurl = `${config[mode].api.host}:${config[mode].api.port}${config[mode].api.routes[0].url}`
+
+    let promise = new Promise(async (resolve, reject) => {
+        try {
+
+
+            let configuration = {
+                headers: { "userName": 'cpc', "bankName": "Ajara", "branchName": "Ajara", "callerSystem": "FCO" }
+            }
+            if (config[mode].api.isproxy) {
+                configuration.proxy = proxy;
+            }
+            let token_result = await getRequest(tokenurl, configuration);
+
+            let token = token_result.token;
+
+            setData.TOKEN = token;
+            console.log("real token", token, setData)
+
+            let insert_query = `insert into ${table} set CREATED_DATE = '${setData.CREATED_DATE}', TOKEN = '${setData.TOKEN}' ,IS_EXPIRED = '${setData.IS_EXPIRED}'`;
+
+            await connection.execute(insert_query,);
+
+            resolve(token);
+
+        }
+        catch (error) {
+            // console.log(error)
+            reject(error);
+        }
+    });
+
+    return promise;
 }
 
 
-async function getRequest(url, config) {
-    try {
-        const result = await axios.get(url, config);
-        return result.data;
-    } catch (error) {
-        console.log(error);
-        throw error;
-    }
+function getRequest(url, config) {
+
+    let promise = new Promise(async (resolve, reject) => {
+        try {
+            let result = await axios.get(url, config);
+            // // console.log("result",result)
+            resolve(result.data);
+        }
+        catch (error) {
+            // console.log(error);
+            reject(error);
+        }
+    });
+
+    return promise;
 }
 
 
 async function cacheMasters() {
-    const masters_table = `masters_list`;
-    const getmasterQ = `SELECT * FROM ${masters_table} WHERE IS_ACTIVE = 1`;
 
-    try {
-        const masters_data = await db.executeQuery(getmasterQ, '');
-        console.log("Masters Data", masters_data);
 
-        for (const table of masters_data) {
-            const checkQ = `SHOW TABLES LIKE '${table.NAME}'`;
-            const checkR = await db.executeQuery(checkQ, '');
-            console.log('table name : ', table.NAME, 'result : ', checkR);
+    if (!connection) {
+        await connect();
+    }
 
-            if (checkR.length > 0) {
-                const dropQ = `DROP TABLE ${table.NAME}`;
-                await db.executeQuery(dropQ, '');
-            }
+    let masters_table = `masters_list`;
 
-            const masterUrl = `${config[mode].api.host}:${config[mode].api.port}${config[mode].api.routes[1].url}${table.ID}`;
+    let getmasterQ = `select * from ${masters_table} where IS_ACTIVE = 1`;
+
+    let [masters_data, masters_fields] = await connection.execute(getmasterQ);
+
+    console.log("Masters Data", masters_data);
+
+    for (let table of masters_data) {// console
+        let checkQ = `SHOW TABLES LIKE '${table.NAME}'`;
+
+        let [checkR, checkF] = await connection.execute(checkQ);
+
+        console.log('table name : ', table.NAME, 'result : ', checkR);
+
+        if (checkR.length > 0) {
+            let dropQ = `DROP TABLE ${table.NAME}`
+            await connection.execute(dropQ);
+        }
+
+
+        let masterUrl = `${config[mode].api.host}:${config[mode].api.port}${config[mode].api.routes[1].url}${table.ID}`
 
         let bearerKey = await getJWTToken();
         let configuration = {
@@ -109,22 +196,28 @@ async function cacheMasters() {
 
         console.log("masterResult", masterResult);
 
-            for (const result of masterResult) {
-                const checkR2 = await db.executeQuery(checkQ, '');
+        for (let result of masterResult) {
+            // let checkQ2 = `SHOW TABLES LIKE '${table.NAME}'`;
 
-                if (checkR2.length === 0) {
-                    const createTableQ = `CREATE TABLE ${table.NAME}(ID INT UNSIGNED NOT NULL AUTO_INCREMENT, ${returnUniqueKey(masterResult)} PRIMARY KEY (\`ID\`))`;
-                    console.log('table name : ', table.NAME, 'result : ', checkR2);
-                    await db.executeQuery(createTableQ, '');
-                }
+            let [checkR2, checkF2] = await connection.execute(checkQ);
 
-                const insertQ = `INSERT INTO ${table.NAME} SET ?`;
-                await db.executeQueryData(insertQ, result, '');
+            if (checkR2.length == 0) {
+                let createTableQ = `CREATE TABLE ${table.NAME}(ID INT UNSIGNED NOT NULL AUTO_INCREMENT, ${returnUniqueKey(masterResult)} PRIMARY KEY (\`ID\`))`;
+                console.log('table name : ', table.NAME, 'result : ', checkR2);
+
+                let createTableR = await connection.execute(createTableQ);
+
+                console.log("query", createTableQ, "result", createTableR);
             }
+
+            let insertQ = `INSERT INTO ${table.NAME} set ${returnInsertQ(result)}`
+            let insertR = await connection.execute(insertQ);
+
+            console.log("query", insertQ, "result", insertR);
         }
-    } catch (error) {
-        console.log(error);
+
     }
+
 }
 
 exports.syncMasters = () => {
@@ -188,9 +281,15 @@ function returnInsertQ(obj) {
 }
 
 exports.onBoardCustomer = async (req, res) => {
+
     try {
-        const applicant_id = req.body.APPLICANT_ID;
-        const basicT = `basic_details`;
+        let applicant_id = req.body.APPLICANT_ID;
+
+        if (!connection) {
+            await connect();
+        }
+
+        let basicT = `basic_details`
         let personalT = `applicants_personal_details`
         let depositT = `term_deposite`
         let serviceT = `facilities`
@@ -203,18 +302,16 @@ exports.onBoardCustomer = async (req, res) => {
         let depositQ = `select * from ${depositT} where APPLICANT_ID = ${applicant_id};`;
         let documentQ = `select * from ${documentT} where APPLICANT_ID = ${applicant_id} AND APPLICANT_NO = 1;`;
         let serviceQ = `select * from ${serviceT} where APPLICANT_ID = ${applicant_id};`;
-        let financeQ = `select * from ${financeT} where APPLICANT_ID = ${applicant_id} AND APPLICANT_NO = 1;`;
-        let nomineeQ = `select * from ${nomineeT} where APPLICANT_ID = ${applicant_id};`;
+        let financeQ = `select * from ${financeT} where APPLICANT_ID = ${applicant_id} AND APPLICANT_NO = 1;`
+        let nomineeQ = `select * from ${nomineeT} where APPLICANT_ID = ${applicant_id};`
 
-        const [basicR, personalR, depositR, serviceR, financeR, documentR, nomineeR] = await Promise.all([
-            db.executeQuery(basicQ, ''),
-            db.executeQuery(personalQ, ''),
-            db.executeQuery(depositQ, ''),
-            db.executeQuery(serviceQ, ''),
-            db.executeQuery(financeQ, ''),
-            db.executeQuery(documentQ, ''),
-            db.executeQuery(nomineeQ, '')
-        ]);
+        let [basicR, basicF] = await connection.execute(basicQ, '');
+        let [personalR, personalF] = await connection.execute(personalQ, '');
+        let [depositR, depositF] = await db.executeQuery(depositQ, '');
+        let [serviceR, serviceF] = await db.executeQuery(serviceQ, '');
+        let [financeR, financeF] = await db.executeQuery(financeQ, '');
+        let documentR = await db.executeQuery(documentQ, '');
+        let [nomineeR, nomineeF] = await db.executeQuery(nomineeQ, '');
 
         console.log("basicR", basicR);
         console.log("personalR", personalR);
@@ -463,7 +560,7 @@ exports.onBoardCustomer = async (req, res) => {
         let accountCreatedData = await axios.post(posturl, account_opening_data, configuration)
 
 
-        let basicInsertQ = `update basic_details set ACCOUNT_NUMBER =  "${accountCreatedData.data['Account number']}",CUSTOMER_ID_1 = "${accountCreatedData.data['Customer Code']}" where ID = ${applicant_id}`;
+        let basicInsertQ = `update basic_details set ACCOUNT_NUMBER =  "${accountCreatedData.data['Account number']}",CUSTOMER_ID_1 = "${accountCreatedData.data['Customer Code']}" where ID = ${applicant_id}`
 
         let basicInsertR = await db.executeQuery(basicInsertQ, '');
         console.log("Query : ", basicInsertQ, "result ", basicInsertR);
@@ -546,8 +643,15 @@ function generateNewDate() {
 
 async function getStateCode(id) {
     try {
-        const stateQ = `SELECT STATEID FROM state_master WHERE ID=${id}`;
-        const stateR = await db.executeQuery(stateQ, '');
+        if (!connection) {
+            connect()
+        }
+
+
+        let stateQ = `select STATEID from state_master where ID=${id}`;
+
+        let [stateR, stateF] = await connection.execute(stateQ, '');
+
         console.log("stateR", stateR);
 
         if (stateR.length > 0) {
@@ -566,8 +670,14 @@ async function getStateCode(id) {
 
 async function getDistCode(id) {
     try {
-        const distQ = `SELECT DISTRICTID FROM district_master WHERE ID=${id}`;
-        const distR = await db.executeQuery(distQ, '');
+        if (!connection) {
+            connect()
+        }
+
+        let distQ = `select DISTRICTID from district_master where ID=${id}`;
+
+        let [distR, distF] = await connection.execute(distQ, '');
+
         console.log("distR", distR);
 
         if (distR.length > 0) {
@@ -584,8 +694,14 @@ async function getDistCode(id) {
 
 async function getTalukaCode(id) {
     try {
-        const talukaQ = `SELECT TALUKAID FROM taluka_master WHERE ID=${id}`;
-        const talukaR = await db.executeQuery(talukaQ, '');
+        if (!connection) {
+            connect()
+        }
+
+        let talukaQ = `select TALUKAID from taluka_master where ID=${id}`;
+
+        let [talukaR, talukaF] = await connection.execute(talukaQ, '');
+
         console.log("talukaR", talukaR);
 
         if (talukaR.length > 0) {
@@ -602,8 +718,14 @@ async function getTalukaCode(id) {
 
 async function getCityCode(id) {
     try {
-        const cityQ = `SELECT CITYID FROM city_master WHERE ID=${id}`;
-        const cityR = await db.executeQuery(cityQ, '');
+        if (!connection) {
+            connect()
+        }
+
+        let cityQ = `select CITYID from city_master where ID=${id}`;
+
+        let [cityR, cityF] = await connection.execute(cityQ, '');
+
         console.log("cityR", cityR);
 
         if (cityR.length > 0) {
@@ -620,8 +742,14 @@ async function getCityCode(id) {
 
 async function getAreaCode(id) {
     try {
-        const areaQ = `SELECT AREAID FROM address_master WHERE ID=${id}`;
-        const areaR = await db.executeQuery(areaQ, '');
+        if (!connection) {
+            connect()
+        }
+
+        let areaQ = `select AREAID from address_master where ID=${id}`;
+
+        let [areaR, areaF] = await connection.execute(areaQ, '');
+
         console.log("areaR", areaR);
 
         if (areaR.length > 0) {
@@ -637,8 +765,10 @@ async function getAreaCode(id) {
 }
 
 async function getBranchFromCBS(branchID) {
-    const branchQ = `SELECT BRANCH_CODE FROM branch_master WHERE ID = ${branchID}`;
-    const branchR = await db.executeQuery(branchQ, '');
+    let branchQ = `select BRANCH_CODE from branch_master where ID  = ${branchID}`;
+
+    let [branchR, branchF] = await db.executeQuery(branchQ, '');
+
     console.log("branchR", branchR);
 
     if (branchR) {
@@ -651,8 +781,10 @@ async function getBranchFromCBS(branchID) {
 }
 
 async function getUserNameByID(id) {
-    const getUserQ = `SELECT CBS_USER_NAME FROM user_master WHERE ID = ${id}`;
-    const userR = await db.executeQuery(getUserQ, '');
+    let getUserQ = `select CBS_USER_NAME from user_master where ID = ${id}`;
+
+    let [userR, userF] = await db.executeQuery(getUserQ, '');
+
     console.log("userR", userR);
 
     if (userR) {
@@ -664,35 +796,68 @@ async function getUserNameByID(id) {
 }
 
 exports.getMasters = async (req, res) => {
-    try {
-        const masterCode = req.body.code;
-        const filter = req.body.filter;
-        const masterQ = `SELECT NAME FROM masters_list WHERE ID = ${masterCode}`;
-        const masterR = await db.executeQuery(masterQ, '');
 
-        if (masterR.length > 0 && masterR[0].NAME) {
-            const table_name = masterR[0].NAME;
-            const getMasterQ = `SELECT * FROM ${table_name} WHERE 1 ${filter}`;
-            const result = await db.executeQuery(getMasterQ, '');
-            res.send({
-                "code": 200,
-                "data": result
-            });
-        } else {
+    try {
+
+        if (!connection) {
+            await connect();
+        }
+
+
+        let masterCode = req.body.code;
+        let filter = req.body.filter;
+
+        let masterQ = `select NAME from masters_list where ID = ${masterCode}`
+
+        let [masterR, masterF] = await connection.execute(masterQ, '');
+
+        console.log("userR", masterR);
+
+        let table_name = ``
+
+        if (masterR.length > 0) {
+            if (masterR[0].NAME) {
+                table_name = masterR[0].NAME;
+
+                let getMasterQ = `select * from ${table_name} where 1 ${filter}`
+
+                let [result, resultF] = await connection.query(getMasterQ);
+
+                res.send({
+                    "code": 200,
+                    "data": result
+                })
+
+            }
+
+            else {
+                res.send({
+                    "code": 200,
+                    "message": "no data",
+                    "data": []
+                });
+            }
+
+        }
+        else {
             res.send({
                 "code": 200,
                 "message": "no data",
                 "data": []
-            });
+            })
         }
-    } catch (error) {
+    }
+
+    catch (error) {
         console.log(error);
-        res.status(400).send({
+        res.send({
             "code": 400,
             "message": "failed"
-        });
+        })
     }
-};
+
+
+}
 
 function Relation(code) {
     let valid_codes = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
