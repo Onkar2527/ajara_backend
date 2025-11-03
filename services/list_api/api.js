@@ -431,6 +431,25 @@ exports.onBoardCustomer = async (req, res) => {
                 "authuser": await getUserNameByID(basicR.VERIFIER_USER_ID),
                 "addressline1": `${personalR.CURRENT_ADDRESS} ${personalR.CURRENT_LANDMARK}`
             },
+            "addobj_O": {
+                "addresstype": "O",
+                "countryid": 1,
+                "stateid": await getStateCode(personalR.OFFICE_STATE),
+                "districtid": await getDistCode(personalR.OFFICE_DISTRICT),
+                "talukaid": await getTalukaCode(personalR.OFFICE_TALUKA),
+                "cityid": await getCityCode(personalR.OFFICE_CITY),
+                "areaid": await getAreaCode(personalR.OFFICE_AREA),
+                "regionid": 1,
+                "mobile": personalR.MOBILE_NUMBER,
+                "pincode": personalR.OFFICE_PINCODE,
+                // "sequenceno": 1,
+                "bankcode": 1,
+                "brncode": await getBranchFromCBS(basicR.CREATED_BRANCH_ID),
+                "entryuser": await getUserNameByID(basicR.MAKER_USER_ID),
+                "verifiedby": await getUserNameByID(basicR.CHACKER_USER_ID),
+                "authuser": await getUserNameByID(basicR.VERIFIER_USER_ID),
+                "addressline1": `${personalR.OFFICE_ADDRESS} ${personalR.OFFICE_LANDMARK}`
+            },
             "kyccomobj": {
                 "kcc_status": "F",
 

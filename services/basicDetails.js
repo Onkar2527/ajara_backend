@@ -230,7 +230,7 @@ exports.create = async (req, res) => {
         for (let i = 0; i < applicants.length; i++) {
             const applicant = applicants[i];
             const applicantNo = i + 1;
-            let applicantPersonalData = { ...getCommonApplicantInfo(), ...getAllApplicantsInfo(applicant, i), APPLICANT_ID: proposalId };
+            let applicantPersonalData = { ...getCommonApplicantInfo(), ...getAllApplicantsInfo(applicant, i + 1), APPLICANT_ID: proposalId };
             let applicantPhotoData = { FIRST_NAME: applicant.FIRST_NAME, MIDDLE_NAME: applicant.MIDDLE_NAME, LAST_NAME: applicant.LAST_NAME, APPLICANT_ID: proposalId, APPLICANT_NO: applicantNo };
 
             let applicantQuery = `insert into applicants_personal_details set ? `;
@@ -305,12 +305,12 @@ exports.update1 = async (req, res) => {
 
                 if (existingApplicant.length > 0) {
                     // Update existing applicant
-                    let applicantPersonalData = { ...getAllApplicantsInfo(applicant, i) };
+                    let applicantPersonalData = { ...getAllApplicantsInfo(applicant, i + 1) };
                     let updateQuery = `update applicants_personal_details set ? where ID = ?`;
                     await db.executeQueryData(updateQuery, [applicantPersonalData, existingApplicant[0].ID], supportKey);
                 } else {
                     // Insert new applicant
-                    let applicantPersonalData = { ...getCommonApplicantInfo(), ...getAllApplicantsInfo(applicant, i), APPLICANT_ID: req.body.ID }; 
+                    let applicantPersonalData = { ...getCommonApplicantInfo(), ...getAllApplicantsInfo(applicant, i + 1), APPLICANT_ID: req.body.ID };
                     let applicantPhotoData = { FIRST_NAME: applicant.FIRST_NAME, MIDDLE_NAME: applicant.MIDDLE_NAME, LAST_NAME: applicant.LAST_NAME, APPLICANT_ID: req.body.ID, APPLICANT_NO: applicantNo };
 
                     let applicantQuery = `insert into applicants_personal_details set ? `;
