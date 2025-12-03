@@ -108,7 +108,7 @@ async function generateToken() {
 
 
             let configuration = {
-                headers: { "userName": 'cpc', "bankName": "Ajara", "branchName": "Ajara", "callerSystem": "FCO" }
+                headers: { "userName": 'cpc', "bankName": "Ajara", "branchName": "Uttur", "callerSystem": "FCO" }
             }
             if (config[mode].api.isproxy) {
                 configuration.proxy = proxy;
@@ -187,7 +187,7 @@ async function cacheMasters() {
 
         let bearerKey = await getJWTToken();
         let configuration = {
-            headers: { "Authorization": `Bearer ${bearerKey}`, "userName": `fco`, "bankName": "Ajara", " branchName": "Ajara", "callerSystem": "FCO" }
+            headers: { "Authorization": `Bearer ${bearerKey}`, "userName": `fco`, "bankName": "Ajara", "branchName": "Uttur", "callerSystem": "FCO" }
         }
         if (config[mode].api.isproxy) {
             configuration.proxy = proxy;
@@ -305,19 +305,31 @@ exports.onBoardCustomer = async (req, res) => {
         let financeQ = `select * from ${financeT} where APPLICANT_ID = ${applicant_id} AND APPLICANT_NO = 1;`
         let nomineeQ = `select * from ${nomineeT} where APPLICANT_ID = ${applicant_id};`
 
-        let [basicR, basicF] = await connection.execute(basicQ, '');
-        let [personalR, personalF] = await connection.execute(personalQ, '');
+        let guardianQ = `select * from ${personalT} where APPLICANT_ID = ${applicant_id} AND APPLICANT_NO = 2;`;
+        let guardianFinanceQ = `select * from ${financeT} where APPLICANT_ID = ${applicant_id} AND APPLICANT_NO = 2;`;
+        let guardianDocumentQ = `select * from ${documentT} where APPLICANT_ID = ${applicant_id} AND APPLICANT_NO = 2;`;
+
+
+        let [basicR, basicF] = await db.executeQuery(basicQ, '');
+        let [personalR, personalF] = await db.executeQuery(personalQ, '');
         let [depositR, depositF] = await db.executeQuery(depositQ, '');
         let [serviceR, serviceF] = await db.executeQuery(serviceQ, '');
         let [financeR, financeF] = await db.executeQuery(financeQ, '');
         let documentR = await db.executeQuery(documentQ, '');
         let [nomineeR, nomineeF] = await db.executeQuery(nomineeQ, '');
 
+        let [guardianR, guardianF] = await db.executeQuery(guardianQ, '');
+        let [guardianFinanceR, guardianFinanceF] = await db.executeQuery(guardianFinanceQ, '');
+        let guardianDocumentR = await db.executeQuery(guardianDocumentQ, '');
+
         console.log("basicR", basicR);
         console.log("personalR", personalR);
         console.log("depositR", depositR);
         console.log("documentR", documentR);
         console.log("nomineeR", nomineeR);
+        console.log("guardianR", guardianR);
+        console.log("guardianFinanceR", guardianFinanceR);
+        console.log("guardianDocumentR", guardianDocumentR);
         // let username = await await getUserNameByID(14);
 
         // res.send({
@@ -391,6 +403,73 @@ exports.onBoardCustomer = async (req, res) => {
                 "maritalstatus": personalR.MARITAL_STATUS,//married = 'M', single = 'U',Divorced:'D'
                 "caste_code": Number(personalR.CASTE)
             },
+            "custgurobj": !personalR.IS_MINOR ? null : {
+                "reg_mobileno": guardianR.MOBILE_NUMBER,
+                "reg_emailid": guardianR.EMAIL_ID,
+                "introbranch": await getBranchFromCBS(basicR.CREATED_BRANCH_ID),
+                "typeofcustomer": 1,
+                "annualincome": guardianFinanceR.INCOME.toString(),
+                "smssubscription": serviceR.SMS_ALERT ? "Y" : "N",
+                "middlename": guardianR.MIDDLE_NAME,
+                "firstname": guardianR.FIRST_NAME,
+                "lastname": guardianR.LAST_NAME,
+                "createdfor": "A",
+                "minor": guardianR.IS_MINOR ? "Y" : "N",
+                "birthdate": convertDate(guardianR.DATE_OF_BIRTH),
+                "gender": guardianR.GENDER,
+                "occupationid": Number(guardianR.PROFESSION),
+                "title": basicR.CUSTOMER_TYPE_1,
+                "idtproofid": Number(guardianR.ID_PROOF),
+                "idtproofidno": guardianR.ID_PROOF_NUMBER,
+                "proofdetailsid": Number(guardianR.PERMANENT_ADDRESS_PROOF),
+                "addproofidno": guardianR.PERMANENT_ADDRESS_PROOF_NUMBER,
+                "riskcat": Number(guardianR.RISK_CATEGORY),
+                "panno": guardianR.PAN_NO,//"GTFDT8976M",
+                "fatherspouse": guardianR.FATHER_OR_SPOUSE,
+                "bankcode": 1,
+                "brncode": await getBranchFromCBS(basicR.CREATED_BRANCH_ID),
+                "entrystatus": "F",
+                "entryuser": await getUserNameByID(basicR.MAKER_USER_ID),
+                "verifiedby": await getUserNameByID(basicR.CHACKER_USER_ID),
+                "authuser": await getUserNameByID(basicR.VERIFIER_USER_ID),
+
+
+                //if minor is y guardian id should be provided.
+
+                //meritial status can be provided.(value will be provided)
+
+                //special cat should be added.
+
+                //relgion and caste can be provided. (masters)
+
+                //services (sms subscription) field can be provided. (y/n)
+
+                //email id can be provided.
+
+                //mother name title.
+
+                //father name title.
+                "religion": Number(guardianR.RELIGION),
+                "caste": Number(guardianR.CASTE),
+
+                "fatherlnm": guardianR.F_OR_H_LAST_NAME,
+                "fatherfnm": guardianR.F_OR_H_FIRST_NAME,
+                "fathermnm": guardianR.F_OR_H_MIDDLE_NAME,
+
+                "motherlname": guardianR.MOTHERS_LAST_NAME,
+                "motherfname": guardianR.MOTHERS_NAME,
+                "mothermname": guardianR.MOTHERS_MIDDLE_NAME,
+                // "subconstitution": Number(guardianR.CONSTITUTION)
+                // "custuin": guardianR.AADHAAR_NUMBER,
+
+                "mothertitle": guardianR.MOTHER_TITLE,
+                "issuiddocplace": basicR.DOCUMENTS_ISSUE_PLACE,
+                "iddocissuauth": basicR.DOCUMENTS_AUTHORITY,
+                "maritalstatus": guardianR.MARITAL_STATUS,//married = 'M', single = 'U',Divorced:'D'
+                "caste_code": Number(guardianR.CASTE)
+            },
+            "acopn_hdr_obj": null,
+            "acopn_tlr_obj": null,
             "addobj_P": {
                 "addresstype": "P",
                 "emailid": personalR.EMAIL_ID,
@@ -450,20 +529,73 @@ exports.onBoardCustomer = async (req, res) => {
                 "authuser": await getUserNameByID(basicR.VERIFIER_USER_ID),
                 "addressline1": `${personalR.OFFICE_ADDRESS} ${personalR.OFFICE_LANDMARK}`
             },
-            "kyccomobj": {
-                "kcc_status": "F",
-
+            "addobjgur_P": !personalR.IS_MINOR ? null : {
+                "addresstype": "P",
+                "emailid": guardianR.EMAIL_ID,
+                "countryid": 1,//constant
+                "stateid": await getStateCode(guardianR.PERMANENT_STATE),
+                "districtid": await getDistCode(guardianR.PERMANENT_DISTRICT),
+                "talukaid": await getTalukaCode(guardianR.PERMANENT_TALUKA),
+                "cityid": await getCityCode(guardianR.PERMANENT_CITY),
+                "areaid": await getAreaCode(guardianR.PERMANENT_AREA),
+                "mobile": guardianR.MOBILE_NUMBER,
+                "pincode": guardianR.PERMANENT_PINCODE,
+                "regionid": 1,
+                // "sequenceno": 1,
+                "bankcode": 1,
+                "brncode": await getBranchFromCBS(basicR.CREATED_BRANCH_ID),
+                "entrystatus": "F",
                 "entryuser": await getUserNameByID(basicR.MAKER_USER_ID),
                 "verifiedby": await getUserNameByID(basicR.CHACKER_USER_ID),
-
+                "authuser": await getUserNameByID(basicR.VERIFIER_USER_ID),
+                "addressline1": `${guardianR.PERMANENT_ADDRESS} ${guardianR.PERMANENT_LANDMARK}`
+            },
+            "addobjgur_C": !personalR.IS_MINOR ? null : {
+                "addresstype": "C",
+                "countryid": 1,
+                "stateid": await getStateCode(guardianR.CURRENT_STATE),
+                "districtid": await getDistCode(guardianR.CURRENT_DISTRICT),
+                "talukaid": await getTalukaCode(guardianR.CURRENT_TALUKA),
+                "cityid": await getCityCode(guardianR.CURRENT_CITY),
+                "areaid": await getAreaCode(guardianR.CURRENT_AREA),
+                "regionid": 1,
+                "mobile": guardianR.MOBILE_NUMBER,
+                "pincode": guardianR.CURRENT_PINCODE,
+                // "sequenceno": 1,
+                "bankcode": 1,
+                "brncode": await getBranchFromCBS(basicR.CREATED_BRANCH_ID),
+                "entryuser": await getUserNameByID(basicR.MAKER_USER_ID),
+                "verifiedby": await getUserNameByID(basicR.CHACKER_USER_ID),
+                "authuser": await getUserNameByID(basicR.VERIFIER_USER_ID),
+                "addressline1": `${guardianR.CURRENT_ADDRESS} ${guardianR.CURRENT_LANDMARK}`
+            },
+            "addobjgur_O": !personalR.IS_MINOR ? null : {
+                "addresstype": "O",
+                "countryid": 1,
+                "stateid": await getStateCode(guardianR.OFFICE_STATE),
+                "districtid": await getDistCode(guardianR.OFFICE_DISTRICT),
+                "talukaid": await getTalukaCode(guardianR.OFFICE_TALUKA),
+                "cityid": await getCityCode(guardianR.OFFICE_CITY),
+                "areaid": await getAreaCode(guardianR.OFFICE_AREA),
+                "regionid": 1,
+                "mobile": guardianR.MOBILE_NUMBER,
+                "pincode": guardianR.OFFICE_PINCODE,
+                // "sequenceno": 1,
+                "bankcode": 1,
+                "brncode": await getBranchFromCBS(basicR.CREATED_BRANCH_ID),
+                "entryuser": await getUserNameByID(basicR.MAKER_USER_ID),
+                "verifiedby": await getUserNameByID(basicR.CHACKER_USER_ID),
+                "authuser": await getUserNameByID(basicR.VERIFIER_USER_ID),
+                "addressline1": `${guardianR.OFFICE_ADDRESS} ${guardianR.OFFICE_LANDMARK}`
+            },
+            "kyccomobj": {
+                "kcc_status": "F",
+                "entryuser": await getUserNameByID(basicR.MAKER_USER_ID),
+                "verifiedby": await getUserNameByID(basicR.CHACKER_USER_ID),
                 "bankcode": 1,
                 "brncode": await getBranchFromCBS(basicR.CREATED_BRANCH_ID)
             },
             "kyccompdtlrobj": {
-
-                // "kcd_srno": 1,
-
-
                 "kcd_addproff": Number(personalR.PERMANENT_ADDRESS_PROOF),
                 "kcd_addidno": personalR.PERMANENT_ADDRESS_PROOF_NUMBER,
                 "kcd_idproof": Number(personalR.ID_PROOF),
@@ -471,6 +603,33 @@ exports.onBoardCustomer = async (req, res) => {
                 "bankcode": 1,
                 "brncode": await getBranchFromCBS(basicR.CREATED_BRANCH_ID)
             },
+            "kyccomgurobj": !personalR.IS_MINOR ? null : {
+                "kcc_status": "F",
+                "entryuser": await getUserNameByID(basicR.MAKER_USER_ID),
+                "verifiedby": await getUserNameByID(basicR.CHACKER_USER_ID),
+                "bankcode": 1,
+                "brncode": await getBranchFromCBS(basicR.CREATED_BRANCH_ID)
+            },
+            "kyccompdtlrgurobj": !personalR.IS_MINOR ? null : {
+                "kcd_addproff": Number(guardianR.PERMANENT_ADDRESS_PROOF),
+                "kcd_addidno": guardianR.PERMANENT_ADDRESS_PROOF_NUMBER,
+                "kcd_idproof": Number(guardianR.ID_PROOF),
+                "kcd_ididno": guardianR.ID_PROOF_NUMBER,
+                "bankcode": 1,
+                "brncode": await getBranchFromCBS(basicR.CREATED_BRANCH_ID)
+            },
+            "custobj_const": null,
+            "custadd_const_P_obj": null,
+            "custadd_const_C_obj": null,
+            "kyc1_const_input": null,
+            "kyc2_const_input": null,
+
+            "custobj_join": null,
+            "custadd_join_P_obj": null,
+            "custadd_join_C_obj": null,
+            "kyc1_join_input": null,
+            "kyc2_join_input": null,
+
             "acmst_obj": {
                 // "interestrate": 5,
 
@@ -513,7 +672,7 @@ exports.onBoardCustomer = async (req, res) => {
                 "acctobeopn_atbrncd": await getBranchFromCBS(basicR.CREATED_BRANCH_ID),
                 "accopened_atbrn": await getBranchFromCBS(basicR.CREATED_BRANCH_ID),
 
-                "accopendt": generateNewDate(),
+                "accopendt": '15-10-2025 00:00:00',// generateNewDate(),
 
                 "opnormdf": "A"
             },
@@ -555,7 +714,12 @@ exports.onBoardCustomer = async (req, res) => {
             "m_kcd_iddocimage": await getDocument('Applicant ID Proof', documentR),
             "m_kcd_adddocimage": await getDocument('Applicant Address Proof', documentR),
             "m_kcd_photo": await getDocument('Applicant Photo', documentR),
-            "m_kcd_sign": await getDocument('Signature', documentR)
+            "m_kcd_sign": await getDocument('Signature', documentR),
+            
+            "m_kcd_photo_gur": !personalR.IS_MINOR ? null : await getDocument('Applicant Photo', guardianDocumentR),
+            "m_kcd_iddocimage_gur": !personalR.IS_MINOR ? null : await getDocument('Applicant ID Proof', guardianDocumentR),
+            "m_kcd_adddocimage_gur": !personalR.IS_MINOR ? null : await getDocument('Applicant Address Proof', guardianDocumentR),
+            "m_kcd_sign_gur": !personalR.IS_MINOR ? null : await getDocument('Signature', guardianDocumentR)
         }
 
         let posturl = `${config[mode].api.host}:${config[mode].api.port}${config[mode].api.routes[3].url}`
@@ -570,7 +734,7 @@ exports.onBoardCustomer = async (req, res) => {
         }
 
         let configuration = {
-            headers: { "Authorization": `Bearer ${bearerKey}`, "userName": 'cpc', "bankName": "Ajara", "branchName": "Ajara", "callerSystem": "FCO" }
+            headers: { "Authorization": `Bearer ${bearerKey}`, "userName": 'cpc', "bankName": "Ajara", "branchName": "Uttur", "callerSystem": "FCO" }
         }
         if (config[mode].api.isproxy) {
             configuration.proxy = proxy;
@@ -601,6 +765,16 @@ exports.onBoardCustomer = async (req, res) => {
         })
     }
 
+
+}
+
+async function getJoinCustObj(basic_details) {
+    const applicant_query = `select * from applicants_personal_details where APPLICANT_NO != 1 and APPLICANT_ID = ${basic_details.ID}`;
+    const financial_query = `select * from financial_information where APPLICANT_NO != 1 and APPLICANT_ID = ${basic_details.ID}`;
+
+    const cust_obj_arr = [];
+
+    
 
 }
 
@@ -924,7 +1098,7 @@ exports.getCustomer = async (req, res) => {
         let bearerKey = await getJWTToken();
 
         let configuration = {
-            headers: { "Authorization": `Bearer ${bearerKey}`, "userName": `ajara.ba`, "bankName": "Ajara", " branchName": "Ajara", "callerSystem": "FCO" }
+            headers: { "Authorization": `Bearer ${bearerKey}`, "userName": `ajara.ba`, "bankName": "Ajara", "branchName": "Uttur", "callerSystem": "FCO" }
         }
         if (config[mode].api.isproxy) {
             configuration.proxy = proxy;
