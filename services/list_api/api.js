@@ -330,12 +330,8 @@ exports.onBoardCustomer = async (req, res) => {
         console.log("guardianR", guardianR);
         console.log("guardianFinanceR", guardianFinanceR);
         console.log("guardianDocumentR", guardianDocumentR);
-        // let username = await await getUserNameByID(14);
 
-        // res.send({
-        //     "code": 200,
-        //     "data": username
-        // })
+        guardianR["APPLICANTS_DATA"] = basicR['APPLICANTS_DATA'].find((val) => val.APPLICANT_NO == guardianR["APPLICANT_NO"]);
 
         let account_opening_data = {
             "custobj": {
@@ -401,9 +397,10 @@ exports.onBoardCustomer = async (req, res) => {
                 "issuiddocplace": basicR.DOCUMENTS_ISSUE_PLACE,
                 "iddocissuauth": basicR.DOCUMENTS_AUTHORITY,
                 "maritalstatus": personalR.MARITAL_STATUS,//married = 'M', single = 'U',Divorced:'D'
-                "caste_code": Number(personalR.CASTE)
+                "caste_code": Number(personalR.CASTE),
+                "guardianid": personalR.IS_MINOR && guardianR["APPLICANTS_DATA"].IS_OLD_CUSTOMER ? guardianR["APPLICANTS_DATA"].CUSTOMER_ID : null
             },
-            "custgurobj": !personalR.IS_MINOR ? null : {
+            "custgurobj": !personalR.IS_MINOR || guardianR["APPLICANTS_DATA"].IS_OLD_CUSTOMER == true ? null : {
                 "reg_mobileno": guardianR.MOBILE_NUMBER,
                 "reg_emailid": guardianR.EMAIL_ID,
                 "introbranch": await getBranchFromCBS(basicR.CREATED_BRANCH_ID),
@@ -529,7 +526,7 @@ exports.onBoardCustomer = async (req, res) => {
                 "authuser": await getUserNameByID(basicR.VERIFIER_USER_ID),
                 "addressline1": `${personalR.OFFICE_ADDRESS} ${personalR.OFFICE_LANDMARK}`
             },
-            "addobjgur_P": !personalR.IS_MINOR ? null : {
+            "addobjgur_P": !personalR.IS_MINOR || guardianR["APPLICANTS_DATA"].IS_OLD_CUSTOMER == true ? null : {
                 "addresstype": "P",
                 "emailid": guardianR.EMAIL_ID,
                 "countryid": 1,//constant
@@ -550,7 +547,7 @@ exports.onBoardCustomer = async (req, res) => {
                 "authuser": await getUserNameByID(basicR.VERIFIER_USER_ID),
                 "addressline1": `${guardianR.PERMANENT_ADDRESS} ${guardianR.PERMANENT_LANDMARK}`
             },
-            "addobjgur_C": !personalR.IS_MINOR ? null : {
+            "addobjgur_C": !personalR.IS_MINOR || guardianR["APPLICANTS_DATA"].IS_OLD_CUSTOMER == true ? null : {
                 "addresstype": "C",
                 "countryid": 1,
                 "stateid": await getStateCode(guardianR.CURRENT_STATE),
@@ -569,7 +566,7 @@ exports.onBoardCustomer = async (req, res) => {
                 "authuser": await getUserNameByID(basicR.VERIFIER_USER_ID),
                 "addressline1": `${guardianR.CURRENT_ADDRESS} ${guardianR.CURRENT_LANDMARK}`
             },
-            "addobjgur_O": !personalR.IS_MINOR ? null : {
+            "addobjgur_O": !personalR.IS_MINOR || guardianR["APPLICANTS_DATA"].IS_OLD_CUSTOMER == true ? null : {
                 "addresstype": "O",
                 "countryid": 1,
                 "stateid": await getStateCode(guardianR.OFFICE_STATE),
@@ -603,14 +600,14 @@ exports.onBoardCustomer = async (req, res) => {
                 "bankcode": 1,
                 "brncode": await getBranchFromCBS(basicR.CREATED_BRANCH_ID)
             },
-            "kyccomgurobj": !personalR.IS_MINOR ? null : {
+            "kyccomgurobj": !personalR.IS_MINOR || guardianR["APPLICANTS_DATA"].IS_OLD_CUSTOMER == true ? null : {
                 "kcc_status": "F",
                 "entryuser": await getUserNameByID(basicR.MAKER_USER_ID),
                 "verifiedby": await getUserNameByID(basicR.CHACKER_USER_ID),
                 "bankcode": 1,
                 "brncode": await getBranchFromCBS(basicR.CREATED_BRANCH_ID)
             },
-            "kyccompdtlrgurobj": !personalR.IS_MINOR ? null : {
+            "kyccompdtlrgurobj": !personalR.IS_MINOR || guardianR["APPLICANTS_DATA"].IS_OLD_CUSTOMER == true ? null : {
                 "kcd_addproff": Number(guardianR.PERMANENT_ADDRESS_PROOF),
                 "kcd_addidno": guardianR.PERMANENT_ADDRESS_PROOF_NUMBER,
                 "kcd_idproof": Number(guardianR.ID_PROOF),
@@ -618,17 +615,9 @@ exports.onBoardCustomer = async (req, res) => {
                 "bankcode": 1,
                 "brncode": await getBranchFromCBS(basicR.CREATED_BRANCH_ID)
             },
-            "custobj_const": null,
-            "custadd_const_P_obj": null,
-            "custadd_const_C_obj": null,
-            "kyc1_const_input": null,
-            "kyc2_const_input": null,
+            ...await getCurrent(basicR, serviceR, depositR),
 
-            "custobj_join": null,
-            "custadd_join_P_obj": null,
-            "custadd_join_C_obj": null,
-            "kyc1_join_input": null,
-            "kyc2_join_input": null,
+            ...await getJoin(basicR, serviceR, depositR),
 
             "acmst_obj": {
                 // "interestrate": 5,
@@ -715,11 +704,11 @@ exports.onBoardCustomer = async (req, res) => {
             "m_kcd_adddocimage": await getDocument('Applicant Address Proof', documentR),
             "m_kcd_photo": await getDocument('Applicant Photo', documentR),
             "m_kcd_sign": await getDocument('Signature', documentR),
-            
-            "m_kcd_photo_gur": !personalR.IS_MINOR ? null : await getDocument('Applicant Photo', guardianDocumentR),
-            "m_kcd_iddocimage_gur": !personalR.IS_MINOR ? null : await getDocument('Applicant ID Proof', guardianDocumentR),
-            "m_kcd_adddocimage_gur": !personalR.IS_MINOR ? null : await getDocument('Applicant Address Proof', guardianDocumentR),
-            "m_kcd_sign_gur": !personalR.IS_MINOR ? null : await getDocument('Signature', guardianDocumentR)
+
+            "m_kcd_photo_gur": !personalR.IS_MINOR || guardianR["APPLICANTS_DATA"].IS_OLD_CUSTOMER == true ? null : await getDocument('Applicant Photo', guardianDocumentR),
+            "m_kcd_iddocimage_gur": !personalR.IS_MINOR || guardianR["APPLICANTS_DATA"].IS_OLD_CUSTOMER == true ? null : await getDocument('Applicant ID Proof', guardianDocumentR),
+            "m_kcd_adddocimage_gur": !personalR.IS_MINOR || guardianR["APPLICANTS_DATA"].IS_OLD_CUSTOMER == true ? null : await getDocument('Applicant Address Proof', guardianDocumentR),
+            "m_kcd_sign_gur": !personalR.IS_MINOR || guardianR["APPLICANTS_DATA"].IS_OLD_CUSTOMER == true ? null : await getDocument('Signature', guardianDocumentR)
         }
 
         let posturl = `${config[mode].api.host}:${config[mode].api.port}${config[mode].api.routes[3].url}`
@@ -732,6 +721,9 @@ exports.onBoardCustomer = async (req, res) => {
         if (personalR.AADHAAR_NUMBER) {
             account_opening_data.custobj.custuin = personalR.AADHAAR_NUMBER;
         }
+        if (account_opening_data.custobj_join != null || account_opening_data.custobj_const != null) {
+            account_opening_data.acmst_obj.jointacc = 'Y'
+        }
 
         let configuration = {
             headers: { "Authorization": `Bearer ${bearerKey}`, "userName": 'cpc', "bankName": "Ajara", "branchName": "Uttur", "callerSystem": "FCO" }
@@ -742,8 +734,47 @@ exports.onBoardCustomer = async (req, res) => {
 
         let accountCreatedData = await axios.post(posturl, account_opening_data, configuration)
 
+        //  "Customer Code": "1002022302, Guardian Id-1002022301",
 
-        let basicInsertQ = `update basic_details set ACCOUNT_NUMBER =  "${accountCreatedData.data['Account number']}",CUSTOMER_ID_1 = "${accountCreatedData.data['Customer Code']}" where ID = ${applicant_id}`
+
+        let basicInsertQ = `update basic_details set ACCOUNT_NUMBER =  "${accountCreatedData.data['Account number']}",CUSTOMER_ID_1 = "${accountCreatedData.data['Customer Code']}" where ID = ${applicant_id}`;
+
+        if (personalR.IS_MINOR && depositR.ACCOUNT_TYPE == 'A') {
+            const customer_ids = accountCreatedData.data['Customer Code'].split(",");
+            const primary_applicant = customer_ids[0];
+            const guardian_applicant = customer_ids[1].split("-")[1];
+            const APPLICANT_DATA = basicR['APPLICANT_DATA'];
+
+            APPLICANT_DATA[1].CUSTOMER_ID = guardian_applicant;
+
+            basicInsertQ = `update basic_details set ACCOUNT_NUMBER =  "${accountCreatedData.data['Account number']}",CUSTOMER_ID_1 = "${primary_applicant}", APPLICANT_DATA = "${APPLICANT_DATA}" where ID = ${applicant_id}`
+        }
+
+        if (account_opening_data.custobj_join != null) {
+            const customer_ids = accountCreatedData.data['Customer Code'].split(",");
+            const primary_applicant = customer_ids[0];
+            const other_ids = customer_ids[1].split("-")[1].split(',');
+            const APPLICANT_DATA = basicR['APPLICANT_DATA'];
+
+            for (let i = 0; i < APPLICANT_DATA.length; i++) {
+                APPLICANT_DATA[i].CUSTOMER_ID = other_ids[i];
+            }
+
+            basicInsertQ = `update basic_details set ACCOUNT_NUMBER =  "${accountCreatedData.data['Account number']}",CUSTOMER_ID_1 = "${primary_applicant}", APPLICANT_DATA = "${APPLICANT_DATA}" where ID = ${applicant_id}`
+        }
+
+        if (account_opening_data.custobj_const != null) {
+            const customer_ids = accountCreatedData.data['Customer Code'].split(",");
+            const primary_applicant = customer_ids[0];
+            const other_ids = customer_ids[1].split("-")[1].split(',');
+            const APPLICANT_DATA = basicR['APPLICANT_DATA'];
+
+            for (let i = 0; i < APPLICANT_DATA.length; i++) {
+                APPLICANT_DATA[i].CUSTOMER_ID = other_ids[i];
+            }
+
+            basicInsertQ = `update basic_details set ACCOUNT_NUMBER =  "${accountCreatedData.data['Account number']}",CUSTOMER_ID_1 = "${primary_applicant}", APPLICANT_DATA = "${APPLICANT_DATA}" where ID = ${applicant_id}`
+        }
 
         let basicInsertR = await db.executeQuery(basicInsertQ, '');
         console.log("Query : ", basicInsertQ, "result ", basicInsertR);
@@ -754,6 +785,10 @@ exports.onBoardCustomer = async (req, res) => {
             "data": account_opening_data,
             "success_data": accountCreatedData.data
         })
+
+        // res.send({
+        //     data: account_opening_data
+        // })
     }
 
     catch (error) {
@@ -765,17 +800,344 @@ exports.onBoardCustomer = async (req, res) => {
         })
     }
 
-
 }
 
-async function getJoinCustObj(basic_details) {
-    const applicant_query = `select * from applicants_personal_details where APPLICANT_NO != 1 and APPLICANT_ID = ${basic_details.ID}`;
-    const financial_query = `select * from financial_information where APPLICANT_NO != 1 and APPLICANT_ID = ${basic_details.ID}`;
+async function getJoin(basic_details, serviceDetails, depositeDetails) {
+    const query = `
+    SELECT 
+    per.*, fin.*
+FROM
+    applicants_personal_details per
+        LEFT OUTER JOIN
+    financial_information fin ON fin.APPLICANT_NO = per.APPLICANT_NO
+        AND fin.APPLICANT_ID = per.APPLICANT_ID 
+        where per.APPLICANT_NO != 1 and per.APPLICANT_ID = ${basic_details.ID}
+    `;
 
-    const cust_obj_arr = [];
+    // APPLICANTS_DATA
 
-    
+    const customers = await db.executeQuery(query);
 
+    if (basic_details.IS_MINOR == 1 || depositeDetails.ACCOUNT_TYPE != 'A') {
+        console.log("inside conditions", basic_details, depositeDetails);
+        return {
+            "custobj_join": null,
+            "custadd_join_P_obj": null,
+            "custadd_join_C_obj": null,
+            "kyc1_join_input": null,
+            "kyc2_join_input": null
+        }
+    }
+
+    for (let i = 0; i < customers.length; i++) {
+        customers[i]["APPLICANTS_DATA"] = basic_details['APPLICANTS_DATA'].find((val) => val.APPLICANT_NO == customers[i]["APPLICANT_NO"]);
+    }
+
+    console.log(customers);
+
+    const obj = {
+        "custobj_join": [],
+        "custadd_join_P_obj": [],
+        "custadd_join_C_obj": [],
+        "kyc1_join_input": [],
+        "kyc2_join_input": []
+    }
+
+    for (const customer of customers) {
+        const cust = {
+            "reg_mobileno": customer.MOBILE_NUMBER,
+            "reg_emailid": customer.EMAIL_ID,
+            "introbranch": await getBranchFromCBS(basic_details.CREATED_BRANCH_ID),
+            "typeofcustomer": 1,
+            "annualincome": customer.INCOME.toString(),
+            "smssubscription": serviceDetails.SMS_ALERT ? "Y" : "N",
+            "middlename": customer.MIDDLE_NAME,
+            "firstname": customer.FIRST_NAME,
+            "lastname": customer.LAST_NAME,
+            "createdfor": "A",
+            "minor": customer.IS_MINOR ? "Y" : "N",
+            "birthdate": convertDate(customer.DATE_OF_BIRTH),
+            "gender": customer.GENDER,
+            "occupationid": Number(customer.PROFESSION),
+            "title": customer['APPLICANTS_DATA'].CUSTOMER_TYPE,
+            "idtproofid": Number(customer.ID_PROOF),
+            "idtproofidno": customer.ID_PROOF_NUMBER,
+            "proofdetailsid": Number(customer.PERMANENT_ADDRESS_PROOF),
+            "addproofidno": customer.PERMANENT_ADDRESS_PROOF_NUMBER,
+            "riskcat": Number(customer.RISK_CATEGORY),
+            "panno": customer.PAN_NO,//"GTFDT8976M",
+            "fatherspouse": customer.FATHER_OR_SPOUSE,
+            "bankcode": 1,
+            "brncode": await getBranchFromCBS(basic_details.CREATED_BRANCH_ID),
+            "entrystatus": "F",
+            "entryuser": await getUserNameByID(basic_details.MAKER_USER_ID),
+            "verifiedby": await getUserNameByID(basic_details.CHACKER_USER_ID),
+            "authuser": await getUserNameByID(basic_details.VERIFIER_USER_ID),
+
+            "religion": Number(customer.RELIGION),
+            "caste": Number(customer.CASTE),
+
+            "fatherlnm": customer.F_OR_H_LAST_NAME,
+            "fatherfnm": customer.F_OR_H_FIRST_NAME,
+            "fathermnm": customer.F_OR_H_MIDDLE_NAME,
+
+            "motherlname": customer.MOTHERS_LAST_NAME,
+            "motherfname": customer.MOTHERS_NAME,
+            "mothermname": customer.MOTHERS_MIDDLE_NAME,
+
+            "mothertitle": customer.MOTHER_TITLE,
+            "issuiddocplace": basic_details.DOCUMENTS_ISSUE_PLACE,
+            "iddocissuauth": basic_details.DOCUMENTS_AUTHORITY,
+            "maritalstatus": customer.MARITAL_STATUS,//married = 'M', single = 'U',Divorced:'D'
+            "caste_code": Number(customer.CASTE),
+            "jhsr": (customer.APPLICANT_NO - 1)
+        }
+
+        const p_add = {
+            "addresstype": "P",
+            "emailid": customer.EMAIL_ID,
+            "countryid": 1,//constant
+            "stateid": await getStateCode(customer.PERMANENT_STATE),
+            "districtid": await getDistCode(customer.PERMANENT_DISTRICT),
+            "talukaid": await getTalukaCode(customer.PERMANENT_TALUKA),
+            "cityid": await getCityCode(customer.PERMANENT_CITY),
+            "areaid": await getAreaCode(customer.PERMANENT_AREA),
+            "mobile": customer.MOBILE_NUMBER,
+            "pincode": customer.PERMANENT_PINCODE,
+            "regionid": 1,
+            // "sequenceno": 1,
+            "bankcode": 1,
+            "brncode": await getBranchFromCBS(basic_details.CREATED_BRANCH_ID),
+            "entrystatus": "F",
+            "entryuser": await getUserNameByID(basic_details.MAKER_USER_ID),
+            "verifiedby": await getUserNameByID(basic_details.CHACKER_USER_ID),
+            "authuser": await getUserNameByID(basic_details.VERIFIER_USER_ID),
+            "addressline1": `${customer.PERMANENT_ADDRESS} ${customer.PERMANENT_LANDMARK}`,
+            "jhsr": (customer.APPLICANT_NO - 1)
+        }
+
+        const c_add = {
+            "addresstype": "C",
+            "countryid": 1,
+            "stateid": await getStateCode(customer.CURRENT_STATE),
+            "districtid": await getDistCode(customer.CURRENT_DISTRICT),
+            "talukaid": await getTalukaCode(customer.CURRENT_TALUKA),
+            "cityid": await getCityCode(customer.CURRENT_CITY),
+            "areaid": await getAreaCode(customer.CURRENT_AREA),
+            "regionid": 1,
+            "mobile": customer.MOBILE_NUMBER,
+            "pincode": customer.CURRENT_PINCODE,
+            // "sequenceno": 1,
+            "bankcode": 1,
+            "brncode": await getBranchFromCBS(basic_details.CREATED_BRANCH_ID),
+            "entryuser": await getUserNameByID(basic_details.MAKER_USER_ID),
+            "verifiedby": await getUserNameByID(basic_details.CHACKER_USER_ID),
+            "authuser": await getUserNameByID(basic_details.VERIFIER_USER_ID),
+            "addressline1": `${customer.CURRENT_ADDRESS} ${customer.CURRENT_LANDMARK}`,
+            "jhsr": (customer.APPLICANT_NO - 1)
+        }
+
+        const kyc_1 = {
+            "kcc_status": "F",
+            "entryuser": await getUserNameByID(basic_details.MAKER_USER_ID),
+            "verifiedby": await getUserNameByID(basic_details.CHACKER_USER_ID),
+            "bankcode": 1,
+            "brncode": await getBranchFromCBS(basic_details.CREATED_BRANCH_ID),
+            "jhsr": (customer.APPLICANT_NO - 1)
+        }
+
+        const kyc_2 = {
+            "kcd_addproff": Number(customer.PERMANENT_ADDRESS_PROOF),
+            "kcd_addidno": customer.PERMANENT_ADDRESS_PROOF_NUMBER,
+            "kcd_idproof": Number(customer.ID_PROOF),
+            "kcd_ididno": customer.ID_PROOF_NUMBER,
+            "bankcode": 1,
+            "brncode": await getBranchFromCBS(basic_details.CREATED_BRANCH_ID),
+            "jhsr": (customer.APPLICANT_NO - 1)
+        }
+
+        obj['custobj_join'].push(cust);
+        obj['custadd_join_P_obj'].push(p_add);
+        obj['custadd_join_C_obj'].push(c_add);
+        obj['kyc1_join_input'].push(kyc_1);
+        obj['kyc2_join_input'].push(kyc_2);
+    }
+
+    console.log("obj : ", obj);
+    for (let o in obj) {
+        if (obj[o].length == 0) {
+            obj[o] = null;
+        }
+    }
+
+    return obj;
+}
+
+async function getCurrent(basic_details, serviceDetails, depositeDetails) {
+    const query = `
+    SELECT 
+    per.*, fin.*
+FROM
+    applicants_personal_details per
+        LEFT OUTER JOIN
+    financial_information fin ON fin.APPLICANT_NO = per.APPLICANT_NO
+        AND fin.APPLICANT_ID = per.APPLICANT_ID 
+        where per.APPLICANT_NO != 1 and per.APPLICANT_ID = ${basic_details.ID}
+    `;
+
+    // APPLICANTS_DATA
+
+    const customers = await db.executeQuery(query);
+
+    if (depositeDetails.ACCOUNT_TYPE != 'C') {
+        return {
+            "custobj_const": null,
+            "custadd_const_P_obj": null,
+            "custadd_const_C_obj": null,
+            "kyc1_const_input": null,
+            "kyc2_const_input": null,
+        }
+    }
+
+    for (let i = 0; i < customers.length; i++) {
+        customers[i]["APPLICANTS_DATA"] = basic_details['APPLICANTS_DATA'].find((val) => val.APPLICANT_NO == customers[i]["APPLICANT_NO"]);
+    }
+
+    const obj = {
+        "custobj_const": [],
+        "custadd_const_P_obj": [],
+        "custadd_const_C_obj": [],
+        "kyc1_const_input": [],
+        "kyc2_const_input": []
+    }
+
+    for (const customer of customers) {
+        const cust = {
+            "reg_mobileno": customer.MOBILE_NUMBER,
+            "reg_emailid": customer.EMAIL_ID,
+            "introbranch": await getBranchFromCBS(basic_details.CREATED_BRANCH_ID),
+            "typeofcustomer": 1,
+            "annualincome": customer.INCOME.toString(),
+            "smssubscription": serviceDetails.SMS_ALERT ? "Y" : "N",
+            "middlename": customer.MIDDLE_NAME,
+            "firstname": customer.FIRST_NAME,
+            "lastname": customer.LAST_NAME,
+            "createdfor": "A",
+            "minor": customer.IS_MINOR ? "Y" : "N",
+            "birthdate": convertDate(customer.DATE_OF_BIRTH),
+            "gender": customer.GENDER,
+            "occupationid": Number(customer.PROFESSION),
+            "title": customers['APPLICANTS_DATA'].CUSTOMER_TYPE,
+            "idtproofid": Number(customer.ID_PROOF),
+            "idtproofidno": customer.ID_PROOF_NUMBER,
+            "proofdetailsid": Number(customer.PERMANENT_ADDRESS_PROOF),
+            "addproofidno": customer.PERMANENT_ADDRESS_PROOF_NUMBER,
+            "riskcat": Number(customer.RISK_CATEGORY),
+            "panno": customer.PAN_NO,//"GTFDT8976M",
+            "fatherspouse": customer.FATHER_OR_SPOUSE,
+            "bankcode": 1,
+            "brncode": await getBranchFromCBS(basic_details.CREATED_BRANCH_ID),
+            "entrystatus": "F",
+            "entryuser": await getUserNameByID(basic_details.MAKER_USER_ID),
+            "verifiedby": await getUserNameByID(basic_details.CHACKER_USER_ID),
+            "authuser": await getUserNameByID(basic_details.VERIFIER_USER_ID),
+
+            "religion": Number(customer.RELIGION),
+            "caste": Number(customer.CASTE),
+
+            "fatherlnm": customer.F_OR_H_LAST_NAME,
+            "fatherfnm": customer.F_OR_H_FIRST_NAME,
+            "fathermnm": customer.F_OR_H_MIDDLE_NAME,
+
+            "motherlname": customer.MOTHERS_LAST_NAME,
+            "motherfname": customer.MOTHERS_NAME,
+            "mothermname": customer.MOTHERS_MIDDLE_NAME,
+
+            "mothertitle": customer.MOTHER_TITLE,
+            "issuiddocplace": basic_details.DOCUMENTS_ISSUE_PLACE,
+            "iddocissuauth": basic_details.DOCUMENTS_AUTHORITY,
+            "maritalstatus": customer.MARITAL_STATUS,//married = 'M', single = 'U',Divorced:'D'
+            "caste_code": Number(customer.CASTE),
+            "jhsr": (customer.APPLICANT_NO - 1)
+        }
+
+        const p_add = {
+            "addresstype": "P",
+            "emailid": customer.EMAIL_ID,
+            "countryid": 1,//constant
+            "stateid": await getStateCode(customer.PERMANENT_STATE),
+            "districtid": await getDistCode(customer.PERMANENT_DISTRICT),
+            "talukaid": await getTalukaCode(customer.PERMANENT_TALUKA),
+            "cityid": await getCityCode(customer.PERMANENT_CITY),
+            "areaid": await getAreaCode(customer.PERMANENT_AREA),
+            "mobile": customer.MOBILE_NUMBER,
+            "pincode": customer.PERMANENT_PINCODE,
+            "regionid": 1,
+            // "sequenceno": 1,
+            "bankcode": 1,
+            "brncode": await getBranchFromCBS(basic_details.CREATED_BRANCH_ID),
+            "entrystatus": "F",
+            "entryuser": await getUserNameByID(basic_details.MAKER_USER_ID),
+            "verifiedby": await getUserNameByID(basic_details.CHACKER_USER_ID),
+            "authuser": await getUserNameByID(basic_details.VERIFIER_USER_ID),
+            "addressline1": `${customer.PERMANENT_ADDRESS} ${customer.PERMANENT_LANDMARK}`,
+            "jhsr": (customer.APPLICANT_NO - 1)
+        }
+
+        const c_add = {
+            "addresstype": "C",
+            "countryid": 1,
+            "stateid": await getStateCode(customer.CURRENT_STATE),
+            "districtid": await getDistCode(customer.CURRENT_DISTRICT),
+            "talukaid": await getTalukaCode(customer.CURRENT_TALUKA),
+            "cityid": await getCityCode(customer.CURRENT_CITY),
+            "areaid": await getAreaCode(customer.CURRENT_AREA),
+            "regionid": 1,
+            "mobile": customer.MOBILE_NUMBER,
+            "pincode": customer.CURRENT_PINCODE,
+            // "sequenceno": 1,
+            "bankcode": 1,
+            "brncode": await getBranchFromCBS(basic_details.CREATED_BRANCH_ID),
+            "entryuser": await getUserNameByID(basic_details.MAKER_USER_ID),
+            "verifiedby": await getUserNameByID(basic_details.CHACKER_USER_ID),
+            "authuser": await getUserNameByID(basic_details.VERIFIER_USER_ID),
+            "addressline1": `${customer.CURRENT_ADDRESS} ${customer.CURRENT_LANDMARK}`,
+            "jhsr": (customer.APPLICANT_NO - 1)
+        }
+
+        const kyc_1 = {
+            "kcc_status": "F",
+            "entryuser": await getUserNameByID(basic_details.MAKER_USER_ID),
+            "verifiedby": await getUserNameByID(basic_details.CHACKER_USER_ID),
+            "bankcode": 1,
+            "brncode": await getBranchFromCBS(basic_details.CREATED_BRANCH_ID),
+            "jhsr": (customer.APPLICANT_NO - 1)
+        }
+
+        const kyc_2 = {
+            "kcd_addproff": Number(customer.PERMANENT_ADDRESS_PROOF),
+            "kcd_addidno": customer.PERMANENT_ADDRESS_PROOF_NUMBER,
+            "kcd_idproof": Number(customer.ID_PROOF),
+            "kcd_ididno": customer.ID_PROOF_NUMBER,
+            "bankcode": 1,
+            "brncode": await getBranchFromCBS(basic_details.CREATED_BRANCH_ID),
+            "jhsr": (customer.APPLICANT_NO - 1)
+        }
+
+        obj['custobj_const'].push(cust);
+        obj['custadd_const_P_obj'].push(p_add);
+        obj['custadd_const_C_obj'].push(c_add);
+        obj['kyc1_const_input'].push(kyc_1);
+        obj['kyc2_const_input'].push(kyc_2);
+    }
+
+    for (let o in obj) {
+        if (obj[o].length == 0) {
+            obj[o] = null;
+        }
+    }
+
+    return obj;
 }
 
 async function getDocument(NAME, arr) {
