@@ -57,6 +57,8 @@ router
     //guardian
 
     .use('/api/guardianInfo', require('./guardianInformation'))
-  
+
     .use('/api/guardianDocument', require('./guardianDocument'))
+
+    .use('/api/report', require('./report'))
 module.exports = router

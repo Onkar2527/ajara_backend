@@ -29,7 +29,28 @@ function reqData(req) {
         APPLICANT4_FIRST_NAME: req.body.APPLICANT4_FIRST_NAME,
         APPLICANT4_MIDDLE_NAME: req.body.APPLICANT4_MIDDLE_NAME,
         APPLICANT4_LAST_NAME: req.body.APPLICANT4_LAST_NAME,
-        IS_MINOR: req.body.IS_MINOR ? '1' : '0',
+        IS_MINOR: (
+            req.body.IS_MINOR == 1 ||
+            req.body.IS_MINOR == '1' ||
+            req.body.IS_MINOR == true ||
+            req.body.IS_MINOR == 'true' ||
+            req.body.IS_MINOR == 'Y' ||
+            req.body.CUSTOMER_TYPE_1 == 'MNR' ||
+            req.body.CUSTOMER_TYPE_1 == 'MINOR' ||
+            (req.body.AGE_1 !== undefined && req.body.AGE_1 !== null && req.body.AGE_1 !== '' && parseInt(req.body.AGE_1) < 18) ||
+            (req.body.AGE !== undefined && req.body.AGE !== null && req.body.AGE !== '' && parseInt(req.body.AGE) < 18) ||
+            (req.body.MINOR_DOB && req.body.MINOR_DOB !== '') ||
+            (req.body.GUARDIAN_NAME && req.body.GUARDIAN_NAME !== '') ||
+            (req.body.RELATION_WITH_MINOR && req.body.RELATION_WITH_MINOR !== '') ||
+            (Array.isArray(req.body.applicants) && req.body.applicants.length > 0 && (
+                req.body.applicants[0].IS_MINOR == 1 ||
+                req.body.applicants[0].IS_MINOR == '1' ||
+                req.body.applicants[0].IS_MINOR == true ||
+                req.body.applicants[0].IS_MINOR == 'Y' ||
+                (req.body.applicants[0].AGE !== undefined && req.body.applicants[0].AGE !== null && req.body.applicants[0].AGE !== '' && parseInt(req.body.applicants[0].AGE) < 18) ||
+                (req.body.applicants[0].DOB && req.body.applicants[0].DOB.includes('/') && parseInt(req.body.applicants[0].DOB.split('/')[2]) > (new Date().getFullYear() - 18))
+            ))
+        ) ? '1' : '0',
         MINOR_DOB: req.body.MINOR_DOB,
         GUARDIAN_NAME: req.body.GUARDIAN_NAME,
         RELATION_WITH_MINOR: req.body.RELATION_WITH_MINOR,
@@ -148,8 +169,31 @@ function getAllApplicantsInfo(applicant, i) {
 
         DATE_OF_BIRTH: applicant.DOB,
         GENDER: applicant.GENDER,
-        MOBILE_NUMBER: applicant.MOBILE
+        MOBILE_NUMBER: applicant.MOBILE,
+
+        IS_MINOR: (
+            applicant.IS_MINOR == 1 ||
+            applicant.IS_MINOR == '1' ||
+            applicant.IS_MINOR == true ||
+            applicant.IS_MINOR == 'true' ||
+            applicant.IS_MINOR == 'Y' ||
+            (applicant.AGE !== undefined && applicant.AGE !== null && applicant.AGE !== '' && parseInt(applicant.AGE) < 18) ||
+            (applicant.CUSTOMER_TYPE == 'MNR' || applicant.CUSTOMER_TYPE == 'MINOR') ||
+            (applicant.DOB && applicant.DOB.includes('/') && parseInt(applicant.DOB.split('/')[2]) > (new Date().getFullYear() - 18))
+        ) ? 1 : 0
     }
+
+    // Added defensive checks to prevent overwriting with NULL if fields are missing from the request (Refill fix) - 2026-04-17
+    if (applicant.RELIGION !== undefined) data.RELIGION = applicant.RELIGION;
+    if (applicant.CASTE !== undefined) data.CASTE = applicant.CASTE;
+    if (applicant.PROFESSION !== undefined) data.PROFESSION = applicant.PROFESSION;
+    if (applicant.NATURE_OF_SERVICE !== undefined) data.NATURE_OF_SERVICE = applicant.NATURE_OF_SERVICE;
+    if (applicant.SELF_EMPLOYED !== undefined) data.SELF_EMPLOYED = applicant.SELF_EMPLOYED;
+    if (applicant.NATURE_OF_BUSINESS !== undefined) data.NATURE_OF_BUSINESS = applicant.NATURE_OF_BUSINESS;
+    if (applicant.SOURCE_OF_FUNDS !== undefined) data.SOURCE_OF_FUNDS = applicant.SOURCE_OF_FUNDS;
+    if (applicant.SPECIAL_CATEGORY !== undefined) data.SPECIAL_CATEGORY = applicant.SPECIAL_CATEGORY;
+    if (applicant.RISK_CATEGORY !== undefined) data.RISK_CATEGORY = applicant.RISK_CATEGORY;
+    if (applicant.CONSTITUTION !== undefined) data.CONSTITUTION = applicant.CONSTITUTION; // Added missing CONSTITUTION field
 
     return data
 }
@@ -192,9 +236,47 @@ exports.get = async (req, res) => {
     const q = `select * from basic_details where ID = ?`;
     try {
         const results = await db.executeQueryData(q, [req.body.ID], supportKey);
-        if (results.length > 0 && results[0].APPLICANTS_DATA) {
-            console.log(results[0].APPLICANTS_DATA);
-            results[0].applicants = results[0].APPLICANTS_DATA;
+        if (results.length > 0) {
+            // Fetch the latest applicant details from dedicated table to stay in sync - 2026-04-17
+            let applicantsQ = `select * from applicants_personal_details where APPLICANT_ID = ? order by APPLICANT_NO`;
+            let personalResults = await db.executeQueryData(applicantsQ, [req.body.ID], supportKey);
+
+            if (results[0].APPLICANTS_DATA) {
+                try {
+                    // Try parsing APPLICANTS_DATA if it's a string
+                    let applicantsJson = typeof results[0].APPLICANTS_DATA === 'string' ? JSON.parse(results[0].APPLICANTS_DATA) : results[0].APPLICANTS_DATA;
+
+                    // Merge JSON data with DB data to ensure personal info fields are populated
+                    if (personalResults.length > 0) {
+                        applicantsJson = applicantsJson.map((app, index) => {
+                            let dbApp = personalResults.find(pa => pa.APPLICANT_NO === (index + 1));
+                            if (dbApp) {
+                                return {
+                                    ...app,
+                                    RELIGION: dbApp.RELIGION,
+                                    CASTE: dbApp.CASTE,
+                                    PROFESSION: dbApp.PROFESSION,
+                                    NATURE_OF_SERVICE: dbApp.NATURE_OF_SERVICE,
+                                    SELF_EMPLOYED: dbApp.SELF_EMPLOYED,
+                                    NATURE_OF_BUSINESS: dbApp.NATURE_OF_BUSINESS,
+                                    SOURCE_OF_FUNDS: dbApp.SOURCE_OF_FUNDS,
+                                    SPECIAL_CATEGORY: dbApp.SPECIAL_CATEGORY,
+                                    RISK_CATEGORY: dbApp.RISK_CATEGORY,
+                                    CONSTITUTION: dbApp.CONSTITUTION,
+                                    DOB: dbApp.DATE_OF_BIRTH,
+                                    MOBILE: dbApp.MOBILE_NUMBER,
+                                    GENDER: dbApp.GENDER
+                                };
+                            }
+                            return app;
+                        });
+                    }
+                    results[0].applicants = applicantsJson;
+                } catch (e) {
+                    console.error("Error parsing APPLICANTS_DATA in get:", e);
+                    results[0].applicants = results[0].APPLICANTS_DATA;
+                }
+            }
         }
         res.send({
             "code": 200,

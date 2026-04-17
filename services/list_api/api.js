@@ -21,9 +21,15 @@ function connect() {
             }
             connection = await mysql.createConnection(database);
 
+            connection.on('error', (err) => {
+                console.log('DB Connection Error:', err);
+                if (err.code === 'PROTOCOL_CONNECTION_LOST' || err.code === 'ECONNRESET') {
+                    connection = null;
+                }
+            });
+
             resolve(connection)
-        }
-        catch (error) {
+        } catch (error) {
             // console.log(error);
             reject(error);
         }
@@ -42,7 +48,7 @@ let proxy = {
 
 async function getJWTToken() {
 
-    if (!connection) {
+    if (!connection || connection.connection._closing) {
         await connect();
     }
 
@@ -67,18 +73,15 @@ async function getJWTToken() {
                 if (get_token_result.length > 0) {
                     token = get_token_result[0].TOKEN;
                     resolve(token);
-                }
-                else {
+                } else {
                     token = await generateToken()
                     resolve(token);
                 }
-            }
-            else {
+            } else {
                 token = await generateToken()
                 resolve(token);
             }
-        }
-        catch (error) {
+        } catch (error) {
             // console.log(error);
             reject(error);
         }
@@ -126,8 +129,7 @@ async function generateToken() {
 
             resolve(token);
 
-        }
-        catch (error) {
+        } catch (error) {
             // console.log(error)
             reject(error);
         }
@@ -144,8 +146,7 @@ function getRequest(url, config) {
             let result = await axios.get(url, config);
             // // console.log("result",result)
             resolve(result.data);
-        }
-        catch (error) {
+        } catch (error) {
             // console.log(error);
             reject(error);
         }
@@ -170,7 +171,7 @@ async function cacheMasters() {
 
     console.log("Masters Data", masters_data);
 
-    for (let table of masters_data) {// console
+    for (let table of masters_data) { // console
         let checkQ = `SHOW TABLES LIKE '${table.NAME}'`;
 
         let [checkR, checkF] = await connection.execute(checkQ);
@@ -231,8 +232,7 @@ exports.syncMasters = () => {
         // const job = schedule.scheduleJob(rule, cacheMasters);
         var job = schedule.scheduleJob(" 1 1 23 * * 0", cacheMasters);
         console.log("job", job)
-    }
-    catch (error) {
+    } catch (error) {
         console.log(error);
 
     }
@@ -264,8 +264,7 @@ function returnInsertQ(obj) {
         if (typeof obj[key] == 'string') {
             if (obj[key].includes('\"')) {
                 sep = '\''
-            }
-            else {
+            } else {
                 sep = '\"'
             }
         }
@@ -279,6 +278,86 @@ function returnInsertQ(obj) {
     return q;
 
 }
+
+//             "success_data": accountCreatedData.data
+//         })
+
+//         // res.send({
+//         //     data: account_opening_data
+
+
+//     } catch (error) {
+
+//         console.log(error)
+//         res.send({
+//             "code": 400,
+//             "message": "Failed",
+//             "error": error
+//         })
+//     }
+
+// }
+
+
+// exports.getInterestRateForSaving = async (req, res) => {
+//     try {
+//         let bankCode = req.query.bankCode;
+//         let branchCode = req.query.branchCode;
+//         let schemeCode = req.query.schemeCode;
+//         let date = req.query.date;
+//         let staff = req.query.staff;
+
+//         if (!connection) {
+//             await connect();
+//         }
+
+//         let tokenurl = `${config[mode].api.host}:${config[mode].api.port}${config[mode].api.routes[4].url}?bankCode=${bankCode}&branchCode=${branchCode}&schemeCode=${schemeCode}&date=${date}&staff=${staff}` // routes[4] is getInterestRateForSaving
+
+//         // Note: The index in routes[] depends on the order in config.js. 
+//         // 0: jwtToken, 1: masters, 2: getCustomer, 3: onBoard, 4: getInterestRateForSaving
+
+//         // Verify index 4 dynamically if possible or trust the config order. 
+//         // Let's use a safer approach by finding the route by name.
+//         const routeConfig = config[mode].api.routes.find(r => r.name === 'getInterestRateForSaving');
+//         if (!routeConfig) {
+//             throw new Error("Route getInterestRateForSaving not found in config");
+//         }
+//         tokenurl = `${config[mode].api.host}:${config[mode].api.port}${routeConfig.url}?bankCode=${bankCode}&branchCode=${branchCode}&schemeCode=${schemeCode}&date=${date}&staff=${staff}`;
+
+
+//         let bearerKey = await getJWTToken();
+
+//         let configuration = {
+//             headers: {
+//                 "Authorization": `Bearer ${bearerKey}`,
+//                 "BankName": "LIST Software Pvt. Ltd",
+//                 "BranchName": "Sangli",
+//                 "UserName": "DemoUser",
+//                 "CallerSystem": "Sys106"
+//             }
+//         }
+//         if (config[mode].api.isproxy) {
+//             configuration.proxy = proxy;
+//         }
+
+//         let response = await getRequest(tokenurl, configuration);
+//         console.log("Interest Rate API Response:", response);
+
+//         res.send({
+//             "code": 200,
+//             "data": response
+//         });
+
+//     } catch (error) {
+//         console.log(error);
+//         res.status(500).send({
+//             code: 500,
+//             message: "Error fetching interest rate",
+//             error: error.message
+//         });
+//     }
+// }
+
 
 exports.onBoardCustomer = async (req, res) => {
 
@@ -310,17 +389,38 @@ exports.onBoardCustomer = async (req, res) => {
         let guardianDocumentQ = `select * from ${documentT} where APPLICANT_ID = ${applicant_id} AND APPLICANT_NO = 2;`;
 
 
-        let [basicR, basicF] = await db.executeQuery(basicQ, '');
-        let [personalR, personalF] = await db.executeQuery(personalQ, '');
-        let [depositR, depositF] = await db.executeQuery(depositQ, '');
-        let [serviceR, serviceF] = await db.executeQuery(serviceQ, '');
-        let [financeR, financeF] = await db.executeQuery(financeQ, '');
+        let basicR = (await db.executeQuery(basicQ, ''))[0];
+        let personalR = (await db.executeQuery(personalQ, ''))[0];
+        let depositR = (await db.executeQuery(depositQ, ''))[0];
+        let serviceR = (await db.executeQuery(serviceQ, ''))[0];
+        let financeR = (await db.executeQuery(financeQ, ''))[0];
         let documentR = await db.executeQuery(documentQ, '');
-        let [nomineeR, nomineeF] = await db.executeQuery(nomineeQ, '');
+        let nomineeR = await db.executeQuery(nomineeQ, ''); // Changed on 2026-04-16 to fetch multiple nominees
 
-        let [guardianR, guardianF] = await db.executeQuery(guardianQ, '');
-        let [guardianFinanceR, guardianFinanceF] = await db.executeQuery(guardianFinanceQ, '');
+        let guardianResults = await db.executeQuery(guardianQ, '');
+        let guardianFinanceR = (await db.executeQuery(guardianFinanceQ, ''))[0];
         let guardianDocumentR = await db.executeQuery(guardianDocumentQ, '');
+
+        if (basicR) {
+            if (typeof basicR.APPLICANTS_DATA === 'string') {
+                try {
+                    basicR.APPLICANTS_DATA = JSON.parse(basicR.APPLICANTS_DATA);
+                } catch (e) {
+                    console.error("Error parsing APPLICANTS_DATA:", e);
+                    basicR.APPLICANTS_DATA = [];
+                }
+            }
+            if (typeof basicR.APPLICANT_DATA === 'string') {
+                try {
+                    basicR.APPLICANT_DATA = JSON.parse(basicR.APPLICANT_DATA);
+                } catch (e) {
+                    console.error("Error parsing APPLICANT_DATA:", e);
+                    basicR.APPLICANT_DATA = [];
+                }
+            }
+        }
+
+        let guardianR = (guardianResults && guardianResults.length > 0) ? guardianResults[0] : null;
 
         console.log("basicR", basicR);
         console.log("personalR", personalR);
@@ -331,11 +431,34 @@ exports.onBoardCustomer = async (req, res) => {
         console.log("guardianFinanceR", guardianFinanceR);
         console.log("guardianDocumentR", guardianDocumentR);
 
-        guardianR["APPLICANTS_DATA"] = basicR['APPLICANTS_DATA'].find((val) => val.APPLICANT_NO == guardianR["APPLICANT_NO"]);
+        // guardianR["APPLICANTS_DATA"] = basicR['APPLICANTS_DATA'].find((val) => val.APPLICANT_NO == guardianR["APPLICANT_NO"]);
+
+
+        if (guardianR && basicR) {
+            const applicantsData = basicR.APPLICANTS_DATA || basicR.APPLICANT_DATA || [];
+            guardianR.APPLICANTS_DATA =
+                (Array.isArray(applicantsData) ? applicantsData.find(v => v.APPLICANT_NO == guardianR.APPLICANT_NO) : null) || null;
+        }
+
+        // Robust logic for minor and joint account flags (Moved here on 2026-04-15)
+        let isMinorAccount = (
+            basicR.IS_MINOR == 1 ||
+            basicR.IS_MINOR == '1' ||
+            personalR.IS_MINOR == 1 ||
+            personalR.IS_MINOR == '1' ||
+            basicR.CUSTOMER_TYPE_1 == 'MNR' ||
+            basicR.CUSTOMER_TYPE_1 == 'MINOR' ||
+            (basicR.AGE_1 !== undefined && basicR.AGE_1 !== null && basicR.AGE_1 !== '' && parseInt(basicR.AGE_1) < 18) ||
+            (personalR.AGE !== undefined && personalR.AGE !== null && personalR.AGE !== '' && parseInt(personalR.AGE) < 18) ||
+            (basicR.GUARDIAN_NAME && basicR.GUARDIAN_NAME !== '') ||
+            (basicR.RELATION_WITH_MINOR && basicR.RELATION_WITH_MINOR !== '')
+        );
+
+        let branchCode = await getBranchFromCBS(basicR.CREATED_BRANCH_ID); // Resolved once on 2026-04-16
 
         let account_opening_data = {
             "custobj": {
-                "reg_mobileno": personalR.MOBILE_NUMBER,
+                "reg_mobileno": (personalR.MOBILE_NUMBER || ""),
                 "reg_emailid": personalR.EMAIL_ID,
                 "introbranch": await getBranchFromCBS(basicR.CREATED_BRANCH_ID),
                 "typeofcustomer": 1,
@@ -345,7 +468,7 @@ exports.onBoardCustomer = async (req, res) => {
                 "firstname": personalR.FIRST_NAME,
                 "lastname": personalR.LAST_NAME,
                 "createdfor": "A",
-                "minor": personalR.IS_MINOR ? "Y" : "N",
+                "minor": isMinorAccount ? "Y" : "N", // Updated to use robust isMinorAccount variable
                 "birthdate": convertDate(personalR.DATE_OF_BIRTH),
                 "gender": personalR.GENDER,
                 "occupationid": Number(personalR.PROFESSION),
@@ -355,7 +478,7 @@ exports.onBoardCustomer = async (req, res) => {
                 "proofdetailsid": Number(personalR.PERMANENT_ADDRESS_PROOF),
                 "addproofidno": personalR.PERMANENT_ADDRESS_PROOF_NUMBER,
                 "riskcat": Number(personalR.RISK_CATEGORY),
-                "panno": personalR.PAN_NO,//"GTFDT8976M",
+                "panno": personalR.PAN_NO, //"GTFDT8976M",
                 "fatherspouse": personalR.FATHER_OR_SPOUSE,
                 "bankcode": 1,
                 "brncode": await getBranchFromCBS(basicR.CREATED_BRANCH_ID),
@@ -393,15 +516,20 @@ exports.onBoardCustomer = async (req, res) => {
                 // "subconstitution": Number(personalR.CONSTITUTION)
                 // "custuin": personalR.AADHAAR_NUMBER,
 
+                "fathertitle": personalR.FATHER_TITLE,
+
                 "mothertitle": personalR.MOTHER_TITLE,
                 "issuiddocplace": basicR.DOCUMENTS_ISSUE_PLACE,
                 "iddocissuauth": basicR.DOCUMENTS_AUTHORITY,
-                "maritalstatus": personalR.MARITAL_STATUS,//married = 'M', single = 'U',Divorced:'D'
+                "maritalstatus": personalR.MARITAL_STATUS, //married = 'M', single = 'U',Divorced:'D'
                 "caste_code": Number(personalR.CASTE),
-                "guardianid": personalR.IS_MINOR && guardianR["APPLICANTS_DATA"].IS_OLD_CUSTOMER ? guardianR["APPLICANTS_DATA"].CUSTOMER_ID : null
+                // Fix: Added defensive checks for guardianR and APPLICANTS_DATA to prevent crash
+                "guardianid": (isMinorAccount && guardianR && guardianR["APPLICANTS_DATA"] && guardianR["APPLICANTS_DATA"].IS_OLD_CUSTOMER) ? guardianR["APPLICANTS_DATA"].CUSTOMER_ID : null, // Updated to use robust isMinorAccount variable
+                "specialcat": Number(personalR.SPECIAL_CATEGORY)
             },
-            "custgurobj": !personalR.IS_MINOR || guardianR["APPLICANTS_DATA"].IS_OLD_CUSTOMER == true ? null : {
-                "reg_mobileno": guardianR.MOBILE_NUMBER,
+            // Fix: Added null checks for guardianR and APPLICANTS_DATA here as well
+            "custgurobj": (!isMinorAccount || !guardianR || !guardianR["APPLICANTS_DATA"] || guardianR["APPLICANTS_DATA"].IS_OLD_CUSTOMER == true) ? null : { // Updated to use robust isMinorAccount variable
+                "reg_mobileno": (guardianR ? guardianR.MOBILE_NUMBER || "" : ""),
                 "reg_emailid": guardianR.EMAIL_ID,
                 "introbranch": await getBranchFromCBS(basicR.CREATED_BRANCH_ID),
                 "typeofcustomer": 1,
@@ -411,7 +539,7 @@ exports.onBoardCustomer = async (req, res) => {
                 "firstname": guardianR.FIRST_NAME,
                 "lastname": guardianR.LAST_NAME,
                 "createdfor": "A",
-                "minor": guardianR.IS_MINOR ? "Y" : "N",
+                "minor": guardianR.IS_MINOR == 1 ? "Y" : "N", // Fixed on 2026-04-07
                 "birthdate": convertDate(guardianR.DATE_OF_BIRTH),
                 "gender": guardianR.GENDER,
                 "occupationid": Number(guardianR.PROFESSION),
@@ -421,7 +549,8 @@ exports.onBoardCustomer = async (req, res) => {
                 "proofdetailsid": Number(guardianR.PERMANENT_ADDRESS_PROOF),
                 "addproofidno": guardianR.PERMANENT_ADDRESS_PROOF_NUMBER,
                 "riskcat": Number(guardianR.RISK_CATEGORY),
-                "panno": guardianR.PAN_NO,//"GTFDT8976M",
+                "specialcat": Number(guardianR.SPECIAL_CATEGORY),
+                "panno": guardianR.PAN_NO, //"GTFDT8976M",
                 "fatherspouse": guardianR.FATHER_OR_SPOUSE,
                 "bankcode": 1,
                 "brncode": await getBranchFromCBS(basicR.CREATED_BRANCH_ID),
@@ -459,10 +588,11 @@ exports.onBoardCustomer = async (req, res) => {
                 // "subconstitution": Number(guardianR.CONSTITUTION)
                 // "custuin": guardianR.AADHAAR_NUMBER,
 
+                "fathertitle": guardianR.FATHER_TITLE,
                 "mothertitle": guardianR.MOTHER_TITLE,
                 "issuiddocplace": basicR.DOCUMENTS_ISSUE_PLACE,
                 "iddocissuauth": basicR.DOCUMENTS_AUTHORITY,
-                "maritalstatus": guardianR.MARITAL_STATUS,//married = 'M', single = 'U',Divorced:'D'
+                "maritalstatus": guardianR.MARITAL_STATUS, //married = 'M', single = 'U',Divorced:'D'
                 "caste_code": Number(guardianR.CASTE)
             },
             "acopn_hdr_obj": null,
@@ -470,13 +600,13 @@ exports.onBoardCustomer = async (req, res) => {
             "addobj_P": {
                 "addresstype": "P",
                 "emailid": personalR.EMAIL_ID,
-                "countryid": 1,//constant
+                "countryid": 1, //constant
                 "stateid": await getStateCode(personalR.PERMANENT_STATE),
                 "districtid": await getDistCode(personalR.PERMANENT_DISTRICT),
                 "talukaid": await getTalukaCode(personalR.PERMANENT_TALUKA),
                 "cityid": await getCityCode(personalR.PERMANENT_CITY),
                 "areaid": await getAreaCode(personalR.PERMANENT_AREA),
-                "mobile": personalR.MOBILE_NUMBER,
+                "mobile": (personalR.MOBILE_NUMBER || ""),
                 "pincode": personalR.PERMANENT_PINCODE,
                 "regionid": 1,
                 // "sequenceno": 1,
@@ -497,7 +627,7 @@ exports.onBoardCustomer = async (req, res) => {
                 "cityid": await getCityCode(personalR.CURRENT_CITY),
                 "areaid": await getAreaCode(personalR.CURRENT_AREA),
                 "regionid": 1,
-                "mobile": personalR.MOBILE_NUMBER,
+                "mobile": (personalR.MOBILE_NUMBER || ""),
                 "pincode": personalR.CURRENT_PINCODE,
                 // "sequenceno": 1,
                 "bankcode": 1,
@@ -516,7 +646,7 @@ exports.onBoardCustomer = async (req, res) => {
                 "cityid": await getCityCode(personalR.OFFICE_CITY),
                 "areaid": await getAreaCode(personalR.OFFICE_AREA),
                 "regionid": 1,
-                "mobile": personalR.MOBILE_NUMBER,
+                "mobile": (personalR.MOBILE_NUMBER || ""),
                 "pincode": personalR.OFFICE_PINCODE,
                 // "sequenceno": 1,
                 "bankcode": 1,
@@ -526,16 +656,16 @@ exports.onBoardCustomer = async (req, res) => {
                 "authuser": await getUserNameByID(basicR.VERIFIER_USER_ID),
                 "addressline1": `${personalR.OFFICE_ADDRESS} ${personalR.OFFICE_LANDMARK}`
             },
-            "addobjgur_P": !personalR.IS_MINOR || guardianR["APPLICANTS_DATA"].IS_OLD_CUSTOMER == true ? null : {
+            "addobjgur_P": (!isMinorAccount || guardianR["APPLICANTS_DATA"].IS_OLD_CUSTOMER == true) ? null : { // Updated to use robust isMinorAccount variable
                 "addresstype": "P",
                 "emailid": guardianR.EMAIL_ID,
-                "countryid": 1,//constant
+                "countryid": 1, //constant
                 "stateid": await getStateCode(guardianR.PERMANENT_STATE),
                 "districtid": await getDistCode(guardianR.PERMANENT_DISTRICT),
                 "talukaid": await getTalukaCode(guardianR.PERMANENT_TALUKA),
                 "cityid": await getCityCode(guardianR.PERMANENT_CITY),
                 "areaid": await getAreaCode(guardianR.PERMANENT_AREA),
-                "mobile": guardianR.MOBILE_NUMBER,
+                "mobile": (guardianR ? guardianR.MOBILE_NUMBER || "" : ""),
                 "pincode": guardianR.PERMANENT_PINCODE,
                 "regionid": 1,
                 // "sequenceno": 1,
@@ -556,7 +686,7 @@ exports.onBoardCustomer = async (req, res) => {
                 "cityid": await getCityCode(guardianR.CURRENT_CITY),
                 "areaid": await getAreaCode(guardianR.CURRENT_AREA),
                 "regionid": 1,
-                "mobile": guardianR.MOBILE_NUMBER,
+                "mobile": (guardianR ? guardianR.MOBILE_NUMBER || "" : ""),
                 "pincode": guardianR.CURRENT_PINCODE,
                 // "sequenceno": 1,
                 "bankcode": 1,
@@ -575,7 +705,7 @@ exports.onBoardCustomer = async (req, res) => {
                 "cityid": await getCityCode(guardianR.OFFICE_CITY),
                 "areaid": await getAreaCode(guardianR.OFFICE_AREA),
                 "regionid": 1,
-                "mobile": guardianR.MOBILE_NUMBER,
+                "mobile": (guardianR ? guardianR.MOBILE_NUMBER || "" : ""),
                 "pincode": guardianR.OFFICE_PINCODE,
                 // "sequenceno": 1,
                 "bankcode": 1,
@@ -600,14 +730,14 @@ exports.onBoardCustomer = async (req, res) => {
                 "bankcode": 1,
                 "brncode": await getBranchFromCBS(basicR.CREATED_BRANCH_ID)
             },
-            "kyccomgurobj": !personalR.IS_MINOR || guardianR["APPLICANTS_DATA"].IS_OLD_CUSTOMER == true ? null : {
+            "kyccomgurobj": (!isMinorAccount || guardianR["APPLICANTS_DATA"].IS_OLD_CUSTOMER == true) ? null : { // Updated to use robust isMinorAccount variable
                 "kcc_status": "F",
                 "entryuser": await getUserNameByID(basicR.MAKER_USER_ID),
                 "verifiedby": await getUserNameByID(basicR.CHACKER_USER_ID),
                 "bankcode": 1,
                 "brncode": await getBranchFromCBS(basicR.CREATED_BRANCH_ID)
             },
-            "kyccompdtlrgurobj": !personalR.IS_MINOR || guardianR["APPLICANTS_DATA"].IS_OLD_CUSTOMER == true ? null : {
+            "kyccompdtlrgurobj": (!isMinorAccount || guardianR["APPLICANTS_DATA"].IS_OLD_CUSTOMER == true) ? null : { // Updated to use robust isMinorAccount variable
                 "kcd_addproff": Number(guardianR.PERMANENT_ADDRESS_PROOF),
                 "kcd_addidno": guardianR.PERMANENT_ADDRESS_PROOF_NUMBER,
                 "kcd_idproof": Number(guardianR.ID_PROOF),
@@ -635,6 +765,7 @@ exports.onBoardCustomer = async (req, res) => {
                 //checkbook y/n
                 "checkbookfacility": serviceR.CHEQUE_BOOK ? "Y" : "N",
                 "schemecode": Number(depositR.SCHEME_CODE),
+                "minbalancecat": Number(depositR.MINIMUM_BALANCE_CATEGORY),
 
                 "acctitle": `${personalR.LAST_NAME} ${personalR.FIRST_NAME} ${personalR.MIDDLE_NAME}`,
 
@@ -661,12 +792,14 @@ exports.onBoardCustomer = async (req, res) => {
                 "acctobeopn_atbrncd": await getBranchFromCBS(basicR.CREATED_BRANCH_ID),
                 "accopened_atbrn": await getBranchFromCBS(basicR.CREATED_BRANCH_ID),
 
-                "accopendt": '15-10-2025 00:00:00',// generateNewDate(),
+                "accopendt": '15-10-2025 00:00:00', // generateNewDate(),
 
                 "opnormdf": "A"
             },
             "accdtl_obj": {
                 "schemecode": Number(depositR.SCHEME_CODE),
+
+                "minbalancecat": Number(depositR.MINIMUM_BALANCE_CATEGORY),
 
                 // "serialno": 1,
                 "changeno": 1,
@@ -681,6 +814,8 @@ exports.onBoardCustomer = async (req, res) => {
             "docdtl_obj": {
                 "schemecode": Number(depositR.SCHEME_CODE),
 
+                "minbalancecat": Number(depositR.MINIMUM_BALANCE_CATEGORY),
+
                 "docid": 1,
 
                 "changeno": 1,
@@ -691,24 +826,27 @@ exports.onBoardCustomer = async (req, res) => {
                 "acctobeopn_atbrncd": await getBranchFromCBS(basicR.CREATED_BRANCH_ID),
                 "accopened_atbrn": await getBranchFromCBS(basicR.CREATED_BRANCH_ID)
             },
-            "acnomobj": {
-                "and_nominame": nomineeR.NOMINEE_NAME,
-                "and_nominaddrs": nomineeR.NOMINEE_ADDRESS,
-                "and_relation": Relation(nomineeR.RELATION),
-                // "and_minority": "Y",
-                "and_dtofbirth": convertDate(nomineeR.DOB),
-                "brncode": await getBranchFromCBS(basicR.CREATED_BRANCH_ID),
-                "and_caretaker": `${nomineeR.APONITED_NAME}  ${nomineeR.APONITED_ADDRESS}`
-            },
+            "acnomobj": (nomineeR && nomineeR.length > 0) ? nomineeR.map((nominee, index) => ({ // Updated on 2026-04-16 to support multiple nominees
+                "and_nominame": nominee.NOMINEE_NAME,
+                "and_nominaddrs": nominee.NOMINEE_ADDRESS,
+                "and_relation": Relation(nominee.RELATION),
+                "and_dtofnom": convertDate(nominee.NOMINEE_DOB),
+                "seq_no": index + 1,
+                "and_cancel": "N",
+                "and_percentage": nominee.SHARE_PERCENTAGE || 100,
+                "and_acopn_brncd": branchCode,
+                "and_acopened_atbrn": branchCode,
+                "brncode": branchCode,
+                "bankcode": 1
+            })) : null,
             "m_kcd_iddocimage": await getDocument('Applicant ID Proof', documentR),
             "m_kcd_adddocimage": await getDocument('Applicant Address Proof', documentR),
             "m_kcd_photo": await getDocument('Applicant Photo', documentR),
             "m_kcd_sign": await getDocument('Signature', documentR),
-
-            "m_kcd_photo_gur": !personalR.IS_MINOR || guardianR["APPLICANTS_DATA"].IS_OLD_CUSTOMER == true ? null : await getDocument('Applicant Photo', guardianDocumentR),
-            "m_kcd_iddocimage_gur": !personalR.IS_MINOR || guardianR["APPLICANTS_DATA"].IS_OLD_CUSTOMER == true ? null : await getDocument('Applicant ID Proof', guardianDocumentR),
-            "m_kcd_adddocimage_gur": !personalR.IS_MINOR || guardianR["APPLICANTS_DATA"].IS_OLD_CUSTOMER == true ? null : await getDocument('Applicant Address Proof', guardianDocumentR),
-            "m_kcd_sign_gur": !personalR.IS_MINOR || guardianR["APPLICANTS_DATA"].IS_OLD_CUSTOMER == true ? null : await getDocument('Signature', guardianDocumentR)
+            "m_kcd_photo_gur": (!isMinorAccount || guardianR["APPLICANTS_DATA"].IS_OLD_CUSTOMER == true) ? null : await getDocument('Applicant Photo', guardianDocumentR), // Updated to use robust isMinorAccount variable
+            "m_kcd_iddocimage_gur": (!isMinorAccount || guardianR["APPLICANTS_DATA"].IS_OLD_CUSTOMER == true) ? null : await getDocument('Applicant ID Proof', guardianDocumentR), // Updated to use robust isMinorAccount variable
+            "m_kcd_adddocimage_gur": (!isMinorAccount || guardianR["APPLICANTS_DATA"].IS_OLD_CUSTOMER == true) ? null : await getDocument('Applicant Address Proof', guardianDocumentR), // Updated to use robust isMinorAccount variable
+            "m_kcd_sign_gur": (!isMinorAccount || guardianR["APPLICANTS_DATA"].IS_OLD_CUSTOMER == true) ? null : await getDocument('Signature', guardianDocumentR) // Updated to use robust isMinorAccount variable
         }
 
         let posturl = `${config[mode].api.host}:${config[mode].api.port}${config[mode].api.routes[3].url}`
@@ -721,8 +859,18 @@ exports.onBoardCustomer = async (req, res) => {
         if (personalR.AADHAAR_NUMBER) {
             account_opening_data.custobj.custuin = personalR.AADHAAR_NUMBER;
         }
-        if (account_opening_data.custobj_join != null || account_opening_data.custobj_const != null) {
-            account_opening_data.acmst_obj.jointacc = 'Y'
+        // Logic already computed above
+
+        if (isMinorAccount) {
+            account_opening_data.custobj.minor = 'Y';
+            account_opening_data.acmst_obj.jointacc = 'N';
+        } else {
+            account_opening_data.custobj.minor = 'N';
+            if (basicR.NO_OF_APPLICANT > 1 || account_opening_data.custobj_join != null || account_opening_data.custobj_const != null) {
+                account_opening_data.acmst_obj.jointacc = 'Y';
+            } else {
+                account_opening_data.acmst_obj.jointacc = 'N';
+            }
         }
 
         let configuration = {
@@ -739,41 +887,42 @@ exports.onBoardCustomer = async (req, res) => {
 
         let basicInsertQ = `update basic_details set ACCOUNT_NUMBER =  "${accountCreatedData.data['Account number']}",CUSTOMER_ID_1 = "${accountCreatedData.data['Customer Code']}" where ID = ${applicant_id}`;
 
-        if (personalR.IS_MINOR && depositR.ACCOUNT_TYPE == 'A') {
+        if (isMinorAccount && depositR.ACCOUNT_TYPE == 'A') { // Updated to use robust isMinorAccount variable
             const customer_ids = accountCreatedData.data['Customer Code'].split(",");
             const primary_applicant = customer_ids[0];
             const guardian_applicant = customer_ids[1].split("-")[1];
-            const APPLICANT_DATA = basicR['APPLICANT_DATA'];
+            const APPLICANTS_DATA = basicR.APPLICANTS_DATA || basicR.APPLICANT_DATA || [];
+            if (Array.isArray(APPLICANTS_DATA) && APPLICANTS_DATA.length > 1) {
+                APPLICANTS_DATA[1].CUSTOMER_ID = guardian_applicant;
+            }
 
-            APPLICANT_DATA[1].CUSTOMER_ID = guardian_applicant;
-
-            basicInsertQ = `update basic_details set ACCOUNT_NUMBER =  "${accountCreatedData.data['Account number']}",CUSTOMER_ID_1 = "${primary_applicant}", APPLICANT_DATA = "${APPLICANT_DATA}" where ID = ${applicant_id}`
+            basicInsertQ = `update basic_details set ACCOUNT_NUMBER =  "${accountCreatedData.data['Account number']}",CUSTOMER_ID_1 = "${primary_applicant}", APPLICANTS_DATA = '${JSON.stringify(APPLICANTS_DATA)}' where ID = ${applicant_id}`
         }
 
         if (account_opening_data.custobj_join != null) {
             const customer_ids = accountCreatedData.data['Customer Code'].split(",");
             const primary_applicant = customer_ids[0];
             const other_ids = customer_ids[1].split("-")[1].split(',');
-            const APPLICANT_DATA = basicR['APPLICANT_DATA'];
+            const APPLICANTS_DATA = basicR['APPLICANTS_DATA'];
 
-            for (let i = 0; i < APPLICANT_DATA.length; i++) {
-                APPLICANT_DATA[i].CUSTOMER_ID = other_ids[i];
+            for (let i = 0; i < APPLICANTS_DATA.length; i++) {
+                APPLICANTS_DATA[i].CUSTOMER_ID = other_ids[i];
             }
 
-            basicInsertQ = `update basic_details set ACCOUNT_NUMBER =  "${accountCreatedData.data['Account number']}",CUSTOMER_ID_1 = "${primary_applicant}", APPLICANT_DATA = "${APPLICANT_DATA}" where ID = ${applicant_id}`
+            basicInsertQ = `update basic_details set ACCOUNT_NUMBER =  "${accountCreatedData.data['Account number']}",CUSTOMER_ID_1 = "${primary_applicant}", APPLICANTS_DATA = '${JSON.stringify(APPLICANTS_DATA)}' where ID = ${applicant_id}`
         }
 
         if (account_opening_data.custobj_const != null) {
             const customer_ids = accountCreatedData.data['Customer Code'].split(",");
             const primary_applicant = customer_ids[0];
             const other_ids = customer_ids[1].split("-")[1].split(',');
-            const APPLICANT_DATA = basicR['APPLICANT_DATA'];
+            const APPLICANTS_DATA = basicR['APPLICANTS_DATA'];
 
-            for (let i = 0; i < APPLICANT_DATA.length; i++) {
-                APPLICANT_DATA[i].CUSTOMER_ID = other_ids[i];
+            for (let i = 0; i < APPLICANTS_DATA.length; i++) {
+                APPLICANTS_DATA[i].CUSTOMER_ID = other_ids[i];
             }
 
-            basicInsertQ = `update basic_details set ACCOUNT_NUMBER =  "${accountCreatedData.data['Account number']}",CUSTOMER_ID_1 = "${primary_applicant}", APPLICANT_DATA = "${APPLICANT_DATA}" where ID = ${applicant_id}`
+            basicInsertQ = `update basic_details set ACCOUNT_NUMBER =  "${accountCreatedData.data['Account number']}",CUSTOMER_ID_1 = "${primary_applicant}", APPLICANTS_DATA = '${JSON.stringify(APPLICANTS_DATA)}' where ID = ${applicant_id}`
         }
 
         let basicInsertR = await db.executeQuery(basicInsertQ, '');
@@ -788,10 +937,10 @@ exports.onBoardCustomer = async (req, res) => {
 
         // res.send({
         //     data: account_opening_data
-        // })
-    }
 
-    catch (error) {
+
+    } catch (error) {
+
         console.log(error)
         res.send({
             "code": 400,
@@ -802,23 +951,25 @@ exports.onBoardCustomer = async (req, res) => {
 
 }
 
+
+
 async function getJoin(basic_details, serviceDetails, depositeDetails) {
     const query = `
-    SELECT 
-    per.*, fin.*
+SELECT 
+per.*, fin.*
 FROM
-    applicants_personal_details per
-        LEFT OUTER JOIN
-    financial_information fin ON fin.APPLICANT_NO = per.APPLICANT_NO
-        AND fin.APPLICANT_ID = per.APPLICANT_ID 
-        where per.APPLICANT_NO != 1 and per.APPLICANT_ID = ${basic_details.ID}
-    `;
+applicants_personal_details per
+LEFT OUTER JOIN
+financial_information fin ON fin.APPLICANT_NO = per.APPLICANT_NO
+AND fin.APPLICANT_ID = per.APPLICANT_ID 
+where per.APPLICANT_NO != 1 and per.APPLICANT_ID = ${basic_details.ID}
+`;
 
     // APPLICANTS_DATA
 
     const customers = await db.executeQuery(query);
 
-    if (basic_details.IS_MINOR == 1 || depositeDetails.ACCOUNT_TYPE != 'A') {
+    if (basic_details.IS_MINOR == 1) {
         console.log("inside conditions", basic_details, depositeDetails);
         return {
             "custobj_join": null,
@@ -829,8 +980,13 @@ FROM
         }
     }
 
-    for (let i = 0; i < customers.length; i++) {
-        customers[i]["APPLICANTS_DATA"] = basic_details['APPLICANTS_DATA'].find((val) => val.APPLICANT_NO == customers[i]["APPLICANT_NO"]);
+    if (basic_details) {
+        const h_applicantsData = basic_details.APPLICANTS_DATA || basic_details.APPLICANT_DATA || [];
+        if (Array.isArray(h_applicantsData)) {
+            for (let i = 0; i < customers.length; i++) {
+                customers[i]["APPLICANTS_DATA"] = h_applicantsData.find((val) => val.APPLICANT_NO == customers[i]["APPLICANT_NO"]);
+            }
+        }
     }
 
     console.log(customers);
@@ -845,27 +1001,28 @@ FROM
 
     for (const customer of customers) {
         const cust = {
-            "reg_mobileno": customer.MOBILE_NUMBER,
+            "reg_mobileno": (customer.MOBILE_NUMBER || ""),
             "reg_emailid": customer.EMAIL_ID,
             "introbranch": await getBranchFromCBS(basic_details.CREATED_BRANCH_ID),
             "typeofcustomer": 1,
-            "annualincome": customer.INCOME.toString(),
+            "annualincome": (customer.INCOME || 0).toString(),
             "smssubscription": serviceDetails.SMS_ALERT ? "Y" : "N",
             "middlename": customer.MIDDLE_NAME,
             "firstname": customer.FIRST_NAME,
             "lastname": customer.LAST_NAME,
             "createdfor": "A",
-            "minor": customer.IS_MINOR ? "Y" : "N",
+            "minor": customer.IS_MINOR == 1 ? "Y" : "N", // Fixed on 2026-04-07
             "birthdate": convertDate(customer.DATE_OF_BIRTH),
             "gender": customer.GENDER,
             "occupationid": Number(customer.PROFESSION),
-            "title": customer['APPLICANTS_DATA'].CUSTOMER_TYPE,
+            "title": customer['APPLICANTS_DATA'] ? customer['APPLICANTS_DATA'].CUSTOMER_TYPE : "",
             "idtproofid": Number(customer.ID_PROOF),
             "idtproofidno": customer.ID_PROOF_NUMBER,
             "proofdetailsid": Number(customer.PERMANENT_ADDRESS_PROOF),
             "addproofidno": customer.PERMANENT_ADDRESS_PROOF_NUMBER,
             "riskcat": Number(customer.RISK_CATEGORY),
-            "panno": customer.PAN_NO,//"GTFDT8976M",
+            "specialcat": Number(customer.SPECIAL_CATEGORY),
+            "panno": customer.PAN_NO, //"GTFDT8976M",
             "fatherspouse": customer.FATHER_OR_SPOUSE,
             "bankcode": 1,
             "brncode": await getBranchFromCBS(basic_details.CREATED_BRANCH_ID),
@@ -885,10 +1042,11 @@ FROM
             "motherfname": customer.MOTHERS_NAME,
             "mothermname": customer.MOTHERS_MIDDLE_NAME,
 
+            "fathertitle": customer.FATHER_TITLE,
             "mothertitle": customer.MOTHER_TITLE,
             "issuiddocplace": basic_details.DOCUMENTS_ISSUE_PLACE,
             "iddocissuauth": basic_details.DOCUMENTS_AUTHORITY,
-            "maritalstatus": customer.MARITAL_STATUS,//married = 'M', single = 'U',Divorced:'D'
+            "maritalstatus": customer.MARITAL_STATUS, //married = 'M', single = 'U',Divorced:'D'
             "caste_code": Number(customer.CASTE),
             "jhsr": (customer.APPLICANT_NO - 1)
         }
@@ -896,13 +1054,13 @@ FROM
         const p_add = {
             "addresstype": "P",
             "emailid": customer.EMAIL_ID,
-            "countryid": 1,//constant
+            "countryid": 1, //constant
             "stateid": await getStateCode(customer.PERMANENT_STATE),
             "districtid": await getDistCode(customer.PERMANENT_DISTRICT),
             "talukaid": await getTalukaCode(customer.PERMANENT_TALUKA),
             "cityid": await getCityCode(customer.PERMANENT_CITY),
             "areaid": await getAreaCode(customer.PERMANENT_AREA),
-            "mobile": customer.MOBILE_NUMBER,
+            "mobile": (customer.MOBILE_NUMBER || ""),
             "pincode": customer.PERMANENT_PINCODE,
             "regionid": 1,
             // "sequenceno": 1,
@@ -925,7 +1083,7 @@ FROM
             "cityid": await getCityCode(customer.CURRENT_CITY),
             "areaid": await getAreaCode(customer.CURRENT_AREA),
             "regionid": 1,
-            "mobile": customer.MOBILE_NUMBER,
+            "mobile": (customer.MOBILE_NUMBER || ""),
             "pincode": customer.CURRENT_PINCODE,
             // "sequenceno": 1,
             "bankcode": 1,
@@ -975,15 +1133,15 @@ FROM
 
 async function getCurrent(basic_details, serviceDetails, depositeDetails) {
     const query = `
-    SELECT 
-    per.*, fin.*
+SELECT 
+per.*, fin.*
 FROM
-    applicants_personal_details per
-        LEFT OUTER JOIN
-    financial_information fin ON fin.APPLICANT_NO = per.APPLICANT_NO
-        AND fin.APPLICANT_ID = per.APPLICANT_ID 
-        where per.APPLICANT_NO != 1 and per.APPLICANT_ID = ${basic_details.ID}
-    `;
+applicants_personal_details per
+LEFT OUTER JOIN
+financial_information fin ON fin.APPLICANT_NO = per.APPLICANT_NO
+AND fin.APPLICANT_ID = per.APPLICANT_ID 
+where per.APPLICANT_NO != 1 and per.APPLICANT_ID = ${basic_details.ID}
+`;
 
     // APPLICANTS_DATA
 
@@ -999,8 +1157,13 @@ FROM
         }
     }
 
-    for (let i = 0; i < customers.length; i++) {
-        customers[i]["APPLICANTS_DATA"] = basic_details['APPLICANTS_DATA'].find((val) => val.APPLICANT_NO == customers[i]["APPLICANT_NO"]);
+    if (basic_details) {
+        const c_applicantsData = basic_details.APPLICANTS_DATA || basic_details.APPLICANT_DATA || [];
+        if (Array.isArray(c_applicantsData)) {
+            for (let i = 0; i < customers.length; i++) {
+                customers[i]["APPLICANTS_DATA"] = c_applicantsData.find((val) => val.APPLICANT_NO == customers[i]["APPLICANT_NO"]);
+            }
+        }
     }
 
     const obj = {
@@ -1013,7 +1176,7 @@ FROM
 
     for (const customer of customers) {
         const cust = {
-            "reg_mobileno": customer.MOBILE_NUMBER,
+            "reg_mobileno": (customer.MOBILE_NUMBER || ""),
             "reg_emailid": customer.EMAIL_ID,
             "introbranch": await getBranchFromCBS(basic_details.CREATED_BRANCH_ID),
             "typeofcustomer": 1,
@@ -1023,17 +1186,18 @@ FROM
             "firstname": customer.FIRST_NAME,
             "lastname": customer.LAST_NAME,
             "createdfor": "A",
-            "minor": customer.IS_MINOR ? "Y" : "N",
+            "minor": customer.IS_MINOR == 1 ? "Y" : "N", // Fixed on 2026-04-07
             "birthdate": convertDate(customer.DATE_OF_BIRTH),
             "gender": customer.GENDER,
             "occupationid": Number(customer.PROFESSION),
-            "title": customers['APPLICANTS_DATA'].CUSTOMER_TYPE,
+            "title": customer['APPLICANTS_DATA'] ? customer['APPLICANTS_DATA'].CUSTOMER_TYPE : "",
             "idtproofid": Number(customer.ID_PROOF),
             "idtproofidno": customer.ID_PROOF_NUMBER,
             "proofdetailsid": Number(customer.PERMANENT_ADDRESS_PROOF),
             "addproofidno": customer.PERMANENT_ADDRESS_PROOF_NUMBER,
             "riskcat": Number(customer.RISK_CATEGORY),
-            "panno": customer.PAN_NO,//"GTFDT8976M",
+            "specialcat": Number(customer.SPECIAL_CATEGORY),
+            "panno": customer.PAN_NO, //"GTFDT8976M",
             "fatherspouse": customer.FATHER_OR_SPOUSE,
             "bankcode": 1,
             "brncode": await getBranchFromCBS(basic_details.CREATED_BRANCH_ID),
@@ -1053,10 +1217,11 @@ FROM
             "motherfname": customer.MOTHERS_NAME,
             "mothermname": customer.MOTHERS_MIDDLE_NAME,
 
+            "fathertitle": customer.FATHER_TITLE,
             "mothertitle": customer.MOTHER_TITLE,
             "issuiddocplace": basic_details.DOCUMENTS_ISSUE_PLACE,
             "iddocissuauth": basic_details.DOCUMENTS_AUTHORITY,
-            "maritalstatus": customer.MARITAL_STATUS,//married = 'M', single = 'U',Divorced:'D'
+            "maritalstatus": customer.MARITAL_STATUS, //married = 'M', single = 'U',Divorced:'D'
             "caste_code": Number(customer.CASTE),
             "jhsr": (customer.APPLICANT_NO - 1)
         }
@@ -1064,13 +1229,13 @@ FROM
         const p_add = {
             "addresstype": "P",
             "emailid": customer.EMAIL_ID,
-            "countryid": 1,//constant
+            "countryid": 1, //constant
             "stateid": await getStateCode(customer.PERMANENT_STATE),
             "districtid": await getDistCode(customer.PERMANENT_DISTRICT),
             "talukaid": await getTalukaCode(customer.PERMANENT_TALUKA),
             "cityid": await getCityCode(customer.PERMANENT_CITY),
             "areaid": await getAreaCode(customer.PERMANENT_AREA),
-            "mobile": customer.MOBILE_NUMBER,
+            "mobile": (customer.MOBILE_NUMBER || ""),
             "pincode": customer.PERMANENT_PINCODE,
             "regionid": 1,
             // "sequenceno": 1,
@@ -1093,7 +1258,7 @@ FROM
             "cityid": await getCityCode(customer.CURRENT_CITY),
             "areaid": await getAreaCode(customer.CURRENT_AREA),
             "regionid": 1,
-            "mobile": customer.MOBILE_NUMBER,
+            "mobile": (customer.MOBILE_NUMBER || ""),
             "pincode": customer.CURRENT_PINCODE,
             // "sequenceno": 1,
             "bankcode": 1,
@@ -1149,20 +1314,21 @@ async function getDocument(NAME, arr) {
         }
     }
 
-    if (filelink != '') {
+    if (filelink) {
         let pathD = filelink;
 
         let res = await fs.readFile(pathD, { encoding: 'utf-8' });
 
         res = res.replace("data:image/jpeg;base64,", '');
         return res;
-    }
-
-    else return '';
+    } else return '';
 }
 
 
 function convertDate(date, srcFormate = 'dd/mm/yyyy') {
+    if (!date || typeof date !== 'string') {
+        return "";
+    }
     let dateArr = date.split("/");
 
     // let converted_date = new Date(dateArr[2], dateArr[1], dateArr[0], 0, 0, 0)
@@ -1211,12 +1377,10 @@ async function getStateCode(id) {
 
         if (stateR.length > 0) {
             return stateR[0].STATEID ? Number(stateR[0].STATEID) : 1;
-        }
-        else {
+        } else {
             return 1;
         }
-    }
-    catch (error) {
+    } catch (error) {
         console.log(error);
         return 1;
 
@@ -1237,12 +1401,10 @@ async function getDistCode(id) {
 
         if (distR.length > 0) {
             return distR[0].DISTRICTID ? Number(distR[0].DISTRICTID) : 1;
-        }
-        else {
+        } else {
             return 1;
         }
-    }
-    catch (error) {
+    } catch (error) {
         return 1;
     }
 }
@@ -1261,12 +1423,10 @@ async function getTalukaCode(id) {
 
         if (talukaR.length > 0) {
             return talukaR[0].TALUKAID ? Number(talukaR[0].TALUKAID) : 1;
-        }
-        else {
+        } else {
             return 1;
         }
-    }
-    catch (error) {
+    } catch (error) {
         return 1;
     }
 }
@@ -1285,12 +1445,10 @@ async function getCityCode(id) {
 
         if (cityR.length > 0) {
             return cityR[0].CITYID ? Number(cityR[0].CITYID) : 1;
-        }
-        else {
+        } else {
             return 1;
         }
-    }
-    catch (error) {
+    } catch (error) {
         return 1;
     }
 }
@@ -1309,12 +1467,10 @@ async function getAreaCode(id) {
 
         if (areaR.length > 0) {
             return areaR[0].AREAID ? Number(areaR[0].AREAID) : 1;
-        }
-        else {
+        } else {
             return 1;
         }
-    }
-    catch (error) {
+    } catch (error) {
         return 1;
     }
 }
@@ -1328,8 +1484,7 @@ async function getBranchFromCBS(branchID) {
 
     if (branchR) {
         return branchR.BRANCH_CODE ? Number(branchR.BRANCH_CODE) : 1;
-    }
-    else {
+    } else {
         return 1;
     }
 
@@ -1344,8 +1499,7 @@ async function getUserNameByID(id) {
 
     if (userR) {
         return userR.CBS_USER_NAME ? userR.CBS_USER_NAME : '-';
-    }
-    else {
+    } else {
         return '-';
     }
 }
@@ -1383,9 +1537,7 @@ exports.getMasters = async (req, res) => {
                     "data": result
                 })
 
-            }
-
-            else {
+            } else {
                 res.send({
                     "code": 200,
                     "message": "no data",
@@ -1393,17 +1545,14 @@ exports.getMasters = async (req, res) => {
                 });
             }
 
-        }
-        else {
+        } else {
             res.send({
                 "code": 200,
                 "message": "no data",
                 "data": []
             })
         }
-    }
-
-    catch (error) {
+    } catch (error) {
         console.log(error);
         res.send({
             "code": 400,
@@ -1444,12 +1593,10 @@ exports.getCustomer = async (req, res) => {
         if (search_mode == 'CUSTOMER_ID') {
             search_key = 'customerCode';
             search_value = req.body.CUSTOMER_ID;
-        }
-        else if (search_mode == 'AADHAAR_NO') {
+        } else if (search_mode == 'AADHAAR_NO') {
             search_key = 'adharNo'
             search_value = req.body.AADHAAR_NO;
-        }
-        else if (search_mode == 'PAN') {
+        } else if (search_mode == 'PAN') {
             search_key = 'panCardNo';
             search_value = req.body.PAN_NO;
         }
@@ -1506,8 +1653,7 @@ exports.getCustomer = async (req, res) => {
                 "original_data": customerData,
                 "data": res_body
             })
-        }
-        else {
+        } else {
             res.send({
                 "code": 404,
                 "message": "no customer"
@@ -1630,13 +1776,72 @@ exports.getCustomer = async (req, res) => {
         //         "KCD_ADDIDNO": "1111"
         //     }
         // }
-    }
-    catch (error) {
+    } catch (error) {
         console.log(error);
         res.send({
             "code": 400,
             "error": error
         })
     }
+}
 
+exports.getInterestRateForSaving = async (req, res) => {
+    try {
+        let bankCode = req.query.bankCode;
+        let branchCode = req.query.branchCode;
+        let schemeCode = req.query.schemeCode;
+        let date = req.query.date;
+        let staff = req.query.staff;
+
+        if (!connection) {
+            await connect();
+        }
+
+        // Resolve internal branch ID to CBS Branch Code
+        let branchCBSCode = await getBranchFromCBS(branchCode);
+
+        // Create final URL with all query parameters - CBS expects lowercase keys
+        // Also ensure bankCode and schemeCode are Numbers to match CBS expectations
+        let tokenurl = `${config[mode].api.host}:${config[mode].api.port}${config[mode].api.routes[4].url}?bankcode=${Number(bankCode)}&brncode=${branchCBSCode}&schemecode=${Number(schemeCode)}&date=${date}&staff=${staff}`
+
+        // Secondary check to ensure correct route from config if indexes changed
+        const routeConfig = config[mode].api.routes.find(r => r.name === 'getInterestRateForSaving');
+        if (routeConfig) {
+            tokenurl = `${config[mode].api.host}:${config[mode].api.port}${routeConfig.url}?bankcode=${Number(bankCode)}&brncode=${branchCBSCode}&schemecode=${Number(schemeCode)}&date=${date}&staff=${staff}`;
+        }
+
+        console.log("Fetching Interest Rate from URL:", tokenurl); // Debug: check final URL sent to CBS
+
+        let bearerKey = await getJWTToken();
+
+        let configuration = {
+            headers: {
+                "Authorization": `Bearer ${bearerKey}`,
+                "bankName": "Ajara",
+                "branchName": "Uttur",
+                "userName": "ajara.ba",
+                "callerSystem": "FCO"
+            }
+        }
+        if (config[mode].api.isproxy) {
+            configuration.proxy = proxy;
+        }
+
+        // Fetch interest rate from CBS
+        let response = await getRequest(tokenurl, configuration);
+        console.log("Interest Rate API Response from CBS:", response); // Debug: log full response from CBS
+
+        res.send({
+            "code": 200,
+            "data": response
+        });
+
+    } catch (error) {
+        console.log(error);
+        res.status(500).send({
+            code: 500,
+            message: "Error fetching interest rate",
+            error: error.message
+        });
+    }
 }
