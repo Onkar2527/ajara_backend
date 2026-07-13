@@ -1,5 +1,23 @@
-/uploads
-/node_modules
+# Dependencies
+node_modules/
+
+# Environment variables
 .env
+
+# Uploads
+uploads/
+
+# SSL certificates
 *.crt
 *.key
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
