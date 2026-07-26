@@ -1617,6 +1617,19 @@ exports.getCustomer = async (req, res) => {
 
         console.log("customerData", customerData);
 
+        if (
+            !customerData || 
+            customerData.message === 'Member Details Not Found' || 
+            customerData.Message === 'Member Details Not Found' || 
+            customerData['Message'] === 'Member Details Not Found' ||
+            !customerData['Customer Details']
+        ) {
+            return res.send({
+                "code": 404,
+                "message": "customer is freeze or is new customer"
+            });
+        }
+
 
         let res_body = {
             CUSTOMER_ID: customerData['Customer Details'].CUSTOMERID,
