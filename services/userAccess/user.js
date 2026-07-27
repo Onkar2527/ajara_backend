@@ -56,19 +56,23 @@ exports.getUser = async (req, res) => {
         let USER_ID = req.body.ID;
 
         let supportKey = req.headers['supportkey'];
-        let query = ` select * from user_master where 1`
+        let query = ` select * from user_master where 1=1 `
+        let params = [];
 
         if (BRANCH_ID) {
-            query += ` AND BRANCH_ID = ${BRANCH_ID} `
+            query += ` AND BRANCH_ID = ? `
+            params.push(BRANCH_ID);
         }
         if (ROLE_ID) {
-            query += ` AND ROLE_ID = ${ROLE_ID}`
+            query += ` AND ROLE_ID = ?`
+            params.push(ROLE_ID);
         }
         if (USER_ID) {
-            query += ` AND ID = ${USER_ID}`
+            query += ` AND ID = ?`
+            params.push(USER_ID);
         }
 
-        let result = await db.executeQuery(query, supportKey);
+        let result = await db.executeQueryData(query, params, supportKey);
 
         console.log(query, result);
 
@@ -92,9 +96,8 @@ exports.getUserBranch = async (req, res) => {
     try {
         let supportKey = req.headers['supportkey'];
         let BRANCH_ID = req.body.BRANCH_ID;
-        let query = `select * from branch_master where ID = ${BRANCH_ID}`
-
-        let result = await db.executeQuery(query, supportKey);
+        let query = `select * from branch_master where ID = ?`
+        let result = await db.executeQueryData(query, [BRANCH_ID], supportKey);
 
         res.send({
             "message": "success",
@@ -118,9 +121,8 @@ exports.getUserRole = async (req, res) => {
         let supportKey = req.headers['supportkey'];
         let ROLE_ID = req.body.ROLE_ID;
 
-        let query = `select * from role_master where ID = ${ROLE_ID}`
-
-        let result = await db.executeQuery(query, supportKey);
+        let query = `select * from role_master where ID = ?`
+        let result = await db.executeQueryData(query, [ROLE_ID], supportKey);
 
         res.send({
             "message": "success",

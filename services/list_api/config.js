@@ -76,11 +76,11 @@ exports.config = {
         database_config: {
             user: 'root',
             database_type: "mysql",
-            host: "20.197.10.226",
+            host: "db.kredpool.ai",
             port: "3306",
             database_name: "list_cbs_masters_ajara",
             ispass: true,
-            password: 'Kred@Pool123'
+            password: 'ajara@bank'
         },
         api: {
             host: "http://103.42.162.39",

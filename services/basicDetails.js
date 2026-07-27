@@ -194,6 +194,10 @@ function getAllApplicantsInfo(applicant, i) {
     if (applicant.SPECIAL_CATEGORY !== undefined) data.SPECIAL_CATEGORY = applicant.SPECIAL_CATEGORY;
     if (applicant.RISK_CATEGORY !== undefined) data.RISK_CATEGORY = applicant.RISK_CATEGORY;
     if (applicant.CONSTITUTION !== undefined) data.CONSTITUTION = applicant.CONSTITUTION; // Added missing CONSTITUTION field
+    if (applicant.IS_DISABLED !== undefined) data.IS_DISABLED = applicant.IS_DISABLED ? 1 : 0;
+    if (applicant.TYPE_OF_DISABILITY !== undefined) data.TYPE_OF_DISABILITY = applicant.TYPE_OF_DISABILITY;
+    if (applicant.DISABILITY_PERCENTAGE !== undefined) data.DISABILITY_PERCENTAGE = applicant.DISABILITY_PERCENTAGE;
+    if (applicant.UDID_NO !== undefined) data.UDID_NO = applicant.UDID_NO;
 
     return data
 }
@@ -265,7 +269,11 @@ exports.get = async (req, res) => {
                                     CONSTITUTION: dbApp.CONSTITUTION,
                                     DOB: dbApp.DATE_OF_BIRTH,
                                     MOBILE: dbApp.MOBILE_NUMBER,
-                                    GENDER: dbApp.GENDER
+                                    GENDER: dbApp.GENDER,
+                                    IS_DISABLED: dbApp.IS_DISABLED,
+                                    TYPE_OF_DISABILITY: dbApp.TYPE_OF_DISABILITY,
+                                    DISABILITY_PERCENTAGE: dbApp.DISABILITY_PERCENTAGE,
+                                    UDID_NO: dbApp.UDID_NO
                                 };
                             }
                             return app;
@@ -373,7 +381,8 @@ exports.update1 = async (req, res) => {
     });
     setData = setData.slice(0, -1);
 
-    const q = `update basic_details set ${setData} where ID = ${req.body.ID}`;
+    const q = `update basic_details set ${setData} where ID = ?`;
+    recData.push(req.body.ID);
 
     try {
         connection = await db.openConnection();

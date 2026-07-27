@@ -28,7 +28,7 @@ function reqData(req) {
         PERMANENT_PINCODE: req.body.PERMANENT_PINCODE,
         HOUSE_PHONE: req.body.HOUSE_PHONE,
         OFFICE_PHONE: req.body.OFFICE_PHONE,
-        EMAIL_ID: string = req.body.EMAIL_ID,
+        EMAIL_ID: req.body.EMAIL_ID,
         MOBILE_NUMBER: req.body.MOBILE_NUMBER,
         WORK: req.body.WORK,
         ESTABLISHMENT: req.body.ESTABLISHMENT,
@@ -38,7 +38,7 @@ function reqData(req) {
         FAMILY_COUNT: req.body.FAMILY_COUNT,
         EDUCATION: req.body.EDUCATION,
         IS_INSURED: req.body.IS_INSURED ? 1 : 0,
-        INSURANCE_YEAR: req.body.INSURANCE_COMPANY,
+        INSURANCE_YEAR: req.body.INSURANCE_YEAR,
         POLICY_TYPE: req.body.POLICY_TYPE,
         INSURANCE_COMPANY: req.body.INSURANCE_COMPANY,
         AADHAAR_NUMBER: req.body.AADHAAR_NUMBER,
@@ -104,7 +104,12 @@ function reqData(req) {
         OFFICE_LANDMARK: req.body.OFFICE_LANDMARK,
         OFFICE_STATE: req.body.OFFICE_STATE,
         OFFICE_PINCODE: req.body.OFFICE_PINCODE,
-        OFFICE_AREA: req.body.OFFICE_AREA
+        OFFICE_AREA: req.body.OFFICE_AREA,
+
+        IS_DISABLED: req.body.IS_DISABLED ? 1 : 0,
+        TYPE_OF_DISABILITY: req.body.TYPE_OF_DISABILITY,
+        DISABILITY_PERCENTAGE: req.body.DISABILITY_PERCENTAGE,
+        UDID_NO: req.body.UDID_NO
     }
 
     return data;
@@ -112,11 +117,14 @@ function reqData(req) {
 
 exports.get = async (req, res) => {
     const supportKey = req.headers['supportkey'];
-    const q = `select * from applicants_personal_details where APPLICANT_ID = ${req.body.APPLICANT_ID}` + (req.body.APPLICANT_NO ? 'AND APPLICANT_NO = ' + req.body.APPLICANT_NO : '');
-    console.log("query", q);
+    const params = [req.body.APPLICANT_ID];
+    let q = `select * from applicants_personal_details where APPLICANT_ID = ?`;
+    if (req.body.APPLICANT_NO) {
+        q += ` AND APPLICANT_NO = ?`;
+        params.push(req.body.APPLICANT_NO);
+    }
     try {
-        const results = await db.executeQuery(q, supportKey);
-        console.log("result personal", results);
+        const results = await db.executeQueryData(q, params, supportKey);
         res.send({
             "code": 200,
             "message": "OK",

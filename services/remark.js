@@ -45,8 +45,8 @@ exports.getAllRemark = async (req, res) => {
         const supportKey = req.headers['supportkey'];
         let APPLICANT_ID = req.body.APPLICANT_ID;
 
-        let q = `select * from ${remark_table} where APPLICANT_ID = ${APPLICANT_ID}`;
-        let result = await db.executeQuery(q, supportKey);
+        let q = `select * from ${remark_table} where APPLICANT_ID = ?`;
+        let result = await db.executeQueryData(q, [APPLICANT_ID], supportKey);
 
         res.send({
             "code": 200,

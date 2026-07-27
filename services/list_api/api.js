@@ -39,6 +39,14 @@ function connect() {
     return promise;
 }
 
+async function ensureConnection() {
+    if (!connection || (connection.connection && (connection.connection._closing || connection.connection._fatal))) {
+        connection = null;
+        await connect();
+    }
+    return connection;
+}
+
 
 let proxy = {
     host: '127.0.0.1',
@@ -48,9 +56,7 @@ let proxy = {
 
 async function getJWTToken() {
 
-    if (!connection || connection.connection._closing) {
-        await connect();
-    }
+    await ensureConnection();
 
     let maxID
 
@@ -94,9 +100,7 @@ async function getJWTToken() {
 async function generateToken() {
     const table = `jwt_token`;
 
-    if (!connection) {
-        await connect();
-    }
+    await ensureConnection();
 
     setData = {
         CREATED_DATE: '22/10/2023',
@@ -159,9 +163,7 @@ function getRequest(url, config) {
 async function cacheMasters() {
 
 
-    if (!connection) {
-        await connect();
-    }
+    await ensureConnection();
 
     let masters_table = `masters_list`;
 
@@ -364,9 +366,7 @@ exports.onBoardCustomer = async (req, res) => {
     try {
         let applicant_id = req.body.APPLICANT_ID;
 
-        if (!connection) {
-            await connect();
-        }
+        await ensureConnection();
 
         let basicT = `basic_details`
         let personalT = `applicants_personal_details`
@@ -434,52 +434,64 @@ exports.onBoardCustomer = async (req, res) => {
         // guardianR["APPLICANTS_DATA"] = basicR['APPLICANTS_DATA'].find((val) => val.APPLICANT_NO == guardianR["APPLICANT_NO"]);
 
 
+        if (!basicR || !personalR || !depositR) {
+            console.error("Missing required records for applicant_id:", applicant_id, { basicR: !!basicR, personalR: !!personalR, depositR: !!depositR });
+            return res.send({
+                "code": 400,
+                "message": "Failed: Required applicant or deposit record missing."
+            });
+        }
+
         if (guardianR && basicR) {
             const applicantsData = basicR.APPLICANTS_DATA || basicR.APPLICANT_DATA || [];
             guardianR.APPLICANTS_DATA =
                 (Array.isArray(applicantsData) ? applicantsData.find(v => v.APPLICANT_NO == guardianR.APPLICANT_NO) : null) || null;
         }
 
-        // Robust logic for minor and joint account flags (Moved here on 2026-04-15)
+        // Robust logic for minor and joint account flags
         let isMinorAccount = (
-            basicR.IS_MINOR == 1 ||
-            basicR.IS_MINOR == '1' ||
-            personalR.IS_MINOR == 1 ||
-            personalR.IS_MINOR == '1' ||
-            basicR.CUSTOMER_TYPE_1 == 'MNR' ||
-            basicR.CUSTOMER_TYPE_1 == 'MINOR' ||
-            (basicR.AGE_1 !== undefined && basicR.AGE_1 !== null && basicR.AGE_1 !== '' && parseInt(basicR.AGE_1) < 18) ||
-            (personalR.AGE !== undefined && personalR.AGE !== null && personalR.AGE !== '' && parseInt(personalR.AGE) < 18) ||
-            (basicR.GUARDIAN_NAME && basicR.GUARDIAN_NAME !== '') ||
-            (basicR.RELATION_WITH_MINOR && basicR.RELATION_WITH_MINOR !== '')
+            (basicR && (
+                basicR.IS_MINOR == 1 ||
+                basicR.IS_MINOR == '1' ||
+                basicR.CUSTOMER_TYPE_1 == 'MNR' ||
+                basicR.CUSTOMER_TYPE_1 == 'MINOR' ||
+                (basicR.AGE_1 !== undefined && basicR.AGE_1 !== null && basicR.AGE_1 !== '' && parseInt(basicR.AGE_1) < 18) ||
+                (basicR.GUARDIAN_NAME && basicR.GUARDIAN_NAME !== '') ||
+                (basicR.RELATION_WITH_MINOR && basicR.RELATION_WITH_MINOR !== '')
+            )) ||
+            (personalR && (
+                personalR.IS_MINOR == 1 ||
+                personalR.IS_MINOR == '1' ||
+                (personalR.AGE !== undefined && personalR.AGE !== null && personalR.AGE !== '' && parseInt(personalR.AGE) < 18)
+            ))
         );
 
-        let branchCode = await getBranchFromCBS(basicR.CREATED_BRANCH_ID); // Resolved once on 2026-04-16
+        let branchCode = await getBranchFromCBS(basicR.CREATED_BRANCH_ID);
 
         let account_opening_data = {
             "custobj": {
                 "reg_mobileno": (personalR.MOBILE_NUMBER || ""),
-                "reg_emailid": personalR.EMAIL_ID,
+                "reg_emailid": personalR.EMAIL_ID || "",
                 "introbranch": await getBranchFromCBS(basicR.CREATED_BRANCH_ID),
                 "typeofcustomer": 1,
-                "annualincome": financeR.INCOME.toString(),
-                "smssubscription": serviceR.SMS_ALERT ? "Y" : "N",
-                "middlename": personalR.MIDDLE_NAME,
-                "firstname": personalR.FIRST_NAME,
-                "lastname": personalR.LAST_NAME,
+                "annualincome": (financeR && financeR.INCOME !== undefined && financeR.INCOME !== null) ? financeR.INCOME.toString() : "0",
+                "smssubscription": (serviceR && serviceR.SMS_ALERT) ? "Y" : "N",
+                "middlename": personalR.MIDDLE_NAME || "",
+                "firstname": personalR.FIRST_NAME || "",
+                "lastname": personalR.LAST_NAME || "",
                 "createdfor": "A",
-                "minor": isMinorAccount ? "Y" : "N", // Updated to use robust isMinorAccount variable
+                "minor": isMinorAccount ? "Y" : "N",
                 "birthdate": convertDate(personalR.DATE_OF_BIRTH),
                 "gender": personalR.GENDER,
-                "occupationid": Number(personalR.PROFESSION),
-                "title": basicR.CUSTOMER_TYPE_1,
-                "idtproofid": Number(personalR.ID_PROOF),
-                "idtproofidno": personalR.ID_PROOF_NUMBER,
-                "proofdetailsid": Number(personalR.PERMANENT_ADDRESS_PROOF),
-                "addproofidno": personalR.PERMANENT_ADDRESS_PROOF_NUMBER,
-                "riskcat": Number(personalR.RISK_CATEGORY),
-                "panno": personalR.PAN_NO, //"GTFDT8976M",
-                "fatherspouse": personalR.FATHER_OR_SPOUSE,
+                "occupationid": Number(personalR.PROFESSION || 0),
+                "title": basicR.CUSTOMER_TYPE_1 || "",
+                "idtproofid": Number(personalR.ID_PROOF || 0),
+                "idtproofidno": personalR.ID_PROOF_NUMBER || "",
+                "proofdetailsid": Number(personalR.PERMANENT_ADDRESS_PROOF || 0),
+                "addproofidno": personalR.PERMANENT_ADDRESS_PROOF_NUMBER || "",
+                "riskcat": Number(personalR.RISK_CATEGORY || 0),
+                "panno": personalR.PAN_NO || "",
+                "fatherspouse": personalR.FATHER_OR_SPOUSE || "F",
                 "bankcode": 1,
                 "brncode": await getBranchFromCBS(basicR.CREATED_BRANCH_ID),
                 "entrystatus": "F",
@@ -487,54 +499,34 @@ exports.onBoardCustomer = async (req, res) => {
                 "verifiedby": await getUserNameByID(basicR.CHACKER_USER_ID),
                 "authuser": await getUserNameByID(basicR.VERIFIER_USER_ID),
 
+                "religion": Number(personalR.RELIGION || 0),
+                "caste": Number(personalR.CASTE || 0),
 
-                //if minor is y guardian id should be provided.
+                "fatherlnm": personalR.F_OR_H_LAST_NAME || "",
+                "fatherfnm": personalR.F_OR_H_FIRST_NAME || "",
+                "fathermnm": personalR.F_OR_H_MIDDLE_NAME || "",
 
-                //meritial status can be provided.(value will be provided)
+                "motherlname": personalR.MOTHERS_LAST_NAME || "",
+                "motherfname": personalR.MOTHERS_NAME || "",
+                "mothermname": personalR.MOTHERS_MIDDLE_NAME || "",
 
-                //special cat should be added.
+                "fathertitle": personalR.FATHER_TITLE || "",
 
-                //relgion and caste can be provided. (masters)
-
-                //services (sms subscription) field can be provided. (y/n)
-
-                //email id can be provided.
-
-                //mother name title.
-
-                //father name title.
-                "religion": Number(personalR.RELIGION),
-                "caste": Number(personalR.CASTE),
-
-                "fatherlnm": personalR.F_OR_H_LAST_NAME,
-                "fatherfnm": personalR.F_OR_H_FIRST_NAME,
-                "fathermnm": personalR.F_OR_H_MIDDLE_NAME,
-
-                "motherlname": personalR.MOTHERS_LAST_NAME,
-                "motherfname": personalR.MOTHERS_NAME,
-                "mothermname": personalR.MOTHERS_MIDDLE_NAME,
-                // "subconstitution": Number(personalR.CONSTITUTION)
-                // "custuin": personalR.AADHAAR_NUMBER,
-
-                "fathertitle": personalR.FATHER_TITLE,
-
-                "mothertitle": personalR.MOTHER_TITLE,
-                "issuiddocplace": basicR.DOCUMENTS_ISSUE_PLACE,
-                "iddocissuauth": basicR.DOCUMENTS_AUTHORITY,
-                "maritalstatus": personalR.MARITAL_STATUS, //married = 'M', single = 'U',Divorced:'D'
-                "caste_code": Number(personalR.CASTE),
-                // Fix: Added defensive checks for guardianR and APPLICANTS_DATA to prevent crash
-                "guardianid": (isMinorAccount && guardianR && guardianR["APPLICANTS_DATA"] && guardianR["APPLICANTS_DATA"].IS_OLD_CUSTOMER) ? guardianR["APPLICANTS_DATA"].CUSTOMER_ID : null, // Updated to use robust isMinorAccount variable
-                "specialcat": Number(personalR.SPECIAL_CATEGORY)
+                "mothertitle": personalR.MOTHER_TITLE || "",
+                "issuiddocplace": basicR.DOCUMENTS_ISSUE_PLACE || "",
+                "iddocissuauth": basicR.DOCUMENTS_AUTHORITY || "",
+                "maritalstatus": personalR.MARITAL_STATUS || "M",
+                "caste_code": Number(personalR.CASTE || 0),
+                "guardianid": (isMinorAccount && guardianR && guardianR["APPLICANTS_DATA"] && guardianR["APPLICANTS_DATA"].IS_OLD_CUSTOMER) ? guardianR["APPLICANTS_DATA"].CUSTOMER_ID : null,
+                "specialcat": Number(personalR.SPECIAL_CATEGORY || 0)
             },
-            // Fix: Added null checks for guardianR and APPLICANTS_DATA here as well
-            "custgurobj": (!isMinorAccount || !guardianR || !guardianR["APPLICANTS_DATA"] || guardianR["APPLICANTS_DATA"].IS_OLD_CUSTOMER == true) ? null : { // Updated to use robust isMinorAccount variable
+            "custgurobj": (!isMinorAccount || !guardianR || !guardianR["APPLICANTS_DATA"] || guardianR["APPLICANTS_DATA"].IS_OLD_CUSTOMER == true) ? null : {
                 "reg_mobileno": (guardianR ? guardianR.MOBILE_NUMBER || "" : ""),
-                "reg_emailid": guardianR.EMAIL_ID,
+                "reg_emailid": guardianR.EMAIL_ID || "",
                 "introbranch": await getBranchFromCBS(basicR.CREATED_BRANCH_ID),
                 "typeofcustomer": 1,
-                "annualincome": guardianFinanceR.INCOME.toString(),
-                "smssubscription": serviceR.SMS_ALERT ? "Y" : "N",
+                "annualincome": (guardianFinanceR && guardianFinanceR.INCOME !== undefined && guardianFinanceR.INCOME !== null) ? guardianFinanceR.INCOME.toString() : "0",
+                "smssubscription": (serviceR && serviceR.SMS_ALERT) ? "Y" : "N",
                 "middlename": guardianR.MIDDLE_NAME,
                 "firstname": guardianR.FIRST_NAME,
                 "lastname": guardianR.LAST_NAME,
@@ -559,22 +551,6 @@ exports.onBoardCustomer = async (req, res) => {
                 "verifiedby": await getUserNameByID(basicR.CHACKER_USER_ID),
                 "authuser": await getUserNameByID(basicR.VERIFIER_USER_ID),
 
-
-                //if minor is y guardian id should be provided.
-
-                //meritial status can be provided.(value will be provided)
-
-                //special cat should be added.
-
-                //relgion and caste can be provided. (masters)
-
-                //services (sms subscription) field can be provided. (y/n)
-
-                //email id can be provided.
-
-                //mother name title.
-
-                //father name title.
                 "religion": Number(guardianR.RELIGION),
                 "caste": Number(guardianR.CASTE),
 
@@ -585,8 +561,6 @@ exports.onBoardCustomer = async (req, res) => {
                 "motherlname": guardianR.MOTHERS_LAST_NAME,
                 "motherfname": guardianR.MOTHERS_NAME,
                 "mothermname": guardianR.MOTHERS_MIDDLE_NAME,
-                // "subconstitution": Number(guardianR.CONSTITUTION)
-                // "custuin": guardianR.AADHAAR_NUMBER,
 
                 "fathertitle": guardianR.FATHER_TITLE,
                 "mothertitle": guardianR.MOTHER_TITLE,
@@ -656,7 +630,7 @@ exports.onBoardCustomer = async (req, res) => {
                 "authuser": await getUserNameByID(basicR.VERIFIER_USER_ID),
                 "addressline1": `${personalR.OFFICE_ADDRESS} ${personalR.OFFICE_LANDMARK}`
             },
-            "addobjgur_P": (!isMinorAccount || guardianR["APPLICANTS_DATA"].IS_OLD_CUSTOMER == true) ? null : { // Updated to use robust isMinorAccount variable
+            "addobjgur_P": (!isMinorAccount || !guardianR || !guardianR["APPLICANTS_DATA"] || guardianR["APPLICANTS_DATA"].IS_OLD_CUSTOMER == true) ? null : { // Updated to use robust isMinorAccount variable
                 "addresstype": "P",
                 "emailid": guardianR.EMAIL_ID,
                 "countryid": 1, //constant
@@ -677,7 +651,7 @@ exports.onBoardCustomer = async (req, res) => {
                 "authuser": await getUserNameByID(basicR.VERIFIER_USER_ID),
                 "addressline1": `${guardianR.PERMANENT_ADDRESS} ${guardianR.PERMANENT_LANDMARK}`
             },
-            "addobjgur_C": !personalR.IS_MINOR || guardianR["APPLICANTS_DATA"].IS_OLD_CUSTOMER == true ? null : {
+            "addobjgur_C": (!isMinorAccount || !guardianR || !guardianR["APPLICANTS_DATA"] || guardianR["APPLICANTS_DATA"].IS_OLD_CUSTOMER == true) ? null : {
                 "addresstype": "C",
                 "countryid": 1,
                 "stateid": await getStateCode(guardianR.CURRENT_STATE),
@@ -696,7 +670,7 @@ exports.onBoardCustomer = async (req, res) => {
                 "authuser": await getUserNameByID(basicR.VERIFIER_USER_ID),
                 "addressline1": `${guardianR.CURRENT_ADDRESS} ${guardianR.CURRENT_LANDMARK}`
             },
-            "addobjgur_O": !personalR.IS_MINOR || guardianR["APPLICANTS_DATA"].IS_OLD_CUSTOMER == true ? null : {
+            "addobjgur_O": (!isMinorAccount || !guardianR || !guardianR["APPLICANTS_DATA"] || guardianR["APPLICANTS_DATA"].IS_OLD_CUSTOMER == true) ? null : {
                 "addresstype": "O",
                 "countryid": 1,
                 "stateid": await getStateCode(guardianR.OFFICE_STATE),
@@ -730,14 +704,14 @@ exports.onBoardCustomer = async (req, res) => {
                 "bankcode": 1,
                 "brncode": await getBranchFromCBS(basicR.CREATED_BRANCH_ID)
             },
-            "kyccomgurobj": (!isMinorAccount || guardianR["APPLICANTS_DATA"].IS_OLD_CUSTOMER == true) ? null : { // Updated to use robust isMinorAccount variable
+            "kyccomgurobj": (!isMinorAccount || !guardianR || !guardianR["APPLICANTS_DATA"] || guardianR["APPLICANTS_DATA"].IS_OLD_CUSTOMER == true) ? null : { // Updated to use robust 
                 "kcc_status": "F",
                 "entryuser": await getUserNameByID(basicR.MAKER_USER_ID),
                 "verifiedby": await getUserNameByID(basicR.CHACKER_USER_ID),
                 "bankcode": 1,
                 "brncode": await getBranchFromCBS(basicR.CREATED_BRANCH_ID)
             },
-            "kyccompdtlrgurobj": (!isMinorAccount || guardianR["APPLICANTS_DATA"].IS_OLD_CUSTOMER == true) ? null : { // Updated to use robust isMinorAccount variable
+            "kyccompdtlrgurobj": (!isMinorAccount || !guardianR || !guardianR["APPLICANTS_DATA"] || guardianR["APPLICANTS_DATA"].IS_OLD_CUSTOMER == true) ? null : { // Updated to use robust 
                 "kcd_addproff": Number(guardianR.PERMANENT_ADDRESS_PROOF),
                 "kcd_addidno": guardianR.PERMANENT_ADDRESS_PROOF_NUMBER,
                 "kcd_idproof": Number(guardianR.ID_PROOF),
@@ -750,19 +724,6 @@ exports.onBoardCustomer = async (req, res) => {
             ...await getJoin(basicR, serviceR, depositR),
 
             "acmst_obj": {
-                // "interestrate": 5,
-
-                //actype 
-
-                //spacial catagory
-                //minimum blance catagory
-
-                //statement y/n
-                //passbook y/n
-
-                //nominee details
-
-                //checkbook y/n
                 "checkbookfacility": serviceR.CHEQUE_BOOK ? "Y" : "N",
                 "schemecode": Number(depositR.SCHEME_CODE),
                 "minbalancecat": Number(depositR.MINIMUM_BALANCE_CATEGORY),
@@ -792,7 +753,7 @@ exports.onBoardCustomer = async (req, res) => {
                 "acctobeopn_atbrncd": await getBranchFromCBS(basicR.CREATED_BRANCH_ID),
                 "accopened_atbrn": await getBranchFromCBS(basicR.CREATED_BRANCH_ID),
 
-                "accopendt": '15-10-2025 00:00:00', // generateNewDate(),
+                "accopendt": generateNewDate(),
 
                 "opnormdf": "A"
             },
@@ -839,14 +800,36 @@ exports.onBoardCustomer = async (req, res) => {
                 "brncode": branchCode,
                 "bankcode": 1
             })) : null,
+            "impairmentplobj": (personalR && (personalR.IS_DISABLED == 1 || personalR.IS_DISABLED == '1' || personalR.IS_DISABLED === true)) ? {
+                "imp_difstatus": 1,
+                "imp_typofimp": personalR.TYPE_OF_DISABILITY || null,
+                "imp_percentg": personalR.DISABILITY_PERCENTAGE ? Number(personalR.DISABILITY_PERCENTAGE) : null,
+                "imp_udidnumbr": personalR.UDID_NO || null,
+                "imp_entuser": await getUserNameByID(basicR.MAKER_USER_ID),
+                "imp_entrydt": generateNewDate(),
+                "imp_status": "A",
+                "imp_authuser": await getUserNameByID(basicR.VERIFIER_USER_ID),
+                "imp_authydt": generateNewDate()
+            } : null,
+            "impairmentplobj_gur": (!isMinorAccount || (guardianR && guardianR["APPLICANTS_DATA"] && guardianR["APPLICANTS_DATA"].IS_OLD_CUSTOMER == true) || !(guardianR && (guardianR.IS_DISABLED == 1 || guardianR.IS_DISABLED == '1' || guardianR.IS_DISABLED === true))) ? null : {
+                "imp_difstatus": 1,
+                "imp_typofimp": guardianR.TYPE_OF_DISABILITY || null,
+                "imp_percentg": guardianR.DISABILITY_PERCENTAGE ? Number(guardianR.DISABILITY_PERCENTAGE) : null,
+                "imp_udidnumbr": guardianR.UDID_NO || null,
+                "imp_entuser": await getUserNameByID(basicR.MAKER_USER_ID),
+                "imp_entrydt": generateNewDate(),
+                "imp_status": "A",
+                "imp_authuser": await getUserNameByID(basicR.VERIFIER_USER_ID),
+                "imp_authydt": generateNewDate()
+            },
             "m_kcd_iddocimage": await getDocument('Applicant ID Proof', documentR),
             "m_kcd_adddocimage": await getDocument('Applicant Address Proof', documentR),
             "m_kcd_photo": await getDocument('Applicant Photo', documentR),
             "m_kcd_sign": await getDocument('Signature', documentR),
-            "m_kcd_photo_gur": (!isMinorAccount || guardianR["APPLICANTS_DATA"].IS_OLD_CUSTOMER == true) ? null : await getDocument('Applicant Photo', guardianDocumentR), // Updated to use robust isMinorAccount variable
-            "m_kcd_iddocimage_gur": (!isMinorAccount || guardianR["APPLICANTS_DATA"].IS_OLD_CUSTOMER == true) ? null : await getDocument('Applicant ID Proof', guardianDocumentR), // Updated to use robust isMinorAccount variable
-            "m_kcd_adddocimage_gur": (!isMinorAccount || guardianR["APPLICANTS_DATA"].IS_OLD_CUSTOMER == true) ? null : await getDocument('Applicant Address Proof', guardianDocumentR), // Updated to use robust isMinorAccount variable
-            "m_kcd_sign_gur": (!isMinorAccount || guardianR["APPLICANTS_DATA"].IS_OLD_CUSTOMER == true) ? null : await getDocument('Signature', guardianDocumentR) // Updated to use robust isMinorAccount variable
+            "m_kcd_photo_gur": (!isMinorAccount || !guardianR || !guardianR["APPLICANTS_DATA"] || guardianR["APPLICANTS_DATA"].IS_OLD_CUSTOMER == true) ? null : await getDocument('Applicant Photo', guardianDocumentR), // Updated to use robust isMinorAccount variable
+            "m_kcd_iddocimage_gur": (!isMinorAccount || !guardianR || !guardianR["APPLICANTS_DATA"] || guardianR["APPLICANTS_DATA"].IS_OLD_CUSTOMER == true) ? null : await getDocument('Applicant ID Proof', guardianDocumentR), // Updated to use robust isMinorAccount variable
+            "m_kcd_adddocimage_gur": (!isMinorAccount || !guardianR || !guardianR["APPLICANTS_DATA"] || guardianR["APPLICANTS_DATA"].IS_OLD_CUSTOMER == true) ? null : await getDocument('Applicant Address Proof', guardianDocumentR), // Updated to use robust isMinorAccount variable
+            "m_kcd_sign_gur": (!isMinorAccount || !guardianR || !guardianR["APPLICANTS_DATA"] || guardianR["APPLICANTS_DATA"].IS_OLD_CUSTOMER == true) ? null : await getDocument('Signature', guardianDocumentR) // Updated to use robust isMinorAccount variable
         }
 
         let posturl = `${config[mode].api.host}:${config[mode].api.port}${config[mode].api.routes[3].url}`
@@ -871,6 +854,18 @@ exports.onBoardCustomer = async (req, res) => {
             } else {
                 account_opening_data.acmst_obj.jointacc = 'N';
             }
+        }
+
+        let testMode = req.body.TEST_MODE === true || req.body.TEST_MODE === 'true' || req.body.TEST_MODE === 1 || req.body.TEST_MODE === '1';
+
+        if (testMode) {
+            console.log("Test Mode active. Returning constructed account_opening_data payload without calling CBS API.");
+            return res.send({
+                "code": 200,
+                "test_mode": true,
+                "message": "Test Mode: Payload generated successfully without creating CBS account.",
+                "data": account_opening_data
+            });
         }
 
         let configuration = {
@@ -976,7 +971,8 @@ where per.APPLICANT_NO != 1 and per.APPLICANT_ID = ${basic_details.ID}
             "custadd_join_P_obj": null,
             "custadd_join_C_obj": null,
             "kyc1_join_input": null,
-            "kyc2_join_input": null
+            "kyc2_join_input": null,
+            "impairobj_join": null
         }
     }
 
@@ -996,7 +992,8 @@ where per.APPLICANT_NO != 1 and per.APPLICANT_ID = ${basic_details.ID}
         "custadd_join_P_obj": [],
         "custadd_join_C_obj": [],
         "kyc1_join_input": [],
-        "kyc2_join_input": []
+        "kyc2_join_input": [],
+        "impairobj_join": []
     }
 
     for (const customer of customers) {
@@ -1114,11 +1111,27 @@ where per.APPLICANT_NO != 1 and per.APPLICANT_ID = ${basic_details.ID}
             "jhsr": (customer.APPLICANT_NO - 1)
         }
 
+        const imp_join = (customer.IS_DISABLED == 1 || customer.IS_DISABLED == '1' || customer.IS_DISABLED === true) ? {
+            "imp_difstatus": 1,
+            "imp_typofimp": customer.TYPE_OF_DISABILITY || null,
+            "imp_percentg": customer.DISABILITY_PERCENTAGE ? Number(customer.DISABILITY_PERCENTAGE) : null,
+            "imp_udidnumbr": customer.UDID_NO || null,
+            "imp_entuser": await getUserNameByID(basic_details.MAKER_USER_ID),
+            "imp_entrydt": generateNewDate(),
+            "imp_status": "A",
+            "imp_authuser": await getUserNameByID(basic_details.VERIFIER_USER_ID),
+            "imp_authydt": generateNewDate(),
+            "jhsr": (customer.APPLICANT_NO - 1)
+        } : null;
+
         obj['custobj_join'].push(cust);
         obj['custadd_join_P_obj'].push(p_add);
         obj['custadd_join_C_obj'].push(c_add);
         obj['kyc1_join_input'].push(kyc_1);
         obj['kyc2_join_input'].push(kyc_2);
+        if (imp_join) {
+            obj['impairobj_join'].push(imp_join);
+        }
     }
 
     console.log("obj : ", obj);
@@ -1154,6 +1167,7 @@ where per.APPLICANT_NO != 1 and per.APPLICANT_ID = ${basic_details.ID}
             "custadd_const_C_obj": null,
             "kyc1_const_input": null,
             "kyc2_const_input": null,
+            "impairobj_const": null
         }
     }
 
@@ -1171,7 +1185,8 @@ where per.APPLICANT_NO != 1 and per.APPLICANT_ID = ${basic_details.ID}
         "custadd_const_P_obj": [],
         "custadd_const_C_obj": [],
         "kyc1_const_input": [],
-        "kyc2_const_input": []
+        "kyc2_const_input": [],
+        "impairobj_const": []
     }
 
     for (const customer of customers) {
@@ -1180,8 +1195,8 @@ where per.APPLICANT_NO != 1 and per.APPLICANT_ID = ${basic_details.ID}
             "reg_emailid": customer.EMAIL_ID,
             "introbranch": await getBranchFromCBS(basic_details.CREATED_BRANCH_ID),
             "typeofcustomer": 1,
-            "annualincome": customer.INCOME.toString(),
-            "smssubscription": serviceDetails.SMS_ALERT ? "Y" : "N",
+            "annualincome": (customer.INCOME !== undefined && customer.INCOME !== null) ? customer.INCOME.toString() : "0",
+            "smssubscription": (serviceDetails && serviceDetails.SMS_ALERT) ? "Y" : "N",
             "middlename": customer.MIDDLE_NAME,
             "firstname": customer.FIRST_NAME,
             "lastname": customer.LAST_NAME,
@@ -1289,11 +1304,27 @@ where per.APPLICANT_NO != 1 and per.APPLICANT_ID = ${basic_details.ID}
             "jhsr": (customer.APPLICANT_NO - 1)
         }
 
+        const imp_const = (customer.IS_DISABLED == 1 || customer.IS_DISABLED == '1' || customer.IS_DISABLED === true) ? {
+            "imp_difstatus": 1,
+            "imp_typofimp": customer.TYPE_OF_DISABILITY || null,
+            "imp_percentg": customer.DISABILITY_PERCENTAGE ? Number(customer.DISABILITY_PERCENTAGE) : null,
+            "imp_udidnumbr": customer.UDID_NO || null,
+            "imp_entuser": await getUserNameByID(basic_details.MAKER_USER_ID),
+            "imp_entrydt": generateNewDate(),
+            "imp_status": "A",
+            "imp_authuser": await getUserNameByID(basic_details.VERIFIER_USER_ID),
+            "imp_authydt": generateNewDate(),
+            "jhsr": (customer.APPLICANT_NO - 1)
+        } : null;
+
         obj['custobj_const'].push(cust);
         obj['custadd_const_P_obj'].push(p_add);
         obj['custadd_const_C_obj'].push(c_add);
         obj['kyc1_const_input'].push(kyc_1);
         obj['kyc2_const_input'].push(kyc_2);
+        if (imp_const) {
+            obj['impairobj_const'].push(imp_const);
+        }
     }
 
     for (let o in obj) {
@@ -1307,37 +1338,54 @@ where per.APPLICANT_NO != 1 and per.APPLICANT_ID = ${basic_details.ID}
 
 async function getDocument(NAME, arr) {
     let filelink = ''
+    if (!arr || !Array.isArray(arr)) return '';
     for (let doc of arr) {
-        if (doc.DOCUMENT_NAME == NAME) {
+        if (doc && doc.DOCUMENT_NAME == NAME) {
             filelink = doc.FILE_LINK;
             break;
         }
     }
 
     if (filelink) {
-        let pathD = filelink;
+        try {
+            let pathD = filelink;
 
-        let res = await fs.readFile(pathD, { encoding: 'utf-8' });
+            let res = await fs.readFile(pathD, { encoding: 'utf-8' });
 
-        res = res.replace("data:image/jpeg;base64,", '');
-        return res;
+            res = res.replace("data:image/jpeg;base64,", '');
+            return res;
+        } catch (e) {
+            console.error(`Error reading document file ${filelink}:`, e.message);
+            return '';
+        }
     } else return '';
 }
 
 
 function convertDate(date, srcFormate = 'dd/mm/yyyy') {
-    if (!date || typeof date !== 'string') {
-        return "";
+    if (!date) return "";
+    if (typeof date === 'string') {
+        if (date.includes('/')) {
+            let parts = date.split('/');
+            if (parts.length === 3) return `${parts[0]}-${parts[1]}-${parts[2]}`;
+        }
+        if (date.includes('-')) {
+            let parts = date.split('T')[0].split('-');
+            if (parts.length === 3) {
+                if (parts[0].length === 4) {
+                    return `${parts[2]}-${parts[1]}-${parts[0]}`;
+                }
+                return `${parts[0]}-${parts[1]}-${parts[2]}`;
+            }
+        }
     }
-    let dateArr = date.split("/");
-
-    // let converted_date = new Date(dateArr[2], dateArr[1], dateArr[0], 0, 0, 0)
-
-    let converted_date = `${dateArr[0]}-${dateArr[1]}-${dateArr[2]}`
-
-    console.log("Date :", converted_date);
-
-    return converted_date;
+    try {
+        let d = new Date(date);
+        if (!isNaN(d.getTime())) {
+            return `${addZ(d.getDate())}-${addZ(d.getMonth() + 1)}-${d.getFullYear()}`;
+        }
+    } catch (e) {}
+    return String(date);
 }
 
 
@@ -1363,15 +1411,13 @@ function generateNewDate() {
 // console.log("current date = ",generateNewDate());
 
 async function getStateCode(id) {
+    if (!id) return 1;
     try {
-        if (!connection) {
-            connect()
-        }
+        await ensureConnection();
 
+        let stateQ = `select STATEID from state_master where ID=?`;
 
-        let stateQ = `select STATEID from state_master where ID=${id}`;
-
-        let [stateR, stateF] = await connection.execute(stateQ, '');
+        let [stateR, stateF] = await connection.execute(stateQ, [id]);
 
         console.log("stateR", stateR);
 
@@ -1388,14 +1434,13 @@ async function getStateCode(id) {
 }
 
 async function getDistCode(id) {
+    if (!id) return 1;
     try {
-        if (!connection) {
-            connect()
-        }
+        await ensureConnection();
 
-        let distQ = `select DISTRICTID from district_master where ID=${id}`;
+        let distQ = `select DISTRICTID from district_master where ID=?`;
 
-        let [distR, distF] = await connection.execute(distQ, '');
+        let [distR, distF] = await connection.execute(distQ, [id]);
 
         console.log("distR", distR);
 
@@ -1410,14 +1455,13 @@ async function getDistCode(id) {
 }
 
 async function getTalukaCode(id) {
+    if (!id) return 1;
     try {
-        if (!connection) {
-            connect()
-        }
+        await ensureConnection();
 
-        let talukaQ = `select TALUKAID from taluka_master where ID=${id}`;
+        let talukaQ = `select TALUKAID from taluka_master where ID=?`;
 
-        let [talukaR, talukaF] = await connection.execute(talukaQ, '');
+        let [talukaR, talukaF] = await connection.execute(talukaQ, [id]);
 
         console.log("talukaR", talukaR);
 
@@ -1432,14 +1476,13 @@ async function getTalukaCode(id) {
 }
 
 async function getCityCode(id) {
+    if (!id) return 1;
     try {
-        if (!connection) {
-            connect()
-        }
+        await ensureConnection();
 
-        let cityQ = `select CITYID from city_master where ID=${id}`;
+        let cityQ = `select CITYID from city_master where ID=?`;
 
-        let [cityR, cityF] = await connection.execute(cityQ, '');
+        let [cityR, cityF] = await connection.execute(cityQ, [id]);
 
         console.log("cityR", cityR);
 
@@ -1454,14 +1497,13 @@ async function getCityCode(id) {
 }
 
 async function getAreaCode(id) {
+    if (!id) return 1;
     try {
-        if (!connection) {
-            connect()
-        }
+        await ensureConnection();
 
-        let areaQ = `select AREAID from address_master where ID=${id}`;
+        let areaQ = `select AREAID from address_master where ID=?`;
 
-        let [areaR, areaF] = await connection.execute(areaQ, '');
+        let [areaR, areaF] = await connection.execute(areaQ, [id]);
 
         console.log("areaR", areaR);
 
@@ -1476,9 +1518,10 @@ async function getAreaCode(id) {
 }
 
 async function getBranchFromCBS(branchID) {
-    let branchQ = `select BRANCH_CODE from branch_master where ID  = ${branchID}`;
+    if (!branchID) return 1;
+    let branchQ = `select BRANCH_CODE from branch_master where ID = ?`;
 
-    let [branchR, branchF] = await db.executeQuery(branchQ, '');
+    let [branchR, branchF] = await db.executeQueryData(branchQ, [branchID], '');
 
     console.log("branchR", branchR);
 
@@ -1491,9 +1534,10 @@ async function getBranchFromCBS(branchID) {
 }
 
 async function getUserNameByID(id) {
-    let getUserQ = `select CBS_USER_NAME from user_master where ID = ${id}`;
+    if (!id) return '-';
+    let getUserQ = `select CBS_USER_NAME from user_master where ID = ?`;
 
-    let [userR, userF] = await db.executeQuery(getUserQ, '');
+    let [userR, userF] = await db.executeQueryData(getUserQ, [id], '');
 
     console.log("userR", userR);
 
@@ -1508,17 +1552,15 @@ exports.getMasters = async (req, res) => {
 
     try {
 
-        if (!connection) {
-            await connect();
-        }
+        await ensureConnection();
 
 
         let masterCode = req.body.code;
-        let filter = req.body.filter;
+        let filter = req.body.filter || '';
 
-        let masterQ = `select NAME from masters_list where ID = ${masterCode}`
+        let masterQ = `select NAME from masters_list where ID = ?`
 
-        let [masterR, masterF] = await connection.execute(masterQ, '');
+        let [masterR, masterF] = await connection.execute(masterQ, [masterCode]);
 
         console.log("userR", masterR);
 
@@ -1618,9 +1660,9 @@ exports.getCustomer = async (req, res) => {
         console.log("customerData", customerData);
 
         if (
-            !customerData || 
-            customerData.message === 'Member Details Not Found' || 
-            customerData.Message === 'Member Details Not Found' || 
+            !customerData ||
+            customerData.message === 'Member Details Not Found' ||
+            customerData.Message === 'Member Details Not Found' ||
             customerData['Message'] === 'Member Details Not Found' ||
             !customerData['Customer Details']
         ) {

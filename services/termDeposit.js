@@ -52,7 +52,6 @@ function reqData(req) {
         TDS: req.body.TDS,
         MATURITY_DATE: req.body.MATURITY_DATE,
         MATURITY_AMOUNT: req.body.MATURITY_AMOUNT,
-        ACCOUNT_TYPE: req.body.ACCOUNT_TYPE,
         ACCOUNT_OPERATION: req.body.ACCOUNT_OPERATION,
         MOBILE_NUMBER_2: req.body.MOBILE_NUMBER_2,
 

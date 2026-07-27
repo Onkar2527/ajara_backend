@@ -94,7 +94,7 @@ exports.getAadhaarPanReport = async (req, res) => {
       ORDER BY bd.ACCOUNT_NUMBER
     `;
 
-        const result = await db.executeQueryAsyncAwait(q, [], supportKey);
+        const result = await db.executeQueryData(q, [], supportKey);
 
         res.send({
             code: 200,
@@ -207,7 +207,7 @@ exports.getBranchWiseReport = async (req, res) => {
         FROM basic_details bd
     `;
 
-        const result = await db.executeQueryAsyncAwait(q, [], supportKey);
+        const result = await db.executeQueryData(q, [], supportKey);
 
         res.send({
             code: 200,
@@ -252,7 +252,7 @@ exports.getAadhaarPanVerificationReport = async (req, res) => {
       ORDER BY bd.ACCOUNT_NUMBER
     `;
 
-        const result = await db.executeQueryAsyncAwait(q, [], supportKey);
+        const result = await db.executeQueryData(q, [], supportKey);
 
         res.send({
             code: 200,
