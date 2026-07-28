@@ -10,8 +10,9 @@ var config = {
     multipleStatements: true,
     charset: 'UTF8_GENERAL_CI',
     port:process.env.MYSQL_PORT,
-    dateStrings: true
-
+    dateStrings: true,
+    enableKeepAlive: true,
+    keepAliveInitialDelay: 10000
 }
 
 
