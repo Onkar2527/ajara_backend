@@ -825,11 +825,11 @@ exports.onBoardCustomer = async (req, res) => {
             "m_kcd_iddocimage": await getDocument('Applicant ID Proof', documentR),
             "m_kcd_adddocimage": await getDocument('Applicant Address Proof', documentR),
             "m_kcd_photo": await getDocument('Applicant Photo', documentR),
-            "m_kcd_sign": await getDocument('Signature', documentR),
+            "m_kcd_sign": await getDocument('Sign', documentR),
             "m_kcd_photo_gur": (!isMinorAccount || !guardianR || !guardianR["APPLICANTS_DATA"] || guardianR["APPLICANTS_DATA"].IS_OLD_CUSTOMER == true) ? null : await getDocument('Applicant Photo', guardianDocumentR), // Updated to use robust isMinorAccount variable
             "m_kcd_iddocimage_gur": (!isMinorAccount || !guardianR || !guardianR["APPLICANTS_DATA"] || guardianR["APPLICANTS_DATA"].IS_OLD_CUSTOMER == true) ? null : await getDocument('Applicant ID Proof', guardianDocumentR), // Updated to use robust isMinorAccount variable
             "m_kcd_adddocimage_gur": (!isMinorAccount || !guardianR || !guardianR["APPLICANTS_DATA"] || guardianR["APPLICANTS_DATA"].IS_OLD_CUSTOMER == true) ? null : await getDocument('Applicant Address Proof', guardianDocumentR), // Updated to use robust isMinorAccount variable
-            "m_kcd_sign_gur": (!isMinorAccount || !guardianR || !guardianR["APPLICANTS_DATA"] || guardianR["APPLICANTS_DATA"].IS_OLD_CUSTOMER == true) ? null : await getDocument('Signature', guardianDocumentR) // Updated to use robust isMinorAccount variable
+            "m_kcd_sign_gur": (!isMinorAccount || !guardianR || !guardianR["APPLICANTS_DATA"] || guardianR["APPLICANTS_DATA"].IS_OLD_CUSTOMER == true) ? null : await getDocument('Sign', guardianDocumentR) // Updated to use robust isMinorAccount variable
         }
 
         let posturl = `${config[mode].api.host}:${config[mode].api.port}${config[mode].api.routes[3].url}`
@@ -1384,7 +1384,7 @@ function convertDate(date, srcFormate = 'dd/mm/yyyy') {
         if (!isNaN(d.getTime())) {
             return `${addZ(d.getDate())}-${addZ(d.getMonth() + 1)}-${d.getFullYear()}`;
         }
-    } catch (e) {}
+    } catch (e) { }
     return String(date);
 }
 

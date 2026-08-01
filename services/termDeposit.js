@@ -59,7 +59,8 @@ function reqData(req) {
         CHEQUE_BANK_NAME: req.body.CHEQUE_BANK_NAME,
 
         PAYMENT_INSTRUCTION: req.body.PAYMENT_INSTRUCTION,
-        SCHEME_CODE:req.body.SCHEME_CODE
+        MINIMUM_BALANCE_CATEGORY: req.body.MINIMUM_BALANCE_CATEGORY,
+        SCHEME_CODE: req.body.SCHEME_CODE
 
     }
 
