@@ -69,6 +69,7 @@ function reqData(req) {
         IS_EMAIL_VERIFIED: req.body.IS_EMAIL_VERIFIED ? 1 : 0,
 
         RISK_CATEGORY: req.body.RISK_CATEGORY,
+        SPECIAL_CATEGORY: req.body.SPECIAL_CATEGORY,
         IS_MINOR: req.body.IS_MINOR ? 1 : 0,
         GUARDIAN_NAME: req.body.GUARDIAN_NAME,
         GUARDIAN_PAN: req.body.GUARDIAN_PAN,
