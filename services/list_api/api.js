@@ -998,7 +998,7 @@ where per.APPLICANT_NO != 1 and per.APPLICANT_ID = ${basic_details.ID}
 
     for (const customer of customers) {
         const cust = {
-            "reg_mobileno": (customer.MOBILE_NUMBER || ""),
+            "reg_mobileno": (customer.MOBILE_NUMBER || "").toString(),
             "reg_emailid": customer.EMAIL_ID,
             "introbranch": await getBranchFromCBS(basic_details.CREATED_BRANCH_ID),
             "typeofcustomer": 1,
@@ -1057,8 +1057,8 @@ where per.APPLICANT_NO != 1 and per.APPLICANT_ID = ${basic_details.ID}
             "talukaid": await getTalukaCode(customer.PERMANENT_TALUKA),
             "cityid": await getCityCode(customer.PERMANENT_CITY),
             "areaid": await getAreaCode(customer.PERMANENT_AREA),
-            "mobile": (customer.MOBILE_NUMBER || ""),
-            "pincode": customer.PERMANENT_PINCODE,
+            "mobile": (customer.MOBILE_NUMBER || "").toString(),
+            "pincode": (customer.PERMANENT_PINCODE || "").toString(),
             "regionid": 1,
             // "sequenceno": 1,
             "bankcode": 1,
@@ -1080,8 +1080,8 @@ where per.APPLICANT_NO != 1 and per.APPLICANT_ID = ${basic_details.ID}
             "cityid": await getCityCode(customer.CURRENT_CITY),
             "areaid": await getAreaCode(customer.CURRENT_AREA),
             "regionid": 1,
-            "mobile": (customer.MOBILE_NUMBER || ""),
-            "pincode": customer.CURRENT_PINCODE,
+            "mobile": (customer.MOBILE_NUMBER || "").toString(),
+            "pincode": (customer.CURRENT_PINCODE || "").toString(),
             // "sequenceno": 1,
             "bankcode": 1,
             "brncode": await getBranchFromCBS(basic_details.CREATED_BRANCH_ID),
