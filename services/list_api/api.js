@@ -470,7 +470,7 @@ exports.onBoardCustomer = async (req, res) => {
 
         let account_opening_data = {
             "custobj": {
-                "reg_mobileno": isMinorAccount ? (personalR.MOBILE_NUMBER || "") : Number(personalR.MOBILE_NUMBER || 0),
+                "reg_mobileno": isMinorAccount ? Number(guardianR.MOBILE_NUMBER || 0) : (guardianR ? (guardianR.MOBILE_NUMBER || "") : Number(personalR.MOBILE_NUMBER || 0)),
                 "reg_emailid": personalR.EMAIL_ID || "",
                 "introbranch": await getBranchFromCBS(basicR.CREATED_BRANCH_ID),
                 "typeofcustomer": 1,
@@ -521,7 +521,7 @@ exports.onBoardCustomer = async (req, res) => {
                 "specialcat": Number(personalR.SPECIAL_CATEGORY || 0)
             },
             "custgurobj": (!isMinorAccount || !guardianR || !guardianR["APPLICANTS_DATA"] || guardianR["APPLICANTS_DATA"].IS_OLD_CUSTOMER == true) ? null : {
-                "reg_mobileno": (guardianR ? guardianR.MOBILE_NUMBER || "" : ""),
+                "reg_mobileno": isMinorAccount ? Number(guardianR.MOBILE_NUMBER || 0) : (guardianR ? guardianR.MOBILE_NUMBER || "" : ""),
                 "reg_emailid": guardianR.EMAIL_ID || "",
                 "introbranch": await getBranchFromCBS(basicR.CREATED_BRANCH_ID),
                 "typeofcustomer": 1,
@@ -998,7 +998,7 @@ where per.APPLICANT_NO != 1 and per.APPLICANT_ID = ${basic_details.ID}
 
     for (const customer of customers) {
         const cust = {
-            "reg_mobileno": (customer.MOBILE_NUMBER || "").toString(),
+            "reg_mobileno": (customer.MOBILE_NUMBER || 0),
             "reg_emailid": customer.EMAIL_ID,
             "introbranch": await getBranchFromCBS(basic_details.CREATED_BRANCH_ID),
             "typeofcustomer": 1,
@@ -1191,7 +1191,7 @@ where per.APPLICANT_NO != 1 and per.APPLICANT_ID = ${basic_details.ID}
 
     for (const customer of customers) {
         const cust = {
-            "reg_mobileno": (customer.MOBILE_NUMBER || ""),
+            "reg_mobileno": (customer.MOBILE_NUMBER || 0),
             "reg_emailid": customer.EMAIL_ID,
             "introbranch": await getBranchFromCBS(basic_details.CREATED_BRANCH_ID),
             "typeofcustomer": 1,
