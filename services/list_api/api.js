@@ -470,7 +470,7 @@ exports.onBoardCustomer = async (req, res) => {
 
         let account_opening_data = {
             "custobj": {
-                "reg_mobileno": isMinorAccount ? Number(guardianR.MOBILE_NUMBER || 0) : (guardianR ? (guardianR.MOBILE_NUMBER || "") : Number(personalR.MOBILE_NUMBER || 0)),
+                "reg_mobileno": isMinorAccount ? (guardianR.MOBILE_NUMBER || "") : (personalR.MOBILE_NUMBER || ""),
                 "reg_emailid": personalR.EMAIL_ID || "",
                 "introbranch": await getBranchFromCBS(basicR.CREATED_BRANCH_ID),
                 "typeofcustomer": 1,
@@ -521,7 +521,7 @@ exports.onBoardCustomer = async (req, res) => {
                 "specialcat": Number(personalR.SPECIAL_CATEGORY || 0)
             },
             "custgurobj": (!isMinorAccount || !guardianR || !guardianR["APPLICANTS_DATA"] || guardianR["APPLICANTS_DATA"].IS_OLD_CUSTOMER == true) ? null : {
-                "reg_mobileno": isMinorAccount ? Number(guardianR.MOBILE_NUMBER || 0) : (guardianR ? guardianR.MOBILE_NUMBER || "" : ""),
+                "reg_mobileno": isMinorAccount ? (guardianR.MOBILE_NUMBER || "") : Number(guardianR ? guardianR.MOBILE_NUMBER || 0 : ""),
                 "reg_emailid": guardianR.EMAIL_ID || "",
                 "introbranch": await getBranchFromCBS(basicR.CREATED_BRANCH_ID),
                 "typeofcustomer": 1,
@@ -580,8 +580,8 @@ exports.onBoardCustomer = async (req, res) => {
                 "talukaid": await getTalukaCode(personalR.PERMANENT_TALUKA),
                 "cityid": await getCityCode(personalR.PERMANENT_CITY),
                 "areaid": await getAreaCode(personalR.PERMANENT_AREA),
-                "mobile": isMinorAccount ? (personalR.MOBILE_NUMBER || "") : Number(personalR.MOBILE_NUMBER || 0),
-                "pincode": isMinorAccount ? (personalR.PERMANENT_PINCODE || "") : Number(personalR.PERMANENT_PINCODE || 0),
+                "mobile": isMinorAccount ? (personalR.MOBILE_NUMBER || "") : (personalR.MOBILE_NUMBER || ""),
+                "pincode": isMinorAccount ? (personalR.PERMANENT_PINCODE || "") : (personalR.PERMANENT_PINCODE || ""),
                 "regionid": 1,
                 // "sequenceno": 1,
                 "bankcode": 1,
@@ -601,8 +601,8 @@ exports.onBoardCustomer = async (req, res) => {
                 "cityid": await getCityCode(personalR.CURRENT_CITY),
                 "areaid": await getAreaCode(personalR.CURRENT_AREA),
                 "regionid": 1,
-                "mobile": isMinorAccount ? (personalR.MOBILE_NUMBER || "") : Number(personalR.MOBILE_NUMBER || 0),
-                "pincode": isMinorAccount ? (personalR.CURRENT_PINCODE || "") : Number(personalR.CURRENT_PINCODE || 0),
+                "mobile": isMinorAccount ? (personalR.MOBILE_NUMBER || "") : (personalR.MOBILE_NUMBER || ""),
+                "pincode": isMinorAccount ? (personalR.PERMANENT_PINCODE || "") : (personalR.PERMANENT_PINCODE || ""),
                 // "sequenceno": 1,
                 "bankcode": 1,
                 "brncode": await getBranchFromCBS(basicR.CREATED_BRANCH_ID),
@@ -620,8 +620,8 @@ exports.onBoardCustomer = async (req, res) => {
                 "cityid": await getCityCode(personalR.OFFICE_CITY),
                 "areaid": await getAreaCode(personalR.OFFICE_AREA),
                 "regionid": 1,
-                "mobile": isMinorAccount ? (personalR.MOBILE_NUMBER || "") : Number(personalR.MOBILE_NUMBER || 0),
-                "pincode": isMinorAccount ? (personalR.OFFICE_PINCODE || "") : Number(personalR.OFFICE_PINCODE || 0),
+                "mobile": isMinorAccount ? (personalR.MOBILE_NUMBER || "") : (personalR.MOBILE_NUMBER || ""),
+                "pincode": isMinorAccount ? (personalR.PERMANENT_PINCODE || "") : (personalR.PERMANENT_PINCODE || ""),
                 // "sequenceno": 1,
                 "bankcode": 1,
                 "brncode": await getBranchFromCBS(basicR.CREATED_BRANCH_ID),
@@ -639,8 +639,8 @@ exports.onBoardCustomer = async (req, res) => {
                 "talukaid": await getTalukaCode(guardianR.PERMANENT_TALUKA),
                 "cityid": await getCityCode(guardianR.PERMANENT_CITY),
                 "areaid": await getAreaCode(guardianR.PERMANENT_AREA),
-                "mobile": (guardianR ? guardianR.MOBILE_NUMBER || "" : ""),
-                "pincode": guardianR.PERMANENT_PINCODE,
+                "mobile": isMinorAccount ? (guardianR ? guardianR.MOBILE_NUMBER || "" : "") : Number(guardianR ? guardianR.MOBILE_NUMBER || "" : ""),
+                "pincode": isMinorAccount ? (guardianR.PERMANENT_PINCODE) : Number(guardianR.PERMANENT_PINCODE),
                 "regionid": 1,
                 // "sequenceno": 1,
                 "bankcode": 1,
@@ -660,8 +660,8 @@ exports.onBoardCustomer = async (req, res) => {
                 "cityid": await getCityCode(guardianR.CURRENT_CITY),
                 "areaid": await getAreaCode(guardianR.CURRENT_AREA),
                 "regionid": 1,
-                "mobile": (guardianR ? guardianR.MOBILE_NUMBER || "" : ""),
-                "pincode": guardianR.CURRENT_PINCODE,
+                "mobile": isMinorAccount ? (guardianR ? guardianR.MOBILE_NUMBER || "" : "") : Number(guardianR ? guardianR.MOBILE_NUMBER || "" : ""),
+                "pincode": isMinorAccount ? (guardianR.PERMANENT_PINCODE) : Number(guardianR.PERMANENT_PINCODE),
                 // "sequenceno": 1,
                 "bankcode": 1,
                 "brncode": await getBranchFromCBS(basicR.CREATED_BRANCH_ID),
@@ -679,8 +679,8 @@ exports.onBoardCustomer = async (req, res) => {
                 "cityid": await getCityCode(guardianR.OFFICE_CITY),
                 "areaid": await getAreaCode(guardianR.OFFICE_AREA),
                 "regionid": 1,
-                "mobile": (guardianR ? guardianR.MOBILE_NUMBER || "" : ""),
-                "pincode": guardianR.OFFICE_PINCODE,
+                "mobile": isMinorAccount ? (guardianR ? guardianR.MOBILE_NUMBER || "" : "") : Number(guardianR ? guardianR.MOBILE_NUMBER || "" : ""),
+                "pincode": isMinorAccount ? (guardianR.PERMANENT_PINCODE) : Number(guardianR.PERMANENT_PINCODE),
                 // "sequenceno": 1,
                 "bankcode": 1,
                 "brncode": await getBranchFromCBS(basicR.CREATED_BRANCH_ID),
@@ -753,7 +753,7 @@ exports.onBoardCustomer = async (req, res) => {
                 "acctobeopn_atbrncd": await getBranchFromCBS(basicR.CREATED_BRANCH_ID),
                 "accopened_atbrn": await getBranchFromCBS(basicR.CREATED_BRANCH_ID),
 
-                "accopendt": generateNewDate(),
+                "accopendt": '16-03-2026',
 
                 "opnormdf": "A"
             },
@@ -825,11 +825,11 @@ exports.onBoardCustomer = async (req, res) => {
             "m_kcd_iddocimage": await getDocument('Applicant ID Proof', documentR),
             "m_kcd_adddocimage": await getDocument('Applicant Address Proof', documentR),
             "m_kcd_photo": await getDocument('Applicant Photo', documentR),
-            "m_kcd_sign": await getDocument('Sign', documentR),
+            "m_kcd_sign": await getDocument('Signature', documentR),
             "m_kcd_photo_gur": (!isMinorAccount || !guardianR || !guardianR["APPLICANTS_DATA"] || guardianR["APPLICANTS_DATA"].IS_OLD_CUSTOMER == true) ? null : await getDocument('Applicant Photo', guardianDocumentR), // Updated to use robust isMinorAccount variable
             "m_kcd_iddocimage_gur": (!isMinorAccount || !guardianR || !guardianR["APPLICANTS_DATA"] || guardianR["APPLICANTS_DATA"].IS_OLD_CUSTOMER == true) ? null : await getDocument('Applicant ID Proof', guardianDocumentR), // Updated to use robust isMinorAccount variable
             "m_kcd_adddocimage_gur": (!isMinorAccount || !guardianR || !guardianR["APPLICANTS_DATA"] || guardianR["APPLICANTS_DATA"].IS_OLD_CUSTOMER == true) ? null : await getDocument('Applicant Address Proof', guardianDocumentR), // Updated to use robust isMinorAccount variable
-            "m_kcd_sign_gur": (!isMinorAccount || !guardianR || !guardianR["APPLICANTS_DATA"] || guardianR["APPLICANTS_DATA"].IS_OLD_CUSTOMER == true) ? null : await getDocument('Sign', guardianDocumentR) // Updated to use robust isMinorAccount variable
+            "m_kcd_sign_gur": (!isMinorAccount || !guardianR || !guardianR["APPLICANTS_DATA"] || guardianR["APPLICANTS_DATA"].IS_OLD_CUSTOMER == true) ? null : await getDocument('Signature', guardianDocumentR) // Updated to use robust isMinorAccount variable
         }
 
         let posturl = `${config[mode].api.host}:${config[mode].api.port}${config[mode].api.routes[3].url}`
@@ -998,7 +998,7 @@ where per.APPLICANT_NO != 1 and per.APPLICANT_ID = ${basic_details.ID}
 
     for (const customer of customers) {
         const cust = {
-            "reg_mobileno": (customer.MOBILE_NUMBER || 0),
+            "reg_mobileno": Number(customer.MOBILE_NUMBER || 0),
             "reg_emailid": customer.EMAIL_ID,
             "introbranch": await getBranchFromCBS(basic_details.CREATED_BRANCH_ID),
             "typeofcustomer": 1,
@@ -1057,8 +1057,8 @@ where per.APPLICANT_NO != 1 and per.APPLICANT_ID = ${basic_details.ID}
             "talukaid": await getTalukaCode(customer.PERMANENT_TALUKA),
             "cityid": await getCityCode(customer.PERMANENT_CITY),
             "areaid": await getAreaCode(customer.PERMANENT_AREA),
-            "mobile": (customer.MOBILE_NUMBER || "").toString(),
-            "pincode": (customer.PERMANENT_PINCODE || "").toString(),
+            "mobile": (customer.MOBILE_NUMBER || ""),
+            "pincode": Number(customer.PERMANENT_PINCODE || ""),
             "regionid": 1,
             // "sequenceno": 1,
             "bankcode": 1,
@@ -1080,8 +1080,8 @@ where per.APPLICANT_NO != 1 and per.APPLICANT_ID = ${basic_details.ID}
             "cityid": await getCityCode(customer.CURRENT_CITY),
             "areaid": await getAreaCode(customer.CURRENT_AREA),
             "regionid": 1,
-            "mobile": (customer.MOBILE_NUMBER || "").toString(),
-            "pincode": (customer.CURRENT_PINCODE || "").toString(),
+            "mobile": (customer.MOBILE_NUMBER || ""),
+            "pincode": Number(customer.CURRENT_PINCODE || ""),
             // "sequenceno": 1,
             "bankcode": 1,
             "brncode": await getBranchFromCBS(basic_details.CREATED_BRANCH_ID),
