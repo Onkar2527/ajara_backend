@@ -880,45 +880,50 @@ exports.onBoardCustomer = async (req, res) => {
         //  "Customer Code": "1002022302, Guardian Id-1002022301",
 
 
-        let basicInsertQ = `update basic_details set ACCOUNT_NUMBER =  "${accountCreatedData.data['Account number']}",CUSTOMER_ID_1 = "${accountCreatedData.data['Customer Code']}" where ID = ${applicant_id}`;
+        const customerCodeStr = accountCreatedData.data['Customer Code'] || "";
+        // Extract all numeric customer IDs from the Customer Code response (robust against space/labels/hyphens)
+        const extractedCustomerIds = (customerCodeStr.match(/\d+/g) || []).map(id => id.trim());
 
-        if (isMinorAccount && depositR.ACCOUNT_TYPE == 'A') { // Updated to use robust isMinorAccount variable
-            const customer_ids = accountCreatedData.data['Customer Code'].split(",");
-            const primary_applicant = customer_ids[0];
-            const guardian_applicant = customer_ids[1].split("-")[1];
-            const APPLICANTS_DATA = basicR.APPLICANTS_DATA || basicR.APPLICANT_DATA || [];
-            if (Array.isArray(APPLICANTS_DATA) && APPLICANTS_DATA.length > 1) {
-                APPLICANTS_DATA[1].CUSTOMER_ID = guardian_applicant;
-            }
+        const customer_id_1 = extractedCustomerIds[0] || "";
+        const customer_id_2 = extractedCustomerIds[1] || null;
+        const customer_id_3 = extractedCustomerIds[2] || null;
+        const customer_id_4 = extractedCustomerIds[3] || null;
 
-            basicInsertQ = `update basic_details set ACCOUNT_NUMBER =  "${accountCreatedData.data['Account number']}",CUSTOMER_ID_1 = "${primary_applicant}", APPLICANTS_DATA = '${JSON.stringify(APPLICANTS_DATA)}' where ID = ${applicant_id}`
-        }
-
-        if (account_opening_data.custobj_join != null) {
-            const customer_ids = accountCreatedData.data['Customer Code'].split(",");
-            const primary_applicant = customer_ids[0];
-            const other_ids = customer_ids[1].split("-")[1].split(',');
-            const APPLICANTS_DATA = basicR['APPLICANTS_DATA'];
-
+        // Update the JSON array of applicants data
+        const APPLICANTS_DATA = basicR.APPLICANTS_DATA || basicR.APPLICANT_DATA || [];
+        if (Array.isArray(APPLICANTS_DATA)) {
             for (let i = 0; i < APPLICANTS_DATA.length; i++) {
-                APPLICANTS_DATA[i].CUSTOMER_ID = other_ids[i];
+                if (extractedCustomerIds[i]) {
+                    APPLICANTS_DATA[i].CUSTOMER_ID = extractedCustomerIds[i];
+                }
             }
-
-            basicInsertQ = `update basic_details set ACCOUNT_NUMBER =  "${accountCreatedData.data['Account number']}",CUSTOMER_ID_1 = "${primary_applicant}", APPLICANTS_DATA = '${JSON.stringify(APPLICANTS_DATA)}' where ID = ${applicant_id}`
         }
 
-        if (account_opening_data.custobj_const != null) {
-            const customer_ids = accountCreatedData.data['Customer Code'].split(",");
-            const primary_applicant = customer_ids[0];
-            const other_ids = customer_ids[1].split("-")[1].split(',');
-            const APPLICANTS_DATA = basicR['APPLICANTS_DATA'];
+        // Build dynamically updated query
+        let updateParts = [
+            `ACCOUNT_NUMBER = "${accountCreatedData.data['Account number']}"`,
+            `CUSTOMER_ID_1 = "${customer_id_1}"`
+        ];
 
-            for (let i = 0; i < APPLICANTS_DATA.length; i++) {
-                APPLICANTS_DATA[i].CUSTOMER_ID = other_ids[i];
-            }
-
-            basicInsertQ = `update basic_details set ACCOUNT_NUMBER =  "${accountCreatedData.data['Account number']}",CUSTOMER_ID_1 = "${primary_applicant}", APPLICANTS_DATA = '${JSON.stringify(APPLICANTS_DATA)}' where ID = ${applicant_id}`
+        if (customer_id_2 !== null) {
+            updateParts.push(`CUSTOMER_ID_2 = "${customer_id_2}"`);
+        } else {
+            updateParts.push(`CUSTOMER_ID_2 = NULL`);
         }
+        if (customer_id_3 !== null) {
+            updateParts.push(`CUSTOMER_ID_3 = "${customer_id_3}"`);
+        } else {
+            updateParts.push(`CUSTOMER_ID_3 = NULL`);
+        }
+        if (customer_id_4 !== null) {
+            updateParts.push(`CUSTOMER_ID_4 = "${customer_id_4}"`);
+        } else {
+            updateParts.push(`CUSTOMER_ID_4 = NULL`);
+        }
+
+        updateParts.push(`APPLICANTS_DATA = '${JSON.stringify(APPLICANTS_DATA)}'`);
+
+        let basicInsertQ = `update basic_details set ${updateParts.join(", ")} where ID = ${applicant_id}`;
 
         let basicInsertR = await db.executeQuery(basicInsertQ, '');
         console.log("Query : ", basicInsertQ, "result ", basicInsertR);

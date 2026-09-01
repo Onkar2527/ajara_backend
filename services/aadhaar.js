@@ -19,43 +19,78 @@ function reqData(req) {
 
 
 exports.create = async (req, res) => {
-    let data = reqData(req)
-    let supportKey = req.headers['supportKey']
-    var setData = "";
-    var recordData = [];
-
-    Object.keys(data).forEach(key => {
-        setData += `${key} ,`;
-        recordData.push(data[key]);
-    });
-
-
-    console.log("data from req", data);
-
+    let data = reqData(req);
+    const supportKey = req.headers["supportKey"];
 
     try {
-        const results = await db.executeQueryData(`insert into aadhaar_address set ?`, data.ADDRESS_ID, supportKey);
+
+        if (
+            data.PROFILE_IMAGE &&
+            typeof data.PROFILE_IMAGE === "string" &&
+            data.PROFILE_IMAGE.startsWith("http")
+        ) {
+            console.log("PROFILE_IMAGE URL:", data.PROFILE_IMAGE);
+
+            const imageResponse = await axios.get(
+                data.PROFILE_IMAGE,
+                {
+                    responseType: "arraybuffer"
+                }
+            );
+
+            const contentType =
+                imageResponse.headers["content-type"] || "image/jpeg";
+
+            data.PROFILE_IMAGE =
+                `data:${contentType};base64,` +
+                Buffer.from(imageResponse.data).toString("base64");
+
+            console.log(
+                "PROFILE_IMAGE converted to Base64, length:",
+                data.PROFILE_IMAGE.length
+            );
+        }
+
+
+        let addressData = data.ADDRESS_ID || {};
+
+        if (Array.isArray(addressData)) {
+            addressData = addressData[0] || {};
+        }
+
+        const results = await db.executeQueryData(
+            `INSERT INTO aadhaar_address SET ?`,
+            addressData,
+            supportKey
+        );
+
         data.ADDRESS_ID = results.insertId;
-        console.log("insertid", results);
-        console.log("data at the end", data);
 
-        await db.executeQueryData(`insert into aadhaar_verified_list set ?`, data, supportKey);
+        console.log("Address Insert ID:", results.insertId);
 
-        res.send({
-            "code": 200,
-            "message": "Aadhaar information saved successfully"
-        })
+
+        await db.executeQueryData(
+            `INSERT INTO aadhaar_verified_list SET ?`,
+            data,
+            supportKey
+        );
+
+
+        return res.send({
+            code: 200,
+            message: "Aadhaar information saved successfully"
+        });
+
+    } catch (error) {
+        console.error("AADHAAR CREATE ERROR:", error);
+
+        return res.status(400).send({
+            code: 400,
+            message: "Failed to save Aadhaar details",
+            error: error.message
+        });
     }
-
-    catch (error) {
-        console.log("error", error);
-        res.send({
-            "code": 400,
-            "message": "failed"
-        })
-    }
-
-}
+};
 
 exports.get = async (req, res) => {
     const supportKey = req.headers['supportkey'];

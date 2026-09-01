@@ -1,4 +1,4 @@
-exports.config = {
+ exports.config = {
     mode: process.env.ENVIROMENT,
     production: {
         database_config: {
@@ -52,11 +52,11 @@ exports.config = {
         database_config: {
             user: 'root',
             database_type: "mysql",
-            host: "20.197.10.226",
+            host: "13.233.147.2",
             port: "3306",
             database_name: "list_cbs_masters_ajara",
             ispass: true,
-            password: 'Kred@Pool123'
+            password: 'ajara@bank'
         },
         api: {
             host: "http://103.42.162.39",
@@ -76,11 +76,11 @@ exports.config = {
         database_config: {
             user: 'root',
             database_type: "mysql",
-            host: "db.kredpool.ai",
+            host: "20.197.10.226",
             port: "3306",
             database_name: "list_cbs_masters_ajara",
             ispass: true,
-            password: 'ajara@bank'
+            password: 'Kred@Pool123'
         },
         api: {
             host: "http://103.42.162.39",
