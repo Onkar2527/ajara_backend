@@ -1,5 +1,6 @@
 
 const db = require('../utilities/dbModule');
+const axios = require('axios');
 
 function reqData(req) {
     const data = {
