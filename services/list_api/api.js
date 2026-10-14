@@ -884,10 +884,10 @@ exports.onBoardCustomer = async (req, res) => {
         // Extract all numeric customer IDs from the Customer Code response (robust against space/labels/hyphens)
         const extractedCustomerIds = (customerCodeStr.match(/\d+/g) || []).map(id => id.trim());
 
-        const customer_id_1 = extractedCustomerIds[0] || "";
-        const customer_id_2 = extractedCustomerIds[1] || null;
-        const customer_id_3 = extractedCustomerIds[2] || null;
-        const customer_id_4 = extractedCustomerIds[3] || null;
+        const customer_id_1 = extractedCustomerIds[0] || basicR.CUSTOMER_ID_1 || "";
+        const customer_id_2 = extractedCustomerIds[1] || basicR.CUSTOMER_ID_2 || null;
+        const customer_id_3 = extractedCustomerIds[2] || basicR.CUSTOMER_ID_3 || null;
+        const customer_id_4 = extractedCustomerIds[3] || basicR.CUSTOMER_ID_4 || null;
 
         // Update the JSON array of applicants data
         const APPLICANTS_DATA = basicR.APPLICANTS_DATA || basicR.APPLICANT_DATA || [];
@@ -1051,6 +1051,24 @@ where per.APPLICANT_NO != 1 and per.APPLICANT_ID = ${basic_details.ID}
             "maritalstatus": customer.MARITAL_STATUS, //married = 'M', single = 'U',Divorced:'D'
             "caste_code": Number(customer.CASTE),
             "jhsr": (customer.APPLICANT_NO - 1)
+        }
+
+        const isOldCustomer = (
+            (customer['APPLICANTS_DATA'] && (
+                customer['APPLICANTS_DATA'].IS_OLD_CUSTOMER === true ||
+                customer['APPLICANTS_DATA'].IS_OLD_CUSTOMER === 1 ||
+                customer['APPLICANTS_DATA'].IS_OLD_CUSTOMER === '1' ||
+                customer['APPLICANTS_DATA'].IS_OLD_CUSTOMER === 'true'
+            )) ||
+            basic_details[`IS_OLD_CUSTOMER_${customer.APPLICANT_NO}`] == 1 ||
+            basic_details[`IS_OLD_CUSTOMER_${customer.APPLICANT_NO}`] == '1' ||
+            basic_details[`IS_OLD_CUSTOMER_${customer.APPLICANT_NO}`] === true
+        );
+
+        const custId = (customer['APPLICANTS_DATA'] && customer['APPLICANTS_DATA'].CUSTOMER_ID) || basic_details[`CUSTOMER_ID_${customer.APPLICANT_NO}`];
+
+        if ((isOldCustomer || custId) && custId && String(custId).trim() !== '') {
+            cust["customerid"] = String(custId).trim();
         }
 
         const p_add = {
@@ -1244,6 +1262,24 @@ where per.APPLICANT_NO != 1 and per.APPLICANT_ID = ${basic_details.ID}
             "maritalstatus": customer.MARITAL_STATUS, //married = 'M', single = 'U',Divorced:'D'
             "caste_code": Number(customer.CASTE),
             "jhsr": (customer.APPLICANT_NO - 1)
+        }
+
+        const isOldCustomerConst = (
+            (customer['APPLICANTS_DATA'] && (
+                customer['APPLICANTS_DATA'].IS_OLD_CUSTOMER === true ||
+                customer['APPLICANTS_DATA'].IS_OLD_CUSTOMER === 1 ||
+                customer['APPLICANTS_DATA'].IS_OLD_CUSTOMER === '1' ||
+                customer['APPLICANTS_DATA'].IS_OLD_CUSTOMER === 'true'
+            )) ||
+            basic_details[`IS_OLD_CUSTOMER_${customer.APPLICANT_NO}`] == 1 ||
+            basic_details[`IS_OLD_CUSTOMER_${customer.APPLICANT_NO}`] == '1' ||
+            basic_details[`IS_OLD_CUSTOMER_${customer.APPLICANT_NO}`] === true
+        );
+
+        const custIdConst = (customer['APPLICANTS_DATA'] && customer['APPLICANTS_DATA'].CUSTOMER_ID) || basic_details[`CUSTOMER_ID_${customer.APPLICANT_NO}`];
+
+        if ((isOldCustomerConst || custIdConst) && custIdConst && String(custIdConst).trim() !== '') {
+            cust["customerid"] = String(custIdConst).trim();
         }
 
         const p_add = {
