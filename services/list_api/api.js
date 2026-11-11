@@ -935,17 +935,29 @@ exports.onBoardCustomer = async (req, res) => {
             "success_data": accountCreatedData.data
         })
 
-        // res.send({
-        //     data: account_opening_data
-
-
     } catch (error) {
+        console.error("onBoardCustomer error:", error);
+        let errorMsg = "Failed to onboard customer in CBS";
+        let cbsError = null;
 
-        console.log(error)
+        if (error.response && error.response.data) {
+            cbsError = error.response.data;
+            if (typeof cbsError === 'string') {
+                errorMsg = cbsError;
+            } else if (typeof cbsError === 'object') {
+                errorMsg = cbsError.message || cbsError.error || cbsError.data || JSON.stringify(cbsError);
+            }
+        } else if (error.message) {
+            errorMsg = error.message;
+        }
+
+        console.error("onBoardCustomer extracted CBS error message:", errorMsg);
+
         res.send({
             "code": 400,
-            "message": "Failed",
-            "error": error
+            "message": errorMsg,
+            "error": errorMsg,
+            "cbs_error": cbsError || errorMsg
         })
     }
 
