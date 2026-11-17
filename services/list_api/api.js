@@ -753,7 +753,7 @@ exports.onBoardCustomer = async (req, res) => {
                 "acctobeopn_atbrncd": await getBranchFromCBS(basicR.CREATED_BRANCH_ID),
                 "accopened_atbrn": await getBranchFromCBS(basicR.CREATED_BRANCH_ID),
 
-                "accopendt": '16-03-2026',
+                "accopendt": generateNewDate(),
 
                 "opnormdf": "A"
             },
