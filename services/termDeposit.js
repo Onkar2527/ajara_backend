@@ -39,6 +39,7 @@ function reqData(req) {
         DEPOSIT_AMOUNT: req.body.DEPOSIT_AMOUNT,
         DEPOSIT_FREQUANCY: req.body.DEPOSIT_FREQUANCY,
         RATE_OF_INTEREST: req.body.RATE_OF_INTEREST,
+        RATE_OF_INTEREST_SAVING: req.body.RATE_OF_INTEREST_SAVING,
         TANURE_YEARS: req.body.TANURE_YEARS,
         TANURE_MONTHS: req.body.TANURE_MONTHS,
         TANURE_DAYS: req.body.TANURE_DAYS,
