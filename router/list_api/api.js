@@ -6,7 +6,7 @@ router
     .post('/onBoardCustomer', require('../../services/list_api/api').onBoardCustomer)
     .post('/getMasters', require('../../services/list_api/api').getMasters)
     .post('/getCustomer', require('../../services/list_api/api').getCustomer)
-    .post('/getInterestRateForSaving', require('../../services/list_api/api').getInterestRateForSaving)
-    .get('/getInterestRateForSaving', require('../../services/list_api/api').getInterestRateForSaving)
+    .post('/getInterestRateForAllAcc', require('../../services/list_api/api').getInterestRateForAllAcc)
+    .get('/getInterestRateForAllAcc', require('../../services/list_api/api').getInterestRateForAllAcc);
 
 module.exports = router;

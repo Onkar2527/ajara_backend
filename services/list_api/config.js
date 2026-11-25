@@ -19,7 +19,7 @@
                 { name: 'masters', url: '/MasterLOV/customer/getMasterLOV/', operation: 'get' },
                 { name: 'getCustomer', url: '/CustomerInfo/customer/getCustomerInfo?', operation: 'get' },
                 { name: 'onBoard', url: '/OnBoardCustomer/customer/onBoard', operation: 'post' },
-                { name: 'getInterestRateForSaving', url: '/OnBoardCustomer/customer/getInterestRateForSaving', operation: 'get' }
+                { name: 'getInterestRateForAllAcc', url: '/OnBoardCustomer/customer/getInterestRateForAllAcc', operation: 'get' }
             ],
             isproxy: false
         }
@@ -35,7 +35,7 @@
     //         password: 'No.5670@'
     //     },
     //     api: {
-    //         host: "http://103.42.162.39",
+    //         host: "http://172.100.30.89",
     //         port: "8888",
     //         logs: true,
     //         routes: [
@@ -52,14 +52,14 @@
         database_config: {
             user: 'root',
             database_type: "mysql",
-            host: "13.233.147.2",
+            host: "172.100.30.89",
             port: "3306",
-            database_name: "list_cbs_masters_ajara",
+            database_name: "list_cbs_masters",
             ispass: true,
-            password: 'ajara@bank'
+            password: 'Fco@Testing2026'
         },
         api: {
-            host: "http://103.42.162.39",
+            host: "http://172.100.30.89",
             port: "8888",
             logs: true,
             routes: [
@@ -67,31 +67,31 @@
                 { name: 'masters', url: '/MasterLOV/customer/getMasterLOV/', operation: 'get' },
                 { name: 'getCustomer', url: '/CustomerInfo/customer/getCustomerInfo?', operation: 'get' },
                 { name: 'onBoard', url: '/OnBoardCustomer/customer/onBoard', operation: 'post' },
-                { name: 'getInterestRateForSaving', url: '/OnBoardCustomer/customer/getInterestRateForSaving', operation: 'get' }
+                { name: 'getInterestRateForAllAcc', url: '/OnBoardCustomer/customer/getInterestRateForAllAcc', operation: 'get' }
             ],
             isproxy: false
         }
     },
     testing_server: {
         database_config: {
-            user: 'root',
+           user: 'root',
             database_type: "mysql",
-            host: "20.197.10.226",
+            host: "172.100.30.89",
             port: "3306",
-            database_name: "list_cbs_masters_ajara",
+            database_name: "list_cbs_masters",
             ispass: true,
-            password: 'Kred@Pool123'
+            password: 'Fco@Testing2026'
         },
         api: {
-            host: "http://103.42.162.39",
-            port: "8085",
+            host: "http://172.100.30.89",
+            port: "8888",
             logs: true,
             routes: [
                 { name: 'jwtToken', url: '/CustomerInfo/api/auth/getJwt', operation: 'get' },
                 { name: 'masters', url: '/MasterLOV/customer/getMasterLOV/', operation: 'get' },
                 { name: 'getCustomer', url: '/CustomerInfo/customer/getCustomerInfo?', operation: 'get' },
                 { name: 'onBoard', url: '/OnBoardCustomer/customer/onBoard', operation: 'post' },
-                { name: 'getInterestRateForSaving', url: '/OnBoardCustomer/customer/getInterestRateForSaving', operation: 'get' }
+                { name: 'getInterestRateForAllAcc', url: '/OnBoardCustomer/customer/getInterestRateForAllAcc', operation: 'get' }
             ],
             isproxy: false
         }

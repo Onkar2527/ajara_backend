@@ -20,9 +20,9 @@ exports.login = async (req, res) => {
         const supportKey = req.headers['supportkey'];
 
         if (!username || !password) {
-            return res.status(400).send({
+            return res.send({
                 "code": 400,
-                "message": "Username or password parameter missing",
+                "message": "Please enter both Username and Password.",
             });
         }
 
@@ -52,7 +52,7 @@ exports.login = async (req, res) => {
             }
 
             if (!isPasswordValid) {
-                return res.status(404).send({ "code": 404, "message": "Username OR Password does not exist" });
+                return res.send({ "code": 404, "message": "Invalid Username or Password!" });
             }
 
             const current_dt = new Date().toISOString().slice(0, 19).replace('T', ' ');
@@ -76,9 +76,9 @@ exports.login = async (req, res) => {
 
             res.send({ "code": 200, "data": send_data });
         } else if (results1.length > 1) {
-            res.status(400).send({ "code": 400, "message": "More than one user." });
+            res.send({ "code": 400, "message": "Multiple user accounts found. Please contact administrator." });
         } else {
-            res.status(404).send({ "code": 404, "message": "Username OR Password does not exist" });
+            res.send({ "code": 404, "message": "Invalid Username or Password!" });
         }
     } catch (error) {
         console.log(error);

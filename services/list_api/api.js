@@ -301,66 +301,6 @@ function returnInsertQ(obj) {
 // }
 
 
-// exports.getInterestRateForSaving = async (req, res) => {
-//     try {
-//         let bankCode = req.query.bankCode;
-//         let branchCode = req.query.branchCode;
-//         let schemeCode = req.query.schemeCode;
-//         let date = req.query.date;
-//         let staff = req.query.staff;
-
-//         if (!connection) {
-//             await connect();
-//         }
-
-//         let tokenurl = `${config[mode].api.host}:${config[mode].api.port}${config[mode].api.routes[4].url}?bankCode=${bankCode}&branchCode=${branchCode}&schemeCode=${schemeCode}&date=${date}&staff=${staff}` // routes[4] is getInterestRateForSaving
-
-//         // Note: The index in routes[] depends on the order in config.js. 
-//         // 0: jwtToken, 1: masters, 2: getCustomer, 3: onBoard, 4: getInterestRateForSaving
-
-//         // Verify index 4 dynamically if possible or trust the config order. 
-//         // Let's use a safer approach by finding the route by name.
-//         const routeConfig = config[mode].api.routes.find(r => r.name === 'getInterestRateForSaving');
-//         if (!routeConfig) {
-//             throw new Error("Route getInterestRateForSaving not found in config");
-//         }
-//         tokenurl = `${config[mode].api.host}:${config[mode].api.port}${routeConfig.url}?bankCode=${bankCode}&branchCode=${branchCode}&schemeCode=${schemeCode}&date=${date}&staff=${staff}`;
-
-
-//         let bearerKey = await getJWTToken();
-
-//         let configuration = {
-//             headers: {
-//                 "Authorization": `Bearer ${bearerKey}`,
-//                 "BankName": "LIST Software Pvt. Ltd",
-//                 "BranchName": "Sangli",
-//                 "UserName": "DemoUser",
-//                 "CallerSystem": "Sys106"
-//             }
-//         }
-//         if (config[mode].api.isproxy) {
-//             configuration.proxy = proxy;
-//         }
-
-//         let response = await getRequest(tokenurl, configuration);
-//         console.log("Interest Rate API Response:", response);
-
-//         res.send({
-//             "code": 200,
-//             "data": response
-//         });
-
-//     } catch (error) {
-//         console.log(error);
-//         res.status(500).send({
-//             code: 500,
-//             message: "Error fetching interest rate",
-//             error: error.message
-//         });
-//     }
-// }
-
-
 exports.onBoardCustomer = async (req, res) => {
 
     try {
@@ -1893,51 +1833,108 @@ exports.getCustomer = async (req, res) => {
     }
 }
 
-exports.getInterestRateForSaving = async (req, res) => {
+exports.getInterestRateForAllAcc = async (req, res) => {
     try {
-        let bankCode = req.query.bankCode;
-        let branchCode = req.query.branchCode;
-        let schemeCode = req.query.schemeCode;
-        let date = req.query.date;
-        let staff = req.query.staff;
+        let bankCode = req.query.bankCode || req.body.bankCode || 1;
+        let branchCode = req.query.branchCode || req.body.branchCode || 1;
+        let schemeCode = req.query.schemeCode || req.body.schemeCode;
+        let staff = req.query.staff || req.body.staff || 'N';
 
-        if (!connection) {
-            await connect();
+        let years = req.query.years !== undefined ? req.query.years : (req.body.years !== undefined ? req.body.years : 0);
+        let months = req.query.months !== undefined ? req.query.months : (req.body.months !== undefined ? req.body.months : 0);
+        let days = req.query.days !== undefined ? req.query.days : (req.body.days !== undefined ? req.body.days : 0);
+        let amount = req.query.amount !== undefined ? req.query.amount : (req.body.amount !== undefined ? req.body.amount : 0);
+
+        let pigmiInstlFreq = req.query.pigmiInstlFreq ?? req.body.pigmiInstlFreq ?? '';
+        let splct = req.query.splct ?? req.body.splct ?? '';
+        let accSpecCtg = req.query.accSpecCtg ?? req.body.accSpecCtg ?? '';
+        let discFreq = req.query.discFreq ?? req.body.discFreq ?? '';
+        let guardianId = req.query.guardianId ?? req.body.guardianId ?? '';
+
+        let rawDate = req.query.accOpenDt || req.query.date || req.body.accOpenDt || req.body.date;
+        let accOpenDt;
+        if (!rawDate) {
+            const now = new Date();
+            accOpenDt = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}-${now.getDate().toString().padStart(2, '0')}`;
+        } else if (typeof rawDate === 'string' && rawDate.includes('-')) {
+            const parts = rawDate.split('-');
+            if (parts[0].length === 2 && parts[2].length === 4) {
+                // DD-MM-YYYY -> YYYY-MM-DD
+                accOpenDt = `${parts[2]}-${parts[1]}-${parts[0]}`;
+            } else {
+                accOpenDt = rawDate;
+            }
+        } else if (typeof rawDate === 'string' && rawDate.includes('/')) {
+            const parts = rawDate.split('/');
+            if (parts[0].length === 2 && parts[2].length === 4) {
+                // DD/MM/YYYY -> YYYY-MM-DD
+                accOpenDt = `${parts[2]}-${parts[1]}-${parts[0]}`;
+            } else {
+                accOpenDt = rawDate;
+            }
+        } else {
+            accOpenDt = rawDate;
         }
 
-        // Resolve internal branch ID to CBS Branch Code
+        await ensureConnection();
+
+        // Resolve internal branch ID to CBS Branch Code if needed
         let branchCBSCode = await getBranchFromCBS(branchCode);
 
-        // Create final URL with all query parameters - CBS expects lowercase keys
-        // Also ensure bankCode and schemeCode are Numbers to match CBS expectations
-        let tokenurl = `${config[mode].api.host}:${config[mode].api.port}${config[mode].api.routes[4].url}?bankcode=${Number(bankCode)}&brncode=${branchCBSCode}&schemecode=${Number(schemeCode)}&date=${date}&staff=${staff}`
+        const routeConfig = config[mode].api.routes.find(r => r.name === 'getInterestRateForAllAcc')
+            || { url: '/OnBoardCustomer/customer/getInterestRateForAllAcc' };
 
-        // Secondary check to ensure correct route from config if indexes changed
-        const routeConfig = config[mode].api.routes.find(r => r.name === 'getInterestRateForSaving');
-        if (routeConfig) {
-            tokenurl = `${config[mode].api.host}:${config[mode].api.port}${routeConfig.url}?bankcode=${Number(bankCode)}&brncode=${branchCBSCode}&schemecode=${Number(schemeCode)}&date=${date}&staff=${staff}`;
-        }
+        const queryParams = new URLSearchParams({
+            bankCode: String(Number(bankCode) || 1),
+            branchCode: String(branchCBSCode || branchCode || 1),
+            accOpenDt: String(accOpenDt),
+            staff: staff ? String(staff) : 'N',
+            years: String(years ?? 0),
+            months: String(months ?? 0),
+            days: String(days ?? 0),
+            amount: String(amount ?? 0),
+            pigmiInstlFreq: String(pigmiInstlFreq || ''),
+            splct: String(splct || ''),
+            accSpecCtg: String(accSpecCtg || ''),
+            discFreq: String(discFreq || ''),
+            guardianId: String(guardianId || ''),
+            schemeCode: String(Number(schemeCode) || '')
+        });
 
-        console.log("Fetching Interest Rate from URL:", tokenurl); // Debug: check final URL sent to CBS
+        let tokenurl = `${config[mode].api.host}:${config[mode].api.port}${routeConfig.url}?${queryParams.toString()}`;
+        console.log("Fetching Interest Rate from URL:", tokenurl);
 
         let bearerKey = await getJWTToken();
 
         let configuration = {
             headers: {
                 "Authorization": `Bearer ${bearerKey}`,
-                "bankName": "Ajara",
-                "branchName": "Uttur",
-                "userName": "ajara.ba",
-                "callerSystem": "FCO"
+                "BankName": "LIST Software Pvt. Ltd",
+                "BranchName": "Sangli",
+                "UserName": "DemoUser",
+                "CallerSystem": "Sys106"
             }
-        }
+        };
         if (config[mode].api.isproxy) {
             configuration.proxy = proxy;
         }
 
-        // Fetch interest rate from CBS
-        let response = await getRequest(tokenurl, configuration);
-        console.log("Interest Rate API Response from CBS:", response); // Debug: log full response from CBS
+        // Fetch interest rate from CBS with automatic token refresh on 401/403
+        let response;
+        try {
+            response = await getRequest(tokenurl, configuration);
+        } catch (requestErr) {
+            if (requestErr.response && (requestErr.response.status === 401 || requestErr.response.status === 403)) {
+                console.log("Token expired or unauthorized, regenerating fresh JWT token...");
+                bearerKey = await generateToken();
+                configuration.headers["Authorization"] = `Bearer ${bearerKey}`;
+                response = await getRequest(tokenurl, configuration);
+            } else {
+                throw requestErr;
+            }
+        }
+
+        console.log("Interest Rate API Response from CBS:", response);
 
         res.send({
             "code": 200,
@@ -1952,4 +1949,4 @@ exports.getInterestRateForSaving = async (req, res) => {
             error: error.message
         });
     }
-}
+};
