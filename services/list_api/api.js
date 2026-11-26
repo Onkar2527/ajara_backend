@@ -551,25 +551,10 @@ exports.onBoardCustomer = async (req, res) => {
                 "authuser": await getUserNameByID(basicR.VERIFIER_USER_ID),
                 "addressline1": `${personalR.CURRENT_ADDRESS} ${personalR.CURRENT_LANDMARK}`
             },
-            "addobj_O": {
-                "addresstype": "O",
-                "countryid": 1,
-                "stateid": await getStateCode(personalR.OFFICE_STATE),
-                "districtid": await getDistCode(personalR.OFFICE_DISTRICT),
-                "talukaid": await getTalukaCode(personalR.OFFICE_TALUKA),
-                "cityid": await getCityCode(personalR.OFFICE_CITY),
-                "areaid": await getAreaCode(personalR.OFFICE_AREA),
-                "regionid": 1,
-                "mobile": isMinorAccount ? (personalR.MOBILE_NUMBER || "") : (personalR.MOBILE_NUMBER || ""),
-                "pincode": isMinorAccount ? (personalR.PERMANENT_PINCODE || "") : (personalR.PERMANENT_PINCODE || ""),
-                // "sequenceno": 1,
-                "bankcode": 1,
-                "brncode": await getBranchFromCBS(basicR.CREATED_BRANCH_ID),
-                "entryuser": await getUserNameByID(basicR.MAKER_USER_ID),
-                "verifiedby": await getUserNameByID(basicR.CHACKER_USER_ID),
-                "authuser": await getUserNameByID(basicR.VERIFIER_USER_ID),
-                "addressline1": `${personalR.OFFICE_ADDRESS} ${personalR.OFFICE_LANDMARK}`
-            },
+            "addobj_O": await buildOfficeAddress(personalR, basicR, {
+                mobile: personalR.MOBILE_NUMBER || "",
+                pincode: personalR.OFFICE_PINCODE || personalR.PERMANENT_PINCODE || ""
+            }),
             "addobjgur_P": (!isMinorAccount || !guardianR || !guardianR["APPLICANTS_DATA"] || guardianR["APPLICANTS_DATA"].IS_OLD_CUSTOMER == true) ? null : { // Updated to use robust isMinorAccount variable
                 "addresstype": "P",
                 "emailid": guardianR.EMAIL_ID,
@@ -610,25 +595,10 @@ exports.onBoardCustomer = async (req, res) => {
                 "authuser": await getUserNameByID(basicR.VERIFIER_USER_ID),
                 "addressline1": `${guardianR.CURRENT_ADDRESS} ${guardianR.CURRENT_LANDMARK}`
             },
-            "addobjgur_O": (!isMinorAccount || !guardianR || !guardianR["APPLICANTS_DATA"] || guardianR["APPLICANTS_DATA"].IS_OLD_CUSTOMER == true) ? null : {
-                "addresstype": "O",
-                "countryid": 1,
-                "stateid": await getStateCode(guardianR.OFFICE_STATE),
-                "districtid": await getDistCode(guardianR.OFFICE_DISTRICT),
-                "talukaid": await getTalukaCode(guardianR.OFFICE_TALUKA),
-                "cityid": await getCityCode(guardianR.OFFICE_CITY),
-                "areaid": await getAreaCode(guardianR.OFFICE_AREA),
-                "regionid": 1,
-                "mobile": isMinorAccount ? (guardianR ? guardianR.MOBILE_NUMBER || "" : "") : Number(guardianR ? guardianR.MOBILE_NUMBER || "" : ""),
-                "pincode": isMinorAccount ? (guardianR.PERMANENT_PINCODE) : Number(guardianR.PERMANENT_PINCODE),
-                // "sequenceno": 1,
-                "bankcode": 1,
-                "brncode": await getBranchFromCBS(basicR.CREATED_BRANCH_ID),
-                "entryuser": await getUserNameByID(basicR.MAKER_USER_ID),
-                "verifiedby": await getUserNameByID(basicR.CHACKER_USER_ID),
-                "authuser": await getUserNameByID(basicR.VERIFIER_USER_ID),
-                "addressline1": `${guardianR.OFFICE_ADDRESS} ${guardianR.OFFICE_LANDMARK}`
-            },
+            "addobjgur_O": (!isMinorAccount || !guardianR || !guardianR["APPLICANTS_DATA"] || guardianR["APPLICANTS_DATA"].IS_OLD_CUSTOMER == true) ? null : await buildOfficeAddress(guardianR, basicR, {
+                mobile: isMinorAccount ? (guardianR ? guardianR.MOBILE_NUMBER || "" : "") : Number(guardianR ? guardianR.MOBILE_NUMBER || "" : ""),
+                pincode: isMinorAccount ? (guardianR.OFFICE_PINCODE || guardianR.PERMANENT_PINCODE) : Number(guardianR.OFFICE_PINCODE || guardianR.PERMANENT_PINCODE)
+            }),
             "kyccomobj": {
                 "kcc_status": "F",
                 "entryuser": await getUserNameByID(basicR.MAKER_USER_ID),
@@ -1402,6 +1372,45 @@ function generateNewDate() {
 
 
 // console.log("current date = ",generateNewDate());
+
+/**
+ * Checks whether an applicant or guardian record has an office address filled.
+ */
+function hasOfficeAddress(record) {
+    if (!record) return false;
+    const isFilled = (val) => {
+        if (val === undefined || val === null) return false;
+        const str = String(val).trim();
+        return str !== '' && str.toLowerCase() !== 'null' && str.toLowerCase() !== 'undefined';
+    };
+    return isFilled(record.OFFICE_ADDRESS) || isFilled(record.OFFICE_LANDMARK);
+}
+
+/**
+ * Builds the CBS office address payload object, or returns null when no office address is filled.
+ */
+async function buildOfficeAddress(record, basicR, { mobile, pincode }) {
+    if (!hasOfficeAddress(record)) return null;
+    return {
+        "addresstype": "O",
+        "countryid": 1,
+        "stateid": await getStateCode(record.OFFICE_STATE),
+        "districtid": await getDistCode(record.OFFICE_DISTRICT),
+        "talukaid": await getTalukaCode(record.OFFICE_TALUKA),
+        "cityid": await getCityCode(record.OFFICE_CITY),
+        "areaid": await getAreaCode(record.OFFICE_AREA),
+        "regionid": 1,
+        "mobile": mobile,
+        "pincode": pincode,
+        // "sequenceno": 1,
+        "bankcode": 1,
+        "brncode": await getBranchFromCBS(basicR.CREATED_BRANCH_ID),
+        "entryuser": await getUserNameByID(basicR.MAKER_USER_ID),
+        "verifiedby": await getUserNameByID(basicR.CHACKER_USER_ID),
+        "authuser": await getUserNameByID(basicR.VERIFIER_USER_ID),
+        "addressline1": `${record.OFFICE_ADDRESS || ""} ${record.OFFICE_LANDMARK || ""}`.trim()
+    };
+}
 
 async function getStateCode(id) {
     if (!id) return 1;
