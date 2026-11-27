@@ -115,7 +115,7 @@ async function generateToken() {
 
 
             let configuration = {
-                headers: { "userName": 'cpc', "bankName": "Ajara", "branchName": "Uttur", "callerSystem": "FCO" }
+                headers: { "userName": 'DemoUser', "bankName": "List Software Pvt. Ltd", "branchName": "Sangli", "callerSystem": "sys106" }
             }
             if (config[mode].api.isproxy) {
                 configuration.proxy = proxy;
@@ -190,7 +190,7 @@ async function cacheMasters() {
 
         let bearerKey = await getJWTToken();
         let configuration = {
-            headers: { "Authorization": `Bearer ${bearerKey}`, "userName": `fco`, "bankName": "Ajara", "branchName": "Uttur", "callerSystem": "FCO" }
+            headers: { "Authorization": `Bearer ${bearerKey}`, "UserName": 'PoojaS', "BankName": "LIST Software Pvt. Ltd", "BranchName": "Sangli", "CallerSystem": "sys106" }
         }
         if (config[mode].api.isproxy) {
             configuration.proxy = proxy;
@@ -240,9 +240,9 @@ exports.syncMasters = () => {
     }
 }
 
-// generateToken();
+//generateToken();
 
-// cacheMasters();
+
 
 
 function returnUniqueKey(arr) {
@@ -281,24 +281,9 @@ function returnInsertQ(obj) {
 
 }
 
-//             "success_data": accountCreatedData.data
-//         })
-
-//         // res.send({
-//         //     data: account_opening_data
 
 
-//     } catch (error) {
 
-//         console.log(error)
-//         res.send({
-//             "code": 400,
-//             "message": "Failed",
-//             "error": error
-//         })
-//     }
-
-// }
 
 
 exports.onBoardCustomer = async (req, res) => {
@@ -514,7 +499,7 @@ exports.onBoardCustomer = async (req, res) => {
             "addobj_P": {
                 "addresstype": "P",
                 "emailid": personalR.EMAIL_ID,
-                "countryid": 1, //constant
+                "countryid": 356, //constant
                 "stateid": await getStateCode(personalR.PERMANENT_STATE),
                 "districtid": await getDistCode(personalR.PERMANENT_DISTRICT),
                 "talukaid": await getTalukaCode(personalR.PERMANENT_TALUKA),
@@ -534,7 +519,7 @@ exports.onBoardCustomer = async (req, res) => {
             },
             "addobj_C": {
                 "addresstype": "C",
-                "countryid": 1,
+                "countryid": 356,
                 "stateid": await getStateCode(personalR.CURRENT_STATE),
                 "districtid": await getDistCode(personalR.CURRENT_DISTRICT),
                 "talukaid": await getTalukaCode(personalR.CURRENT_TALUKA),
@@ -551,14 +536,16 @@ exports.onBoardCustomer = async (req, res) => {
                 "authuser": await getUserNameByID(basicR.VERIFIER_USER_ID),
                 "addressline1": `${personalR.CURRENT_ADDRESS} ${personalR.CURRENT_LANDMARK}`
             },
+
             "addobj_O": await buildOfficeAddress(personalR, basicR, {
                 mobile: personalR.MOBILE_NUMBER || "",
                 pincode: personalR.OFFICE_PINCODE || personalR.PERMANENT_PINCODE || ""
-            }),
+            }
+            ),
             "addobjgur_P": (!isMinorAccount || !guardianR || !guardianR["APPLICANTS_DATA"] || guardianR["APPLICANTS_DATA"].IS_OLD_CUSTOMER == true) ? null : { // Updated to use robust isMinorAccount variable
                 "addresstype": "P",
                 "emailid": guardianR.EMAIL_ID,
-                "countryid": 1, //constant
+                "countryid": 356, //constant
                 "stateid": await getStateCode(guardianR.PERMANENT_STATE),
                 "districtid": await getDistCode(guardianR.PERMANENT_DISTRICT),
                 "talukaid": await getTalukaCode(guardianR.PERMANENT_TALUKA),
@@ -578,7 +565,7 @@ exports.onBoardCustomer = async (req, res) => {
             },
             "addobjgur_C": (!isMinorAccount || !guardianR || !guardianR["APPLICANTS_DATA"] || guardianR["APPLICANTS_DATA"].IS_OLD_CUSTOMER == true) ? null : {
                 "addresstype": "C",
-                "countryid": 1,
+                "countryid": 356,
                 "stateid": await getStateCode(guardianR.CURRENT_STATE),
                 "districtid": await getDistCode(guardianR.CURRENT_DISTRICT),
                 "talukaid": await getTalukaCode(guardianR.CURRENT_TALUKA),
@@ -595,6 +582,7 @@ exports.onBoardCustomer = async (req, res) => {
                 "authuser": await getUserNameByID(basicR.VERIFIER_USER_ID),
                 "addressline1": `${guardianR.CURRENT_ADDRESS} ${guardianR.CURRENT_LANDMARK}`
             },
+
             "addobjgur_O": (!isMinorAccount || !guardianR || !guardianR["APPLICANTS_DATA"] || guardianR["APPLICANTS_DATA"].IS_OLD_CUSTOMER == true) ? null : await buildOfficeAddress(guardianR, basicR, {
                 mobile: isMinorAccount ? (guardianR ? guardianR.MOBILE_NUMBER || "" : "") : Number(guardianR ? guardianR.MOBILE_NUMBER || "" : ""),
                 pincode: isMinorAccount ? (guardianR.OFFICE_PINCODE || guardianR.PERMANENT_PINCODE) : Number(guardianR.OFFICE_PINCODE || guardianR.PERMANENT_PINCODE)
@@ -663,7 +651,7 @@ exports.onBoardCustomer = async (req, res) => {
                 "acctobeopn_atbrncd": await getBranchFromCBS(basicR.CREATED_BRANCH_ID),
                 "accopened_atbrn": await getBranchFromCBS(basicR.CREATED_BRANCH_ID),
 
-                "accopendt": generateNewDate(),
+                "accopendt": "30-11-2026",//generateNewDate(),
 
                 "opnormdf": "A"
             },
@@ -779,7 +767,7 @@ exports.onBoardCustomer = async (req, res) => {
         }
 
         let configuration = {
-            headers: { "Authorization": `Bearer ${bearerKey}`, "userName": 'cpc', "bankName": "Ajara", "branchName": "Uttur", "callerSystem": "FCO" }
+            headers: { "Authorization": `Bearer ${bearerKey}`, "userName": 'PoojaS', "bankName": "LIST Software Pvt. Ltd", "branchName": "Sangli", "callerSystem": "System5" }
         }
         if (config[mode].api.isproxy) {
             configuration.proxy = proxy;
@@ -996,7 +984,7 @@ where per.APPLICANT_NO != 1 and per.APPLICANT_ID = ${basic_details.ID}
         const p_add = {
             "addresstype": "P",
             "emailid": customer.EMAIL_ID,
-            "countryid": 1, //constant
+            "countryid": 356, //constant
             "stateid": await getStateCode(customer.PERMANENT_STATE),
             "districtid": await getDistCode(customer.PERMANENT_DISTRICT),
             "talukaid": await getTalukaCode(customer.PERMANENT_TALUKA),
@@ -1018,7 +1006,7 @@ where per.APPLICANT_NO != 1 and per.APPLICANT_ID = ${basic_details.ID}
 
         const c_add = {
             "addresstype": "C",
-            "countryid": 1,
+            "countryid": 356,
             "stateid": await getStateCode(customer.CURRENT_STATE),
             "districtid": await getDistCode(customer.CURRENT_DISTRICT),
             "talukaid": await getTalukaCode(customer.CURRENT_TALUKA),
@@ -1207,7 +1195,7 @@ where per.APPLICANT_NO != 1 and per.APPLICANT_ID = ${basic_details.ID}
         const p_add = {
             "addresstype": "P",
             "emailid": customer.EMAIL_ID,
-            "countryid": 1, //constant
+            "countryid": 356, //constant
             "stateid": await getStateCode(customer.PERMANENT_STATE),
             "districtid": await getDistCode(customer.PERMANENT_DISTRICT),
             "talukaid": await getTalukaCode(customer.PERMANENT_TALUKA),
@@ -1229,7 +1217,7 @@ where per.APPLICANT_NO != 1 and per.APPLICANT_ID = ${basic_details.ID}
 
         const c_add = {
             "addresstype": "C",
-            "countryid": 1,
+            "countryid": 356,
             "stateid": await getStateCode(customer.CURRENT_STATE),
             "districtid": await getDistCode(customer.CURRENT_DISTRICT),
             "talukaid": await getTalukaCode(customer.CURRENT_TALUKA),
@@ -1370,12 +1358,6 @@ function generateNewDate() {
     return date;
 }
 
-
-// console.log("current date = ",generateNewDate());
-
-/**
- * Checks whether an applicant or guardian record has an office address filled.
- */
 function hasOfficeAddress(record) {
     if (!record) return false;
     const isFilled = (val) => {
@@ -1411,6 +1393,9 @@ async function buildOfficeAddress(record, basicR, { mobile, pincode }) {
         "addressline1": `${record.OFFICE_ADDRESS || ""} ${record.OFFICE_LANDMARK || ""}`.trim()
     };
 }
+
+
+// console.log("current date = ",generateNewDate());
 
 async function getStateCode(id) {
     if (!id) return 1;
@@ -1651,7 +1636,7 @@ exports.getCustomer = async (req, res) => {
         let bearerKey = await getJWTToken();
 
         let configuration = {
-            headers: { "Authorization": `Bearer ${bearerKey}`, "userName": `ajara.ba`, "bankName": "Ajara", "branchName": "Uttur", "callerSystem": "FCO" }
+            headers: { "Authorization": `Bearer ${bearerKey}`, "userName": 'PoojaS', "bankName": "LIST Software Pvt. Ltd", "branchName": "Sangli", "callerSystem": "Sys106" }
         }
         if (config[mode].api.isproxy) {
             configuration.proxy = proxy;
