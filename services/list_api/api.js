@@ -505,7 +505,7 @@ exports.onBoardCustomer = async (req, res) => {
                 "talukaid": await getTalukaCode(personalR.PERMANENT_TALUKA),
                 "cityid": await getCityCode(personalR.PERMANENT_CITY),
                 "areaid": await getAreaCode(personalR.PERMANENT_AREA),
-                "mobile": isMinorAccount ? (personalR.MOBILE_NUMBER || "") : (personalR.MOBILE_NUMBER || ""),
+                //"mobile": isMinorAccount ? (personalR.MOBILE_NUMBER || "") : (personalR.MOBILE_NUMBER || ""),
                 "pincode": isMinorAccount ? (personalR.PERMANENT_PINCODE || "") : (personalR.PERMANENT_PINCODE || ""),
                 "regionid": 1,
                 // "sequenceno": 1,
@@ -515,7 +515,9 @@ exports.onBoardCustomer = async (req, res) => {
                 "entryuser": await getUserNameByID(basicR.MAKER_USER_ID),
                 "verifiedby": await getUserNameByID(basicR.CHACKER_USER_ID),
                 "authuser": await getUserNameByID(basicR.VERIFIER_USER_ID),
-                "addressline1": `${personalR.PERMANENT_ADDRESS} ${personalR.PERMANENT_LANDMARK}`
+                "addressline1": personalR.PERMANENT_LANDMARK || "",
+                "apartmentbuilding": personalR.PERMANENT_ADDRESS || "",
+
             },
             "addobj_C": {
                 "addresstype": "C",
@@ -526,7 +528,7 @@ exports.onBoardCustomer = async (req, res) => {
                 "cityid": await getCityCode(personalR.CURRENT_CITY),
                 "areaid": await getAreaCode(personalR.CURRENT_AREA),
                 "regionid": 1,
-                "mobile": isMinorAccount ? (personalR.MOBILE_NUMBER || "") : (personalR.MOBILE_NUMBER || ""),
+                //"mobile": isMinorAccount ? (personalR.MOBILE_NUMBER || "") : (personalR.MOBILE_NUMBER || ""),
                 "pincode": isMinorAccount ? (personalR.PERMANENT_PINCODE || "") : (personalR.PERMANENT_PINCODE || ""),
                 // "sequenceno": 1,
                 "bankcode": 1,
@@ -534,11 +536,12 @@ exports.onBoardCustomer = async (req, res) => {
                 "entryuser": await getUserNameByID(basicR.MAKER_USER_ID),
                 "verifiedby": await getUserNameByID(basicR.CHACKER_USER_ID),
                 "authuser": await getUserNameByID(basicR.VERIFIER_USER_ID),
-                "addressline1": `${personalR.CURRENT_ADDRESS} ${personalR.CURRENT_LANDMARK}`
+                "addressline1": personalR.CURRENT_LANDMARK || "",
+                "apartmentbuilding": personalR.CURRENT_ADDRESS || ""
             },
 
             "addobj_O": await buildOfficeAddress(personalR, basicR, {
-                mobile: personalR.MOBILE_NUMBER || "",
+                // mobile: personalR.MOBILE_NUMBER || "",
                 pincode: personalR.OFFICE_PINCODE || personalR.PERMANENT_PINCODE || ""
             }
             ),
@@ -551,7 +554,7 @@ exports.onBoardCustomer = async (req, res) => {
                 "talukaid": await getTalukaCode(guardianR.PERMANENT_TALUKA),
                 "cityid": await getCityCode(guardianR.PERMANENT_CITY),
                 "areaid": await getAreaCode(guardianR.PERMANENT_AREA),
-                "mobile": isMinorAccount ? (guardianR ? guardianR.MOBILE_NUMBER || "" : "") : Number(guardianR ? guardianR.MOBILE_NUMBER || "" : ""),
+                //"mobile": isMinorAccount ? (guardianR ? guardianR.MOBILE_NUMBER || "" : "") : Number(guardianR ? guardianR.MOBILE_NUMBER || "" : ""),
                 "pincode": isMinorAccount ? (guardianR.PERMANENT_PINCODE) : Number(guardianR.PERMANENT_PINCODE),
                 "regionid": 1,
                 // "sequenceno": 1,
@@ -561,7 +564,8 @@ exports.onBoardCustomer = async (req, res) => {
                 "entryuser": await getUserNameByID(basicR.MAKER_USER_ID),
                 "verifiedby": await getUserNameByID(basicR.CHACKER_USER_ID),
                 "authuser": await getUserNameByID(basicR.VERIFIER_USER_ID),
-                "addressline1": `${guardianR.PERMANENT_ADDRESS} ${guardianR.PERMANENT_LANDMARK}`
+                "addressline1": guardianR.PERMANENT_LANDMARK || "",
+                "apartmentbuilding": guardianR.PERMANENT_ADDRESS || ""
             },
             "addobjgur_C": (!isMinorAccount || !guardianR || !guardianR["APPLICANTS_DATA"] || guardianR["APPLICANTS_DATA"].IS_OLD_CUSTOMER == true) ? null : {
                 "addresstype": "C",
@@ -572,7 +576,7 @@ exports.onBoardCustomer = async (req, res) => {
                 "cityid": await getCityCode(guardianR.CURRENT_CITY),
                 "areaid": await getAreaCode(guardianR.CURRENT_AREA),
                 "regionid": 1,
-                "mobile": isMinorAccount ? (guardianR ? guardianR.MOBILE_NUMBER || "" : "") : Number(guardianR ? guardianR.MOBILE_NUMBER || "" : ""),
+                // "mobile": isMinorAccount ? (guardianR ? guardianR.MOBILE_NUMBER || "" : "") : Number(guardianR ? guardianR.MOBILE_NUMBER || "" : ""),
                 "pincode": isMinorAccount ? (guardianR.PERMANENT_PINCODE) : Number(guardianR.PERMANENT_PINCODE),
                 // "sequenceno": 1,
                 "bankcode": 1,
@@ -580,11 +584,12 @@ exports.onBoardCustomer = async (req, res) => {
                 "entryuser": await getUserNameByID(basicR.MAKER_USER_ID),
                 "verifiedby": await getUserNameByID(basicR.CHACKER_USER_ID),
                 "authuser": await getUserNameByID(basicR.VERIFIER_USER_ID),
-                "addressline1": `${guardianR.CURRENT_ADDRESS} ${guardianR.CURRENT_LANDMARK}`
+                "addressline1": guardianR.CURRENT_LANDMARK || "",
+                "apartmentbuilding": guardianR.CURRENT_ADDRESS || ""
             },
 
             "addobjgur_O": (!isMinorAccount || !guardianR || !guardianR["APPLICANTS_DATA"] || guardianR["APPLICANTS_DATA"].IS_OLD_CUSTOMER == true) ? null : await buildOfficeAddress(guardianR, basicR, {
-                mobile: isMinorAccount ? (guardianR ? guardianR.MOBILE_NUMBER || "" : "") : Number(guardianR ? guardianR.MOBILE_NUMBER || "" : ""),
+                //mobile: isMinorAccount ? (guardianR ? guardianR.MOBILE_NUMBER || "" : "") : Number(guardianR ? guardianR.MOBILE_NUMBER || "" : ""),
                 pincode: isMinorAccount ? (guardianR.OFFICE_PINCODE || guardianR.PERMANENT_PINCODE) : Number(guardianR.OFFICE_PINCODE || guardianR.PERMANENT_PINCODE)
             }),
             "kyccomobj": {
@@ -990,7 +995,7 @@ where per.APPLICANT_NO != 1 and per.APPLICANT_ID = ${basic_details.ID}
             "talukaid": await getTalukaCode(customer.PERMANENT_TALUKA),
             "cityid": await getCityCode(customer.PERMANENT_CITY),
             "areaid": await getAreaCode(customer.PERMANENT_AREA),
-            "mobile": (customer.MOBILE_NUMBER || ""),
+            //"mobile": (customer.MOBILE_NUMBER || ""),
             "pincode": Number(customer.PERMANENT_PINCODE || ""),
             "regionid": 1,
             // "sequenceno": 1,
@@ -1000,7 +1005,8 @@ where per.APPLICANT_NO != 1 and per.APPLICANT_ID = ${basic_details.ID}
             "entryuser": await getUserNameByID(basic_details.MAKER_USER_ID),
             "verifiedby": await getUserNameByID(basic_details.CHACKER_USER_ID),
             "authuser": await getUserNameByID(basic_details.VERIFIER_USER_ID),
-            "addressline1": `${customer.PERMANENT_ADDRESS} ${customer.PERMANENT_LANDMARK}`,
+            "addressline1": customer.PERMANENT_LANDMARK || "",
+            "apartmentbuilding": customer.PERMANENT_ADDRESS || "",
             "jhsr": (customer.APPLICANT_NO - 1)
         }
 
@@ -1013,7 +1019,7 @@ where per.APPLICANT_NO != 1 and per.APPLICANT_ID = ${basic_details.ID}
             "cityid": await getCityCode(customer.CURRENT_CITY),
             "areaid": await getAreaCode(customer.CURRENT_AREA),
             "regionid": 1,
-            "mobile": (customer.MOBILE_NUMBER || ""),
+            //"mobile": (customer.MOBILE_NUMBER || ""),
             "pincode": Number(customer.CURRENT_PINCODE || ""),
             // "sequenceno": 1,
             "bankcode": 1,
@@ -1021,7 +1027,8 @@ where per.APPLICANT_NO != 1 and per.APPLICANT_ID = ${basic_details.ID}
             "entryuser": await getUserNameByID(basic_details.MAKER_USER_ID),
             "verifiedby": await getUserNameByID(basic_details.CHACKER_USER_ID),
             "authuser": await getUserNameByID(basic_details.VERIFIER_USER_ID),
-            "addressline1": `${customer.CURRENT_ADDRESS} ${customer.CURRENT_LANDMARK}`,
+            "addressline1": customer.CURRENT_LANDMARK || "",
+            "apartmentbuilding": customer.CURRENT_ADDRESS || "",
             "jhsr": (customer.APPLICANT_NO - 1)
         }
 
@@ -1201,7 +1208,7 @@ where per.APPLICANT_NO != 1 and per.APPLICANT_ID = ${basic_details.ID}
             "talukaid": await getTalukaCode(customer.PERMANENT_TALUKA),
             "cityid": await getCityCode(customer.PERMANENT_CITY),
             "areaid": await getAreaCode(customer.PERMANENT_AREA),
-            "mobile": (customer.MOBILE_NUMBER || ""),
+            //"mobile": (customer.MOBILE_NUMBER || ""),
             "pincode": customer.PERMANENT_PINCODE,
             "regionid": 1,
             // "sequenceno": 1,
@@ -1211,7 +1218,8 @@ where per.APPLICANT_NO != 1 and per.APPLICANT_ID = ${basic_details.ID}
             "entryuser": await getUserNameByID(basic_details.MAKER_USER_ID),
             "verifiedby": await getUserNameByID(basic_details.CHACKER_USER_ID),
             "authuser": await getUserNameByID(basic_details.VERIFIER_USER_ID),
-            "addressline1": `${customer.PERMANENT_ADDRESS} ${customer.PERMANENT_LANDMARK}`,
+            "addressline1": customer.PERMANENT_LANDMARK || "",
+            "apartmentbuilding": customer.PERMANENT_ADDRESS || "",
             "jhsr": (customer.APPLICANT_NO - 1)
         }
 
@@ -1224,7 +1232,7 @@ where per.APPLICANT_NO != 1 and per.APPLICANT_ID = ${basic_details.ID}
             "cityid": await getCityCode(customer.CURRENT_CITY),
             "areaid": await getAreaCode(customer.CURRENT_AREA),
             "regionid": 1,
-            "mobile": (customer.MOBILE_NUMBER || ""),
+            //"mobile": (customer.MOBILE_NUMBER || ""),
             "pincode": customer.CURRENT_PINCODE,
             // "sequenceno": 1,
             "bankcode": 1,
@@ -1232,7 +1240,8 @@ where per.APPLICANT_NO != 1 and per.APPLICANT_ID = ${basic_details.ID}
             "entryuser": await getUserNameByID(basic_details.MAKER_USER_ID),
             "verifiedby": await getUserNameByID(basic_details.CHACKER_USER_ID),
             "authuser": await getUserNameByID(basic_details.VERIFIER_USER_ID),
-            "addressline1": `${customer.CURRENT_ADDRESS} ${customer.CURRENT_LANDMARK}`,
+            "addressline1": customer.CURRENT_LANDMARK || "",
+            "apartmentbuilding": customer.CURRENT_ADDRESS || "",
             "jhsr": (customer.APPLICANT_NO - 1)
         }
 
@@ -1375,14 +1384,14 @@ async function buildOfficeAddress(record, basicR, { mobile, pincode }) {
     if (!hasOfficeAddress(record)) return null;
     return {
         "addresstype": "O",
-        "countryid": 1,
+        "countryid": 356,
         "stateid": await getStateCode(record.OFFICE_STATE),
         "districtid": await getDistCode(record.OFFICE_DISTRICT),
         "talukaid": await getTalukaCode(record.OFFICE_TALUKA),
         "cityid": await getCityCode(record.OFFICE_CITY),
         "areaid": await getAreaCode(record.OFFICE_AREA),
         "regionid": 1,
-        "mobile": mobile,
+        // "mobile": mobile,
         "pincode": pincode,
         // "sequenceno": 1,
         "bankcode": 1,
@@ -1390,7 +1399,8 @@ async function buildOfficeAddress(record, basicR, { mobile, pincode }) {
         "entryuser": await getUserNameByID(basicR.MAKER_USER_ID),
         "verifiedby": await getUserNameByID(basicR.CHACKER_USER_ID),
         "authuser": await getUserNameByID(basicR.VERIFIER_USER_ID),
-        "addressline1": `${record.OFFICE_ADDRESS || ""} ${record.OFFICE_LANDMARK || ""}`.trim()
+        "addressline1": record.OFFICE_LANDMARK || "",
+        "apartmentbuilding": record.OFFICE_ADDRESS || ""
     };
 }
 
